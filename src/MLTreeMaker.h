@@ -1,7 +1,7 @@
 /**
  * @file    MLTreeMaker.h
  * @author  Joakim Olsson <joakim.olsson@cern.ch>
- * @brief   A derivation that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
+# @brief    Athena package to save a tree that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
  * @date    October 2016
  */
 
@@ -182,8 +182,6 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_cellPt;
     std::vector<float> m_cellEta;
     std::vector<float> m_cellPhi;
-    std::vector<float> m_cellEta2;
-    std::vector<float> m_cellPhi2;
     std::vector<float> m_cellR;
 
 }; 

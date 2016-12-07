@@ -227,8 +227,6 @@ StatusCode MLTreeMaker::initialize() {
   m_tree->Branch("cellE",               &m_cellE);
   m_tree->Branch("cellEta",             &m_cellEta);
   m_tree->Branch("cellPhi",             &m_cellPhi);
-  m_tree->Branch("cellEta2",            &m_cellEta2);
-  m_tree->Branch("cellPhi2",            &m_cellPhi2);
   m_tree->Branch("cellR",               &m_cellR);
 
   return StatusCode::SUCCESS;
@@ -337,8 +335,6 @@ StatusCode MLTreeMaker::execute() {
   m_cellE.clear();
   m_cellEta.clear();
   m_cellPhi.clear();
-  m_cellEta2.clear();
-  m_cellPhi2.clear();
   m_cellR.clear();
 
   // General event information
@@ -715,8 +711,6 @@ StatusCode MLTreeMaker::execute() {
     m_cellPt.push_back(cell->pt()/1e3);
     m_cellEta.push_back(cell->caloDDE()->eta());
     m_cellPhi.push_back(cell->caloDDE()->phi());
-    m_cellEta2.push_back(cell->eta());
-    m_cellPhi2.push_back(cell->phi());
     m_cellR.push_back(cell->caloDDE()->r());
 
   }

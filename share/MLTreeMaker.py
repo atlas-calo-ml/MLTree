@@ -1,16 +1,21 @@
 #
 # @file     MLTreeMaker.h
 # @author   Joakim Olsson <joakim.olsson@cern.ch>
-# @brief    A derivation that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
+# @brief    Athena package to save a tree that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
 # @date     October 2016
 #
 
-theApp.EvtMax = 10
-
+theApp.EvtMax = -1
 import AthenaPoolCnvSvc.ReadAthenaPool
 
+# MC15c pi+ test
 svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1" ]
+# MC15a pi+ test
+svcMgr.EventSelector.InputCollections = [ "" ]
+# MC15a pi0 test
+svcMgr.EventSelector.InputCollections = [ "" ]
 
+# Setup MLTreeMaker algorithm
 from AthenaCommon import CfgMgr
 algSeq = CfgMgr.AthSequencer("AthAlgSeq")
 algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
@@ -20,7 +25,6 @@ algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
                              EventCleaning = True,
                              Pileup = True,
                              OutputLevel = DEBUG)
-
 algSeq.MLTreeMaker.RootStreamName = "OutputStream"
 
 # Setup stream auditor
