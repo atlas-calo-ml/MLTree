@@ -1,0 +1,51 @@
+## automatically generated CMT requirements file
+package MLTree
+author Joakim Olsson <joakim.olsson@cern.ch> 
+
+##############################################################################
+## package dependencies 
+
+use AtlasPolicy 	AtlasPolicy-*
+use GaudiInterface 	GaudiInterface-* 	External
+use AthenaBaseComps AthenaBaseComps-* Control
+use AtlasROOT 		              AtlasROOT-* 		        External
+
+use TrigCaloEvent	              TrigCaloEvent-*		      Trigger/TrigEvent
+use CaloIdentifier              CaloIdentifier-*        Calorimeter
+use RecoToolInterfaces          RecoToolInterfaces-*    Reconstruction/RecoTools
+use xAODCaloEvent               xAODCaloEvent-*         Event/xAOD
+
+private
+
+use xAODEventInfo 	            xAODEventInfo-* 	      Event/xAOD
+use xAODTruth                   xAODTruth-*             Event/xAOD
+use xAODEventShape              xAODEventShape-*        Event/xAOD
+use CaloEvent                   CaloEvent-*             Calorimeter
+use CaloUtils                   CaloUtils-*             Calorimeter
+use TileIdentifier	            TileIdentifier-*	      TileCalorimeter
+use TileEvent                   TileEvent-*             TileCalorimeter
+use TrkExInterfaces             TrkExInterfaces-*       Tracking/TrkExtrapolation 
+use TrkParameters  	            TrkParameters-*         Tracking/TrkEvent
+use TrkTrack	   	              TrkTrack-*	            Tracking/TrkEvent
+use xAODTracking   	            xAODTracking-*		      Event/xAOD
+use CaloTrackingGeometry        CaloTrackingGeometry-*  Calorimeter
+use TrkSurfaces                 TrkSurfaces-*           Tracking/TrkDetDescr
+use GeoPrimitives               GeoPrimitives-*    	    DetectorDescription
+use TrkCaloExtension            TrkCaloExtension-*      Tracking/TrkEvent
+use CaloDetDescr                CaloDetDescr-*          Calorimeter
+use TrkParametersIdentificationHelpers  TrkParametersIdentificationHelpers-* Tracking/TrkEvent
+
+##############################################################################
+
+public
+
+# declare the directories that CMT should know about
+branches src src/components doc share
+
+## default is to make component library. See: https://twiki.cern.ch/twiki/bin/view/Main/LearningAthena#Libraries_in_CMT for alternatives
+
+apply_pattern declare_joboptions files="*.py"
+apply_pattern declare_python_modules files="*.py"
+
+library MLTree *.cxx components/*.cxx
+apply_pattern component_library
