@@ -7,15 +7,15 @@ author Joakim Olsson <joakim.olsson@cern.ch>
 
 use AtlasPolicy 	AtlasPolicy-*
 use GaudiInterface 	GaudiInterface-* 	External
-use AthenaBaseComps AthenaBaseComps-* Control
-use AtlasROOT 		              AtlasROOT-* 		        External
-
-use TrigCaloEvent	              TrigCaloEvent-*		      Trigger/TrigEvent
-use CaloIdentifier              CaloIdentifier-*        Calorimeter
-use RecoToolInterfaces          RecoToolInterfaces-*    Reconstruction/RecoTools
-use xAODCaloEvent               xAODCaloEvent-*         Event/xAOD
 
 private
+
+use AtlasROOT 		              AtlasROOT-* 		        External
+use AthenaBaseComps AthenaBaseComps-* Control
+use CaloIdentifier              CaloIdentifier-*        Calorimeter
+use TrigCaloEvent	              TrigCaloEvent-*		      Trigger/TrigEvent
+use RecoToolInterfaces          RecoToolInterfaces-*    Reconstruction/RecoTools
+use xAODCaloEvent               xAODCaloEvent-*         Event/xAOD
 
 use xAODEventInfo 	            xAODEventInfo-* 	      Event/xAOD
 use xAODTruth                   xAODTruth-*             Event/xAOD

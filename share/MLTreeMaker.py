@@ -8,19 +8,24 @@
 theApp.EvtMax = -1
 import AthenaPoolCnvSvc.ReadAthenaPool
 
+# from CaloRec.CaloTopoClusterFlags import jobproperties
+# jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
+# from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
+
 # MC15c pi+ test
-svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1" ]
-# MC15a pi+ test
-svcMgr.EventSelector.InputCollections = [ "" ]
-# MC15a pi0 test
-svcMgr.EventSelector.InputCollections = [ "" ]
+# svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1" ]
+svcMgr.EventSelector.InputCollections = [ "/share/t3data2/jolsson/singlepion/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000196.pool.root.1" ]
+# # MC15a pi+ test
+# svcMgr.EventSelector.InputCollections = [ "" ]
+# # MC15a pi0 test
+# svcMgr.EventSelector.InputCollections = [ "" ]
 
 # Setup MLTreeMaker algorithm
 from AthenaCommon import CfgMgr
 algSeq = CfgMgr.AthSequencer("AthAlgSeq")
 algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
                              TrackContainer = "InDetTrackParticles",
-                             CaloClusterContainer = "CaloCalTopoClusters",
+                             CaloClusterContainer = "CaloTopoClusters",
                              Prefix = "CALO",
                              EventCleaning = True,
                              Pileup = True,

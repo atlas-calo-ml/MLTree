@@ -1,0 +1,8 @@
+document optdebug_library MLTree_optdebug_library library=MLTree
+make_fragment make_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/make_header
+make_fragment dependencies /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/dependencies
+make_fragment cleanup_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/cleanup_header
+make_fragment optdebug_library -header=optdebug_library_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/DetCommon/20.7.7/AtlasCommonPolicy/cmt/fragments/optdebug_library
+make_fragment optdebug_library_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/DetCommon/20.7.7/AtlasCommonPolicy/cmt/fragments/optdebug_library_header
+make_fragment document_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/document_header
+make_fragment dependency /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/dependency

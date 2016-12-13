@@ -176,6 +176,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_clusPt;
     std::vector<float> m_clusEta;
     std::vector<float> m_clusPhi;
+    std::vector<std::vector<float> > m_clus_;
 
     // Cells
     std::vector<float> m_cellE;

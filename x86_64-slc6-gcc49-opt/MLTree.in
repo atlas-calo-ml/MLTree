@@ -1,0 +1,29 @@
+library MLTree -no_prototypes *.cxx components/*.cxx
+make_fragment make_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/make_header
+make_fragment dependencies /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/dependencies
+make_fragment cleanup_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/cleanup_header
+make_fragment protos_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/protos_header
+make_fragment buildproto /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/buildproto
+make_fragment dependencies_and_triggers /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/dependencies_and_triggers
+make_fragment java /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/java
+make_fragment java_copy /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/java_copy
+make_fragment cleanup /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/cleanup
+make_fragment cleanup_java /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/cleanup_java
+make_fragment jar_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/jar_header
+make_fragment library_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/library_header
+make_fragment jar /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/jar
+make_fragment library_no_share /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/library_no_share
+make_fragment library_no_static /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/GAUDI/v26r2p2-lcg81e/GaudiPolicy/cmt/fragments/library_no_static
+make_fragment library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/DetCommon/20.7.7/AtlasCommonPolicy/cmt/fragments/library
+make_fragment cleanup_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/cleanup_library
+make_fragment fortran_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/fortran_library
+make_fragment c_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/c_library
+make_fragment cpp_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/cpp_library
+make_fragment yacc_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/yacc_library
+make_fragment lex_library /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/lex_library
+language fortran -suffix=f -suffix=F -linker=$(flink) -preprocessor_command=$(ppcmd)
+language c -suffix=c -linker=$(clink) -prototypes -dependencies_options=-MMD" "-MP" "-MF" "$*.d" "-MQ" "$@
+language c++ -suffix=C -suffix=cc -suffix=cxx -suffix=cpp -linker=$(cpplink) -fragment=cpp -dependencies_options=-MMD" "-MP" "-MF" "$*.d" "-MQ" "$@
+language java -suffix=java -linker=java
+language yacc -suffix=y -linker=$(clink) -prototypes
+language lex -suffix=l -linker=$(clink) -prototypes

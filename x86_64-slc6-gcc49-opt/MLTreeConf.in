@@ -1,0 +1,8 @@
+document genconfig MLTreeConf ../x86_64-slc6-gcc49-opt/libMLTree.so outdir=/share/home/jolsson/workarea/MLTreeAthenaAnalysis/MLTree/genConf/MLTree library=MLTree library_preload= extra_modules= conf_destdir=/share/home/jolsson/workarea/MLTreeAthenaAnalysis/InstallArea/python confModuleName=GaudiKernel.Proxy confDefaultName=Configurable.DefaultName confAlgorithm=ConfigurableAlgorithm confAlgTool=ConfigurableAlgTool confAuditor=ConfigurableAuditor confService=ConfigurableService
+make_fragment make_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/make_header
+make_fragment dependencies /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/dependencies
+make_fragment cleanup_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/cleanup_header
+make_fragment genconfig -header=genconfig_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/GAUDI/v26r2p2-lcg81e/GaudiPolicy/cmt/fragments/genconfig
+make_fragment genconfig_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/GAUDI/v26r2p2-lcg81e/GaudiPolicy/cmt/fragments/genconfig_header
+make_fragment document_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/document_header
+make_fragment dependency /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/dependency

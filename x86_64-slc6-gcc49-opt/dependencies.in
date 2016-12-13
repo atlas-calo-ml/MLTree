@@ -1,0 +1,3 @@
+include_path none
+macro Boost_header_file_filter /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/sw/lcg/releases/LCG_81e/Boost/1.59.0_python2.7/x86_64-slc6-gcc49-opt/include/boost-1_59
+macro Boost_header_file_stamp /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/sw/lcg/releases/LCG_81e/Boost/1.59.0_python2.7/x86_64-slc6-gcc49-opt/include/boost-1_59/boost/any.hpp

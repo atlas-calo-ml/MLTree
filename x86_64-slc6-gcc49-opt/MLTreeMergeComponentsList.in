@@ -1,0 +1,8 @@
+document merge_componentslist MLTreeMergeComponentsList ../x86_64-slc6-gcc49-opt/libMLTree.so library=MLTree merge_componentslist_switch=--do-merge
+make_fragment make_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/make_header
+make_fragment dependencies /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/dependencies
+make_fragment cleanup_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/AtlasDerivation/20.7.7.4/AtlasPolicy/cmt/fragments/cleanup_header
+make_fragment merge_componentslist -header=merge_componentslist_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/GAUDI/v26r2p2-lcg81e/GaudiPolicy/cmt/fragments/merge_componentslist
+make_fragment merge_componentslist_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/GAUDI/v26r2p2-lcg81e/GaudiPolicy/cmt/fragments/merge_componentslist_header
+make_fragment document_header /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/document_header
+make_fragment dependency /cvmfs/atlas.cern.ch/repo/sw/software/x86_64-slc6-gcc49-opt/20.7.7/CMT/v1r25p20160527/mgr/fragments/dependency

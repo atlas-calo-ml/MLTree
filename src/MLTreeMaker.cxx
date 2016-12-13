@@ -462,19 +462,19 @@ StatusCode MLTreeMaker::execute() {
     }
   }
 
-  // Truth particles
-  const xAOD::TruthParticleContainer* truthContainer = 0;
-  CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
-  for (const auto& truth: *truthContainer) {
-
-    m_pdgId.push_back(truth->pdgId());
-    m_status.push_back(truth->status());
-    m_barcode.push_back(truth->barcode());
-    m_truthPartPt.push_back(truth->pt()/1e3);
-    m_truthPartMass.push_back(truth->m()/1e3);
-    m_truthPartEta.push_back(truth->eta());
-    m_truthPartPhi.push_back(truth->phi());
-  }
+  // // Truth particles
+  // const xAOD::TruthParticleContainer* truthContainer = 0;
+  // CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
+  // for (const auto& truth: *truthContainer) {
+  //
+  //   m_pdgId.push_back(truth->pdgId());
+  //   m_status.push_back(truth->status());
+  //   m_barcode.push_back(truth->barcode());
+  //   m_truthPartPt.push_back(truth->pt()/1e3);
+  //   m_truthPartMass.push_back(truth->m()/1e3);
+  //   m_truthPartEta.push_back(truth->eta());
+  //   m_truthPartPhi.push_back(truth->phi());
+  // }
 
   // Tracks
   const xAOD::TrackParticleContainer* trackContainer = 0;
@@ -686,34 +686,45 @@ StatusCode MLTreeMaker::execute() {
   }
 
   // Calo clusters
-  const xAOD::CaloClusterContainer* clusterContainer = 0; 
-  CHECK(evtStore()->retrieve(clusterContainer, m_caloClusterContainerName));
+  const xAOD::CaloClusterContainer* clusContainer = 0; 
+  CHECK(evtStore()->retrieve(clusContainer, m_caloClusterContainerName));
 
-  for (const auto& cluster : *clusterContainer) {
+  for (const auto& clus : *clusContainer) {
 
-    m_clusE.push_back(cluster->e()/1e3);
-    m_clusPt.push_back(cluster->pt()/1e3);
-    m_clusEta.push_back(cluster->eta());
-    m_clusPhi.push_back(cluster->phi());
+    float clus_e = clus->e()/1e3;
+    float clus_pt = clus->pt()/1e3;
+    float clus_eta = clus->eta();
+    float clus_phi = clus->phi();
 
+    m_clusE.push_back(clus_e);
+    m_clusPt.push_back(clus_pt);
+    m_clusEta.push_back(clus_eta);
+    m_clusPhi.push_back(clus_phi);
+
+    for (auto cell_itr(clus->cell_begin()); cell_itr != clus->cell_end(); ++cell_itr) {
+      // const CaloCell* cell = *cell_itr;
+      if ( fabs(*cell->eta() - clus_eta) < 0.2 || fabs(*cell->phi() - clus_phi) < 0.2 ) {
+        std::cout << *cell->eta() << std::endl;
+      }
+    }
   }
 
-  // Calo cells
-  const CaloCellContainer *caloCellContainer = 0;
-  CHECK(evtStore()->retrieve(caloCellContainer, "AllCalo"));
-
-  for (const auto& cell : *caloCellContainer) {
-
-    // Calorimeter/CaloDetDescr/CaloDetDescr/CaloDetDescrElement.h
-    if (!cell->caloDDE()) continue;
-
-    m_cellE.push_back(cell->e()/1e3);
-    m_cellPt.push_back(cell->pt()/1e3);
-    m_cellEta.push_back(cell->caloDDE()->eta());
-    m_cellPhi.push_back(cell->caloDDE()->phi());
-    m_cellR.push_back(cell->caloDDE()->r());
-
-  }
+  // // Calo cells
+  // const CaloCellContainer *caloCellContainer = 0;
+  // CHECK(evtStore()->retrieve(caloCellContainer, "AllCalo"));
+  //
+  // for (const auto& cell : *caloCellContainer) {
+  //
+  //   // Calorimeter/CaloDetDescr/CaloDetDescr/CaloDetDescrElement.h
+  //   if (!cell->caloDDE()) continue;
+  //
+  //   m_cellE.push_back(cell->e()/1e3);
+  //   m_cellPt.push_back(cell->pt()/1e3);
+  //   m_cellEta.push_back(cell->caloDDE()->eta());
+  //   m_cellPhi.push_back(cell->caloDDE()->phi());
+  //   m_cellR.push_back(cell->caloDDE()->r());
+  //
+  // }
 
   m_tree->Fill();
 
