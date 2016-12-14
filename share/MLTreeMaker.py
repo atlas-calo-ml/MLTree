@@ -1,20 +1,16 @@
 #
 # @file     MLTreeMaker.h
 # @author   Joakim Olsson <joakim.olsson@cern.ch>
-# @brief    Athena package to save a tree that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
+# @brief    Athena package to save cell images of clusters for ML training
 # @date     October 2016
 #
 
 theApp.EvtMax = -1
 import AthenaPoolCnvSvc.ReadAthenaPool
 
-# from CaloRec.CaloTopoClusterFlags import jobproperties
-# jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
-# from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
-
 # MC15c pi+ test
-# svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1" ]
-svcMgr.EventSelector.InputCollections = [ "/share/t3data2/jolsson/singlepion/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000196.pool.root.1" ]
+svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1" ]
+# svcMgr.EventSelector.InputCollections = [ "/share/t3data2/jolsson/singlepion/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000196.pool.root.1" ]
 # # MC15a pi+ test
 # svcMgr.EventSelector.InputCollections = [ "" ]
 # # MC15a pi0 test
@@ -25,7 +21,7 @@ from AthenaCommon import CfgMgr
 algSeq = CfgMgr.AthSequencer("AthAlgSeq")
 algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
                              TrackContainer = "InDetTrackParticles",
-                             CaloClusterContainer = "CaloTopoClusters",
+                             CaloClusterContainer = "CaloCalTopoClusters",
                              Prefix = "CALO",
                              EventCleaning = True,
                              Pileup = True,
@@ -49,3 +45,9 @@ getService("AtlasTrackingGeometrySvc")
 from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
 oks = ObjKeyStore()
 oks.addStreamESD('CaloCellContainer', ['AllCalo'] )
+
+## Suggestion from Peter Loch to turn off local cluster calibration, at the
+## moment this makes Athena crash
+# from CaloRec.CaloTopoClusterFlags import jobproperties
+# jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
+# from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter

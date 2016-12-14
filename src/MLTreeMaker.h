@@ -1,8 +1,8 @@
 /**
- * @file    MLTreeMaker.h
- * @author  Joakim Olsson <joakim.olsson@cern.ch>
-# @brief    Athena package to save a tree that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision
- * @date    October 2016
+ * @file    mltreemaker.h
+ * @author  joakim olsson <joakim.olsson@cern.ch>
+ * @brief   Athena package to save cell images of clusters for ML training 
+ * @date    october 2016
  */
 
 #ifndef MLTREE_MLTREEMAKER_H
@@ -38,6 +38,8 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     virtual StatusCode  finalize();
 
   private: 
+    bool m_doEventTree;
+    bool m_doClusterTree;
     // bool m_isMC;
     bool m_doEventCleaning;
     bool m_doPileup;
@@ -59,7 +61,10 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     const TileTBID* m_tileTBID; 
 
     // Retrieve tree
-    TTree* m_tree;
+    TTree* m_eventTree;
+    TTree* m_clusterTree;
+
+    //// Add to eventTree
 
     // Event info
     int      m_runNumber;
@@ -105,6 +110,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     float    m_xf2;
 
     // Truth particles
+    int m_nTruthPart;
     std::vector<int>   m_pdgId;
     std::vector<int>   m_status;
     std::vector<int>   m_barcode;
@@ -114,76 +120,110 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_truthPartPhi;
 
     // Track variables
-    std::vector<float> m_trkPt;
-    std::vector<float> m_trkP;
-    std::vector<float> m_trkMass;
-    std::vector<float> m_trkEta;
-    std::vector<float> m_trkPhi;
+    int m_nTrack;
+    std::vector<float> m_trackPt;
+    std::vector<float> m_trackP;
+    std::vector<float> m_trackMass;
+    std::vector<float> m_trackEta;
+    std::vector<float> m_trackPhi;
 
     // Track extrapolation
     // Presampler
-    std::vector<float> m_trkEta_PreSamplerB;
-    std::vector<float> m_trkPhi_PreSamplerB;
-    std::vector<float> m_trkEta_PreSamplerE;
-    std::vector<float> m_trkPhi_PreSamplerE;
+    std::vector<float> m_trackEta_PreSamplerB;
+    std::vector<float> m_trackPhi_PreSamplerB;
+    std::vector<float> m_trackEta_PreSamplerE;
+    std::vector<float> m_trackPhi_PreSamplerE;
     // LAr EM Barrel layers
-    std::vector<float> m_trkEta_EMB1; 
-    std::vector<float> m_trkPhi_EMB1; 
-    std::vector<float> m_trkEta_EMB2; 
-    std::vector<float> m_trkPhi_EMB2; 
-    std::vector<float> m_trkEta_EMB3; 
-    std::vector<float> m_trkPhi_EMB3; 
+    std::vector<float> m_trackEta_EMB1; 
+    std::vector<float> m_trackPhi_EMB1; 
+    std::vector<float> m_trackEta_EMB2; 
+    std::vector<float> m_trackPhi_EMB2; 
+    std::vector<float> m_trackEta_EMB3; 
+    std::vector<float> m_trackPhi_EMB3; 
     // LAr EM Endcap layers
-    std::vector<float> m_trkEta_EME1; 
-    std::vector<float> m_trkPhi_EME1; 
-    std::vector<float> m_trkEta_EME2; 
-    std::vector<float> m_trkPhi_EME2; 
-    std::vector<float> m_trkEta_EME3; 
-    std::vector<float> m_trkPhi_EME3; 
+    std::vector<float> m_trackEta_EME1; 
+    std::vector<float> m_trackPhi_EME1; 
+    std::vector<float> m_trackEta_EME2; 
+    std::vector<float> m_trackPhi_EME2; 
+    std::vector<float> m_trackEta_EME3; 
+    std::vector<float> m_trackPhi_EME3; 
     // Hadronic Endcap layers
-    std::vector<float> m_trkEta_HEC0; 
-    std::vector<float> m_trkPhi_HEC0; 
-    std::vector<float> m_trkEta_HEC1; 
-    std::vector<float> m_trkPhi_HEC1; 
-    std::vector<float> m_trkEta_HEC2; 
-    std::vector<float> m_trkPhi_HEC2; 
-    std::vector<float> m_trkEta_HEC3; 
-    std::vector<float> m_trkPhi_HEC3; 
+    std::vector<float> m_trackEta_HEC0; 
+    std::vector<float> m_trackPhi_HEC0; 
+    std::vector<float> m_trackEta_HEC1; 
+    std::vector<float> m_trackPhi_HEC1; 
+    std::vector<float> m_trackEta_HEC2; 
+    std::vector<float> m_trackPhi_HEC2; 
+    std::vector<float> m_trackEta_HEC3; 
+    std::vector<float> m_trackPhi_HEC3; 
     // Tile Barrel layers
-    std::vector<float> m_trkEta_TileBar0; 
-    std::vector<float> m_trkPhi_TileBar0; 
-    std::vector<float> m_trkEta_TileBar1; 
-    std::vector<float> m_trkPhi_TileBar1; 
-    std::vector<float> m_trkEta_TileBar2; 
-    std::vector<float> m_trkPhi_TileBar2; 
+    std::vector<float> m_trackEta_TileBar0; 
+    std::vector<float> m_trackPhi_TileBar0; 
+    std::vector<float> m_trackEta_TileBar1; 
+    std::vector<float> m_trackPhi_TileBar1; 
+    std::vector<float> m_trackEta_TileBar2; 
+    std::vector<float> m_trackPhi_TileBar2; 
     // Tile Gap layers
-    std::vector<float> m_trkEta_TileGap1; 
-    std::vector<float> m_trkPhi_TileGap1; 
-    std::vector<float> m_trkEta_TileGap2; 
-    std::vector<float> m_trkPhi_TileGap2; 
-    std::vector<float> m_trkEta_TileGap3; 
-    std::vector<float> m_trkPhi_TileGap3; 
+    std::vector<float> m_trackEta_TileGap1; 
+    std::vector<float> m_trackPhi_TileGap1; 
+    std::vector<float> m_trackEta_TileGap2; 
+    std::vector<float> m_trackPhi_TileGap2; 
+    std::vector<float> m_trackEta_TileGap3; 
+    std::vector<float> m_trackPhi_TileGap3; 
     // Tile Extended Barrel layers
-    std::vector<float> m_trkEta_TileExt0;
-    std::vector<float> m_trkPhi_TileExt0;
-    std::vector<float> m_trkEta_TileExt1;
-    std::vector<float> m_trkPhi_TileExt1;
-    std::vector<float> m_trkEta_TileExt2;
-    std::vector<float> m_trkPhi_TileExt2;
+    std::vector<float> m_trackEta_TileExt0;
+    std::vector<float> m_trackPhi_TileExt0;
+    std::vector<float> m_trackEta_TileExt1;
+    std::vector<float> m_trackPhi_TileExt1;
+    std::vector<float> m_trackEta_TileExt2;
+    std::vector<float> m_trackPhi_TileExt2;
 
-    // Clusters 
-    std::vector<float> m_clusE;
-    std::vector<float> m_clusPt;
-    std::vector<float> m_clusEta;
-    std::vector<float> m_clusPhi;
-    std::vector<std::vector<float> > m_clus_;
+    // Clusters and cells 
+    int m_nCluster;
+    std::vector<float> m_clusterE;
+    std::vector<float> m_clusterPt;
+    std::vector<float> m_clusterEta;
+    std::vector<float> m_clusterPhi;
+    std::vector<float> m_cluster_nCells;
+    std::vector<float> m_cluster_cell_dEta;
+    std::vector<float> m_cluster_cell_dPhi;
+    std::vector<float> m_cluster_cell_dR_min;
+    std::vector<float> m_cluster_cell_dR_max;
+    std::vector<float> m_cluster_cell_dEta_min;
+    std::vector<float> m_cluster_cell_dEta_max;
+    std::vector<float> m_cluster_cell_dPhi_min;
+    std::vector<float> m_cluster_cell_dPhi_max;
 
-    // Cells
-    std::vector<float> m_cellE;
-    std::vector<float> m_cellPt;
-    std::vector<float> m_cellEta;
-    std::vector<float> m_cellPhi;
-    std::vector<float> m_cellR;
+    std::vector<float> m_cluster_cell_centerCellEta;
+    std::vector<float> m_cluster_cell_centerCellPhi;
+    std::vector<int>   m_cluster_cell_centerCellLayer;
+
+    //// Add to clusterTree
+    
+    float m_fClusterE;
+    float m_fClusterPt;
+    float m_fClusterEta;
+    float m_fClusterPhi;
+    float m_fCluster_nCells;
+
+    float m_fCluster_cell_dR_min;
+    float m_fCluster_cell_dR_max;
+    float m_fCluster_cell_dEta_min;
+    float m_fCluster_cell_dEta_max;
+    float m_fCluster_cell_dPhi_min;
+    float m_fCluster_cell_dPhi_max;
+
+    float m_fCluster_cell_centerCellEta;
+    float m_fCluster_cell_centerCellPhi;
+    int   m_fCluster_cell_centerCellLayer;
+
+    // Images: eta x phi = 0.4 x 0.4 
+    float m_EMB1[128][4];
+    float m_EMB2[16][16];
+    float m_EMB3[8][16];
+    float m_TileBar0[4][4];
+    float m_TileBar1[4][4];
+    float m_TileBar2[2][4];
 
 }; 
 
