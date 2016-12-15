@@ -4,8 +4,8 @@ import sys
 import re
 
 import numpy as np
-from ROOT import TFile, TChain
-from root_numpy import root2array, tree2array, fill_hist
+from ROOT import TChain
+from root_numpy import tree2array
 
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
@@ -25,12 +25,13 @@ def main(argv):
 
     # ------------------------------------------------------------------
     # Setup
-    nevents = 20
+    nclusters = 20
     input_path = '/Users/joakim/GoogleDrive/CERN/Projects/ML/MLDerivation/test_datasets/'
     file_names = ['MLderivation.pool.root']
-    treename = 'ImageTree'
+    treename = 'ClusterTree'
     sample = 'piplus' # 'piplus' or 'pi0'
     # ------------------------------------------------------------------
+
     sample_label = '$\pi^+$'
     if sample == 'pi0':
         sample_label = '$\pi^0$'
@@ -51,11 +52,11 @@ def main(argv):
                     sample_label+', TileBar1 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.1\\times0.1$)',
                     sample_label+', TileBar2 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.2\\times0.1$)'
                     ]
-    clusters = tree2array(chain, branches=layers, start=0, stop=nevents)
+    clusters = tree2array(chain, branches=layers, start=0, stop=nclusters)
 
     print '----> Plotting images'
     for i, cluster in enumerate(clusters):
-        print 'Event {}'.format(i)
+        print 'Plotting images for cluster #{}'.format(i)
         for j, layer in enumerate(layers):
             fig = plt.figure(figsize=(8,8))
             ax = fig.add_subplot(111)
@@ -83,7 +84,7 @@ def main(argv):
             # ax.grid(which='both')
             ax.grid(which='minor', alpha=0.2)
             ax.grid(which='major', alpha=0.5)
-            fig.savefig('image_'+sample+'_event_{}_'.format(i)+layer+'.pdf', bbox_inches='tight')
+            fig.savefig('image_'+sample+'_cluster_{}_'.format(i)+layer+'.pdf', bbox_inches='tight')
 
 if __name__ == "__main__":
     main(sys.argv)
