@@ -1,7 +1,5 @@
 # MLTree 
-Athena package to save a tree that includes clusters, cells, tracks and truth information for projects using ML and Computer Vision.
-
-More functionality and documentation to be added asap!
+Athena package to save cell images of clusters for ML training.
 
 For questions please contact: joakim.olsson[at]cern.ch
 
