@@ -15,8 +15,8 @@ svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/data
 theApp.EvtMax = -1
 import AthenaPoolCnvSvc.ReadAthenaPool
 
-from AthenaCommon.GlobalFlags import jobproperties
-jobproperties.Global.DetDescrVersion='ATLAS-R2-2015-04-00-00'
+# from AthenaCommon.GlobalFlags import jobproperties
+# jobproperties.Global.DetDescrVersion='ATLAS-R2-2015-04-00-00'
 
 # Setup MLTreeMaker algorithm
 from AthenaCommon import CfgMgr
