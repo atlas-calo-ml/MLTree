@@ -278,6 +278,8 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("cluster_cell_centerCellPhi",    &m_fCluster_cell_centerCellPhi,   "cluster_cell_centerCellPhi/F");
     m_clusterTree->Branch("cluster_cell_centerCellLayer",  &m_fCluster_cell_centerCellLayer, "cluster_cell_centerCellLayer/I");
 
+    m_clusterTree->Branch("cluster_cellE_norm", &m_cluster_cellE_norm);
+
     // Images
     m_clusterTree->Branch("EMB1",           &m_EMB1[0],         "EMB1[128][4]/F");
     m_clusterTree->Branch("EMB2",           &m_EMB2[0],         "EMB2[16][16]/F");
@@ -285,6 +287,14 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("TileBar0",       &m_TileBar0[0],     "TileBar0[4][4]/F");
     m_clusterTree->Branch("TileBar1",       &m_TileBar1[0],     "TileBar1[4][4]/F");
     m_clusterTree->Branch("TileBar2",       &m_TileBar2[0],     "TileBar2[2][4]/F");
+
+    // Check for duplicates
+    m_clusterTree->Branch("duplicate_EMB1",       &m_duplicate_EMB1,     "duplicate_EMB1/F");
+    m_clusterTree->Branch("duplicate_EMB2",       &m_duplicate_EMB2,     "duplicate_EMB2/F");
+    m_clusterTree->Branch("duplicate_EMB3",       &m_duplicate_EMB3,     "duplicate_EMB3/F");
+    m_clusterTree->Branch("duplicate_TileBar0",   &m_duplicate_TileBar0, "duplicate_TileBar0/F");
+    m_clusterTree->Branch("duplicate_TileBar1",   &m_duplicate_TileBar1, "duplicate_TileBar1/F");
+    m_clusterTree->Branch("duplicate_TileBar2",   &m_duplicate_TileBar2, "duplicate_TileBar2/F");
   }
 
   return StatusCode::SUCCESS;
@@ -847,15 +857,24 @@ StatusCode MLTreeMaker::execute() {
       m_cluster_cell_centerCellLayer.push_back((int)centerCellLayer);
     }
 
-    // Clear images
-    memset(m_EMB1, 0, sizeof(m_EMB1[0][0]) * 128 * 4);
-    memset(m_EMB2, 0, sizeof(m_EMB2[0][0]) * 16 * 16);
-    memset(m_EMB3, 0, sizeof(m_EMB3[0][0]) * 8 * 16);
-    memset(m_TileBar0, 0, sizeof(m_TileBar0[0][0]) * 4 * 4);
-    memset(m_TileBar1, 0, sizeof(m_TileBar1[0][0]) * 4 * 4);
-    memset(m_TileBar2, 0, sizeof(m_TileBar2[0][0]) * 2 * 4);
-
     if (m_doClusterTree) {
+
+      // Clear images
+      memset(m_EMB1, 0, sizeof(m_EMB1[0][0]) * 128 * 4);
+      memset(m_EMB2, 0, sizeof(m_EMB2[0][0]) * 16 * 16);
+      memset(m_EMB3, 0, sizeof(m_EMB3[0][0]) * 8 * 16);
+      memset(m_TileBar0, 0, sizeof(m_TileBar0[0][0]) * 4 * 4);
+      memset(m_TileBar1, 0, sizeof(m_TileBar1[0][0]) * 4 * 4);
+      memset(m_TileBar2, 0, sizeof(m_TileBar2[0][0]) * 2 * 4);
+
+      m_duplicate_EMB1 = 0;
+      m_duplicate_EMB2 = 0;
+      m_duplicate_EMB3 = 0;
+      m_duplicate_TileBar0 = 0;
+      m_duplicate_TileBar1 = 0;
+      m_duplicate_TileBar2 = 0;
+
+      m_cluster_cellE_norm.clear();
 
       // Fill images 
       int iEta = 0;
@@ -873,34 +892,42 @@ StatusCode MLTreeMaker::execute() {
         float cellE = cell->e()*(it_cell.weight())/1e3;
         float cellE_norm = cellE/clusterE;
 
+        m_cluster_cellE_norm.push_back(cellE_norm);
+
         if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
 
         // Ugly, but will do for now
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
         switch(cellLayer){
           case CaloCell_ID::EMB1:
-            iEta = int(dEta/cellSizeEta[0]); 
-            iPhi = int(dPhi/cellSizePhi[0]); 
+            iEta = int(dEta/cellSizeEta[0]+cellSizeEta[0]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[0]+cellSizePhi[0]*0.5); 
+            if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
             if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] = cellE_norm;
           case CaloCell_ID::EMB2:
-            iEta = int(dEta/cellSizeEta[1]); 
-            iPhi = int(dPhi/cellSizePhi[1]); 
+            iEta = int(dEta/cellSizeEta[1]+cellSizeEta[1]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[1]+cellSizePhi[1]*0.5); 
+            if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
             if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] = cellE_norm;
           case CaloCell_ID::EMB3:
-            iEta = int(dEta/cellSizeEta[2]); 
-            iPhi = int(dPhi/cellSizePhi[2]); 
+            iEta = int(dEta/cellSizeEta[2]+cellSizeEta[2]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[2]+cellSizePhi[2]*0.5); 
+            if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
             if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] = cellE_norm;
           case CaloCell_ID::TileBar0:
-            iEta = int(dEta/cellSizeEta[3]); 
-            iPhi = int(dPhi/cellSizePhi[3]); 
+            iEta = int(dEta/cellSizeEta[3]+cellSizeEta[3]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[3]+cellSizePhi[3]*0.5); 
+            if (m_TileBar0[iEta+2][iPhi+2] != 0) m_duplicate_TileBar0++; // check for duplicates
             if (iEta < 4 && iPhi < 4) m_TileBar0[iEta+2][iPhi+2] = cellE_norm;
           case CaloCell_ID::TileBar1:
-            iEta = int(dEta/cellSizeEta[4]); 
-            iPhi = int(dPhi/cellSizePhi[4]); 
+            iEta = int(dEta/cellSizeEta[4]+cellSizeEta[4]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[4]+cellSizePhi[4]*0.5); 
+            if (m_TileBar1[iEta+2][iPhi+2] != 0) m_duplicate_TileBar1++; // check for duplicates
             if (iEta < 4 && iPhi < 4) m_TileBar1[iEta+2][iPhi+2] = cellE_norm;
           case CaloCell_ID::TileBar2:
-            iEta = int(dEta/cellSizeEta[5]); 
-            iPhi = int(dPhi/cellSizePhi[5]); 
+            iEta = int(dEta/cellSizeEta[5]+cellSizeEta[5]*0.5); 
+            iPhi = int(dPhi/cellSizePhi[5]+cellSizePhi[5]*0.5); 
+            if (m_TileBar2[iEta+1][iPhi+2] != 0) m_duplicate_TileBar2++; // check for duplicates
             if (iEta < 2 && iPhi < 4) m_TileBar2[iEta+1][iPhi+2] = cellE_norm;
           default:
             continue;

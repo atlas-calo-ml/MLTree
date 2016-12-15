@@ -5,7 +5,8 @@
 # @date     October 2016
 #
 
-theApp.EvtMax = -1
+# theApp.EvtMax = -1
+theApp.EvtMax = 100
 import AthenaPoolCnvSvc.ReadAthenaPool
 
 ## MC15c pi+ test
@@ -20,6 +21,11 @@ jobproperties.Global.DetDescrVersion='ATLAS-R2-2015-02-01-00' # For MC15a single
 
 # from AthenaCommon.GlobalFlags import globalflags
 # globalflags.DetDescrVersion.set_Value_and_Lock('ATLAS-R2-2015-02-01-00')
+
+# Suggestion from Peter Loch to turn off local cluster calibration
+from CaloRec.CaloTopoClusterFlags import jobproperties
+jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
+from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
 
 # Setup MLTreeMaker algorithm
 from AthenaCommon import CfgMgr
@@ -50,8 +56,3 @@ getService("AtlasTrackingGeometrySvc")
 from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
 oks = ObjKeyStore()
 oks.addStreamESD('CaloCellContainer', ['AllCalo'] )
-
-## Suggestion from Peter Loch to turn off local cluster calibration
-from CaloRec.CaloTopoClusterFlags import jobproperties
-jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
-# from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
