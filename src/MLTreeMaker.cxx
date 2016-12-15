@@ -42,13 +42,16 @@
 
 MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
-  m_doEventTree(false),
+  m_doEventTree(true),
   m_doClusterTree(true),
   m_doEventCleaning(false),
   m_doPileup(false),
   m_doShapeEM(false),
   m_doShapeLC(false),
   m_doEventTruth(false),
+  m_clusterE_min(0.5),
+  m_clusterE_max(100.0),
+  m_clusterEtaAbs_max(0.7),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
   m_truthContainerName("TruthParticles"),
@@ -61,6 +64,9 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_surfaceHelper("CaloSurfaceHelper/CaloSurfaceHelper"),
   m_tileTBID(0)
 {
+  declareProperty("ClusterEmin", m_clusterE_min);
+  declareProperty("ClusterEmax", m_clusterE_max);
+  declareProperty("ClusterEtaAbsmax", m_clusterEtaAbs_max);
   declareProperty("EventTree", m_doEventTree);
   declareProperty("ClusterTree", m_doClusterTree);
   declareProperty("EventCleaning", m_doEventCleaning);
@@ -232,6 +238,7 @@ StatusCode MLTreeMaker::initialize() {
     m_eventTree->Branch("clusterEta",             &m_clusterEta);
     m_eventTree->Branch("clusterPhi",             &m_clusterPhi);
     m_eventTree->Branch("cluster_nCells",         &m_cluster_nCells);
+    m_eventTree->Branch("cluster_sumCellE",       &m_cluster_sumCellE);
     m_eventTree->Branch("cluster_cell_dEta",      &m_cluster_cell_dEta);
     m_eventTree->Branch("cluster_cell_dPhi",      &m_cluster_cell_dPhi);
     m_eventTree->Branch("cluster_cell_dR_min",    &m_cluster_cell_dR_min);
@@ -252,12 +259,14 @@ StatusCode MLTreeMaker::initialize() {
     CHECK( book(TTree("ClusterTree", "ClusterTree")) );
     m_clusterTree = tree("ClusterTree");
 
-    m_clusterTree->Branch("runNumber",      &m_runNumber,       "runNumber/I");
-    m_clusterTree->Branch("clusterE",       &m_fClusterE,       "clusterE/F");
-    m_clusterTree->Branch("clusterPt",      &m_fClusterPt,      "clusterPt/F");
-    m_clusterTree->Branch("clusterEta",     &m_fClusterEta,     "clusterEta/F");
-    m_clusterTree->Branch("clusterPhi",     &m_fClusterPhi,     "clusterPhi/F");
-    m_clusterTree->Branch("cluster_nCells", &m_fCluster_nCells, "cluster_nCells/I");
+    m_clusterTree->Branch("runNumber",        &m_runNumber,         "runNumber/I");
+    m_clusterTree->Branch("eventNumber",      &m_eventNumber,       "eventNumber/I");
+    m_clusterTree->Branch("clusterE",         &m_fClusterE,         "clusterE/F");
+    m_clusterTree->Branch("clusterPt",        &m_fClusterPt,        "clusterPt/F");
+    m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
+    m_clusterTree->Branch("clusterPhi",       &m_fClusterPhi,       "clusterPhi/F");
+    m_clusterTree->Branch("cluster_nCells",   &m_fCluster_nCells,   "cluster_nCells/I");
+    m_clusterTree->Branch("cluster_sumCellE", &m_fCluster_sumCellE, "cluster_sumCellE/F");
 
     m_clusterTree->Branch("cluster_cell_dR_min",    &m_fCluster_cell_dR_min,   "cluster_cell_dR_min/F");
     m_clusterTree->Branch("cluster_cell_dR_max",    &m_fCluster_cell_dR_max,   "cluster_cell_dR_max/F");
@@ -265,10 +274,9 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("cluster_cell_dEta_max",  &m_fCluster_cell_dEta_max, "cluster_cell_dEta_max/F");
     m_clusterTree->Branch("cluster_cell_dPhi_min",  &m_fCluster_cell_dPhi_min, "cluster_cell_dPhi_min/F");
     m_clusterTree->Branch("cluster_cell_dPhi_max",  &m_fCluster_cell_dPhi_max, "cluster_cell_dPhi_max/F");
-
     m_clusterTree->Branch("cluster_cell_centerCellEta",    &m_fCluster_cell_centerCellEta,   "cluster_cell_centerCellEta/F");
     m_clusterTree->Branch("cluster_cell_centerCellPhi",    &m_fCluster_cell_centerCellPhi,   "cluster_cell_centerCellPhi/F");
-    m_clusterTree->Branch("cluster_cell_centerCellLayer",  &m_fCluster_cell_centerCellLayer, "cluster_cell_centerCellLayer/F");
+    m_clusterTree->Branch("cluster_cell_centerCellLayer",  &m_fCluster_cell_centerCellLayer, "cluster_cell_centerCellLayer/I");
 
     // Images
     m_clusterTree->Branch("EMB1",           &m_EMB1[0],         "EMB1[128][4]/F");
@@ -382,6 +390,7 @@ StatusCode MLTreeMaker::execute() {
   m_clusterEta.clear();
   m_clusterPhi.clear();
   m_cluster_nCells.clear();
+  m_cluster_sumCellE.clear();
   m_cluster_cell_dEta.clear();
   m_cluster_cell_dPhi.clear();
   m_cluster_cell_dR_min.clear();
@@ -765,7 +774,7 @@ StatusCode MLTreeMaker::execute() {
     float clusterPhi = cluster->phi();
 
     // Only select low energy clusters in the Barrel region (for now)
-    if (clusterE < 0.5 || clusterE > 100. || fabs(clusterEta) > .7) continue;
+    if (clusterE < m_clusterE_min || clusterE > m_clusterE_max || fabs(clusterEta) > m_clusterEtaAbs_max) continue;
 
     if (m_doEventTree) {
       m_clusterE.push_back(clusterE);
@@ -785,6 +794,7 @@ StatusCode MLTreeMaker::execute() {
     CaloCell_ID::CaloSample centerCellLayer;
 
     int nCells = 0;
+    float sumCellE = 0;
     bool fillCellValidation = false;
 
     // Figure out which cell is at the center if the cluster and fill some validation plots
@@ -818,11 +828,13 @@ StatusCode MLTreeMaker::execute() {
       };
 
       fillCellValidation = true;
+      sumCellE += cell->e()/1e3;
       nCells++;
     }
 
     if (fillCellValidation && m_doEventTree) {
       m_cluster_nCells.push_back(nCells);
+      m_cluster_sumCellE.push_back(sumCellE);
       m_cluster_cell_dR_min.push_back(dR_min);
       m_cluster_cell_dR_max.push_back(dR_max);
       m_cluster_cell_dEta_min.push_back(dEta_min);
@@ -900,6 +912,7 @@ StatusCode MLTreeMaker::execute() {
       m_fClusterEta = clusterEta;
       m_fClusterPhi = clusterPhi; 
       m_fCluster_nCells = nCells;
+      m_fCluster_sumCellE = sumCellE;
 
       m_fCluster_cell_dR_min = dR_min;
       m_fCluster_cell_dR_max = dR_max;
@@ -910,7 +923,7 @@ StatusCode MLTreeMaker::execute() {
 
       m_fCluster_cell_centerCellEta = centerCellEta;
       m_fCluster_cell_centerCellPhi = centerCellPhi;
-      m_fCluster_cell_centerCellLayer = centerCellLayer;
+      m_fCluster_cell_centerCellLayer = (int)centerCellLayer;
 
       m_clusterTree->Fill();
     }

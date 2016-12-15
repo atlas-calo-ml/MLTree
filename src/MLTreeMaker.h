@@ -64,6 +64,11 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     TTree* m_eventTree;
     TTree* m_clusterTree;
 
+    // Cluster selections
+    float m_clusterE_min;
+    float m_clusterE_max;
+    float m_clusterEtaAbs_max;
+
     //// Add to eventTree
 
     // Event info
@@ -180,11 +185,12 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
 
     // Clusters and cells 
     int m_nCluster;
+    std::vector<int> m_cluster_nCells;
     std::vector<float> m_clusterE;
     std::vector<float> m_clusterPt;
     std::vector<float> m_clusterEta;
     std::vector<float> m_clusterPhi;
-    std::vector<float> m_cluster_nCells;
+    std::vector<float> m_cluster_sumCellE;
     std::vector<float> m_cluster_cell_dEta;
     std::vector<float> m_cluster_cell_dPhi;
     std::vector<float> m_cluster_cell_dR_min;
@@ -200,12 +206,12 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
 
     //// Add to clusterTree
     
+    int   m_fCluster_nCells;
     float m_fClusterE;
     float m_fClusterPt;
     float m_fClusterEta;
     float m_fClusterPhi;
-    float m_fCluster_nCells;
-
+    float m_fCluster_sumCellE;
     float m_fCluster_cell_dR_min;
     float m_fCluster_cell_dR_max;
     float m_fCluster_cell_dEta_min;
