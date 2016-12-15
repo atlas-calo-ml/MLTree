@@ -4,12 +4,12 @@ import subprocess as sp
 
 # Joakim Olsson <joakim.olsson@cern.ch>
 
-nFilesPerJob = 50
+nFilesPerJob = 10
 
 # If sub-jobs exceed the walltime limit, they will get killed. When you want to submit long running jobs (e.g., customized G4 simulation), submit them to sites where longer walltime limit is available by specifying the expected execution time (in second) to the --maxCpuCount option.
 maxCpuCount = 252000 # 70 hrs ##172800 # 48 hrs
 
-tag = '20161216_0'
+tag = '20161216_4'
 user = 'jolsson'
 
 doBuild = True

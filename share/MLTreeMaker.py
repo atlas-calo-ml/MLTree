@@ -14,8 +14,8 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 ## MC15a pi+ test
 # svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._001502.pool.root.1"]
 ## MC15a pi0 test
-svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._001571.pool.root.1",
-                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._003596.pool.root.1"]
+# svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._001571.pool.root.1",
+#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._003596.pool.root.1"]
 
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion='ATLAS-R2-2015-02-01-00' # For MC15a single pion samples
