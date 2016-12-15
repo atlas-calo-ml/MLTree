@@ -9,7 +9,8 @@ For questions please contact: joakim.olsson[at]cern.ch
 mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
 git clone https://github.com/jmrolsson/MLTree.git 
 setupATLAS
-asetup 20.7.7.9,AtlasProduction,here
+#asetup 20.7.7.9,AtlasProduction,here
+asetup 20.1.0.3,AtlasProduction,here
 lsetup panda
 cmt find_packages && cmt compile 
 ```
