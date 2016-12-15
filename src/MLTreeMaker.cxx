@@ -828,7 +828,7 @@ StatusCode MLTreeMaker::execute() {
       };
 
       fillCellValidation = true;
-      sumCellE += cluster->getCellWeight(it_cell)*cell->e()/1e3;
+      sumCellE += cell->e()*(it_cell.weight())/1e3;
       nCells++;
     }
 
@@ -870,7 +870,7 @@ StatusCode MLTreeMaker::execute() {
 
         float dEta = cell->eta() - centerCellEta;
         float dPhi = cell->phi() - centerCellPhi;
-        float cellE = cluster->getCellWeight(it_cell)*cell->e()/1e3;
+        float cellE = cell->e()*(it_cell.weight())/1e3;
         float cellE_norm = cellE/clusterE;
 
         if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
