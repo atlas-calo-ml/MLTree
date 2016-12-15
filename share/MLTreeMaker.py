@@ -51,7 +51,7 @@ from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
 oks = ObjKeyStore()
 oks.addStreamESD('CaloCellContainer', ['AllCalo'] )
 
-## Suggestion from Peter Loch to turn off local cluster calibration, at the moment this makes Athena crash
-# from CaloRec.CaloTopoClusterFlags import jobproperties
-# jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
+## Suggestion from Peter Loch to turn off local cluster calibration
+from CaloRec.CaloTopoClusterFlags import jobproperties
+jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
 # from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter

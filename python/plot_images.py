@@ -13,23 +13,23 @@ import seaborn as sns
 from matplotlib.colors import LogNorm
 
 sns.set_style("whitegrid")
-params = {'legend.fontsize': 'x-large',
+params = {'legend.fontsize': 'large',
           'figure.figsize': (8, 8),
-         'axes.labelsize': 'x-large',
-         'axes.titlesize':'x-large',
-         'xtick.labelsize':'large',
-         'ytick.labelsize':'large'}
+          'axes.labelsize': 'x-large',
+          'axes.titlesize':'large',
+          'xtick.labelsize':'large',
+          'ytick.labelsize':'large'}
 pylab.rcParams.update(params)
 
 def main(argv):
 
     # ------------------------------------------------------------------
     # Setup
-    nclusters = 20
+    nclusters = 30
     input_path = '/Users/joakim/GoogleDrive/CERN/Projects/ML/MLDerivation/test_datasets/'
-    file_names = ['MLderivation.pool.root']
+    file_names = ['MLderivation_pi0.root']
     treename = 'ClusterTree'
-    sample = 'piplus' # 'piplus' or 'pi0'
+    sample = 'pi0' # 'piplus' or 'pi0'
     # ------------------------------------------------------------------
 
     sample_label = '$\pi^+$'
@@ -45,22 +45,18 @@ def main(argv):
     cell_size_eta = [0.0031, 0.025, 0.05, 0.1, 0.1, 0.2]
     scale_factor_phi = [1, 4, 4, 1, 1, 1]
     scale_factor_eta = [8, 4, 2, 1, 1, 1]
-    layer_labels = [sample_label+', EMB1 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.0031\\times0.0980$)',
-                    sample_label+', EMB2 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.0250\\times0.0245$)',
-                    sample_label+', EMB3 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.0500\\times0.0245$)',
-                    sample_label+', TileBar0 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.1\\times0.1$)',
-                    sample_label+', TileBar1 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.1\\times0.1$)',
-                    sample_label+', TileBar2 (cell size: $\\Delta\\eta\\times\\Delta\\phi = 0.2\\times0.1$)'
-                    ]
-    clusters = tree2array(chain, branches=layers, start=0, stop=nclusters)
+    clusters = tree2array(chain, branches=['EMB1', 'EMB2', 'EMB3', 'TileBar0', 'TileBar1', 'TileBar2', 'clusterE'], start=0, stop=nclusters)
 
     print '----> Plotting images'
     for i, cluster in enumerate(clusters):
         print 'Plotting images for cluster #{}'.format(i)
         for j, layer in enumerate(layers):
+            cluster_energy = '{:.2f}'.format(cluster[6])
+            title = sample_label+', '+layer+', $E_{\\rm clus} = '+cluster_energy\
+                +'\,{\\rm GeV}$, $\\Delta\\eta_{\\rm cell}\\times\\Delta\\phi_{\\rm cell} = '+str(cell_size_eta[j])+'\\times'+str(cell_size_phi[j])+'$'
             fig = plt.figure(figsize=(8,8))
             ax = fig.add_subplot(111)
-            ax.set_title(layer_labels[j])
+            ax.set_title(title)
             len_phi = int(re.findall(r'\d+', str((cluster[j]).shape))[1])
             len_eta = int(re.findall(r'\d+', str((cluster[j]).shape))[0])
             phi_range = len_phi*cell_size_phi[j]/2.+1e-5
