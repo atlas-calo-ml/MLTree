@@ -589,7 +589,7 @@ StatusCode MLTreeMaker::execute() {
           CaloCell_ID::CaloSample intLayer;
 
           if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
-            std::cout << "invalid Track Identifier"<< std::endl;
+            std::cout << "Invalid Track Identifier"<< std::endl;
             intLayer = CaloCell_ID::CaloSample::Unknown;
           } else {
             intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
@@ -883,9 +883,9 @@ StatusCode MLTreeMaker::execute() {
       float cellSizePhi[] = {0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
-      std::cout << "------------------------" << std::endl;
-      std::cout << "centerCellEta " << centerCellEta << std::endl; 
-      std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
+      // std::cout << "------------------------" << std::endl;
+      // std::cout << "centerCellEta " << centerCellEta << std::endl; 
+      // std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
       int cell_i = 0;
       for(; it_cell != it_cell_end; it_cell++){
         const CaloCell* cell = (*it_cell);
@@ -897,12 +897,12 @@ StatusCode MLTreeMaker::execute() {
         float cellE_norm = cellE/clusterE;
 
         m_cluster_cellE_norm.push_back(cellE_norm);
-        std::cout << "cell #: " << cell_i << std::endl; 
-        std::cout << "cellE_norm: " << cellE_norm << std::endl; 
-        std::cout << "cell->eta() " << cell->eta() << std::endl; 
-        std::cout << "cell->phi() " << cell->phi() << std::endl; 
-        std::cout << "dEta: " << dEta << std::endl; 
-        std::cout << "dPhi: " << dPhi << std::endl; 
+        // std::cout << "cell #: " << cell_i << std::endl; 
+        // std::cout << "cellE_norm: " << cellE_norm << std::endl; 
+        // std::cout << "cell->eta() " << cell->eta() << std::endl; 
+        // std::cout << "cell->phi() " << cell->phi() << std::endl; 
+        // std::cout << "dEta: " << dEta << std::endl; 
+        // std::cout << "dPhi: " << dPhi << std::endl; 
         cell_i++;
 
         if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
@@ -914,49 +914,49 @@ StatusCode MLTreeMaker::execute() {
             iPhi = floor(dPhi/cellSizePhi[0]+0.1); 
             if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
             if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB2) {
             iEta = floor(dEta/cellSizeEta[1]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[1]+0.1); 
             if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
             if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB3) {
             iEta = floor(dEta/cellSizeEta[2]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[2]+0.1); 
             if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
             if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) {
             iEta = floor(dEta/cellSizeEta[3]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[3]+0.1); 
             if (m_TileBar0[iEta+2][iPhi+2] != 0) m_duplicate_TileBar0++; // check for duplicates
             if (iEta < 4 && iPhi < 4) m_TileBar0[iEta+2][iPhi+2] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar1) {
             iEta = floor(dEta/cellSizeEta[4]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[4]+0.1); 
             if (m_TileBar1[iEta+2][iPhi+2] != 0) m_duplicate_TileBar1++; // check for duplicates
             if (iEta < 4 && iPhi < 4) m_TileBar1[iEta+2][iPhi+2] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar2) {
             iEta = floor(dEta/cellSizeEta[5]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[5]+0.1); 
             if (m_TileBar2[iEta+1][iPhi+2] != 0) m_duplicate_TileBar2++; // check for duplicates
             if (iEta < 2 && iPhi < 4) m_TileBar2[iEta+1][iPhi+2] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            // std::cout << "iEta: " << iEta << std::endl; 
+            // std::cout << "iPhi: " << iPhi << std::endl; 
         }
       }
 
