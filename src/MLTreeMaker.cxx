@@ -42,7 +42,7 @@
 
 MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
-  m_doEventTree(true),
+  m_doEventTree(false),
   m_doClusterTree(true),
   m_doEventCleaning(false),
   m_doPileup(false),
