@@ -26,10 +26,12 @@ def main(argv):
     # ------------------------------------------------------------------
     # Setup
     nclusters = 30
-    input_path = '/Users/joakim/GoogleDrive/CERN/Projects/ML/MLDerivation/test_datasets/'
-    file_names = ['MLderivation_pi0.root']
     treename = 'ClusterTree'
-    sample = 'pi0' # 'piplus' or 'pi0'
+    input_path = '/Users/joakim/GoogleDrive/CERN/Projects/ML/MLDerivation/datasets/'
+    # sample = 'pi0'
+    # file_names = ['user.jolsson.mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.e3496_s2139_s2132_r6569_images.20161216_4_OutputStream/user.jolsson.10234643.OutputStream._000110.root']
+    sample = 'piplus'
+    file_names = ['user.jolsson.mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.e3501_s2141_s2132_r6569_images.20161216_4_OutputStream/user.jolsson.10234644.OutputStream._000110.root']
     # ------------------------------------------------------------------
 
     sample_label = '$\pi^+$'

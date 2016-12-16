@@ -9,12 +9,15 @@ theApp.EvtMax = -1
 # theApp.EvtMax = 100
 import AthenaPoolCnvSvc.ReadAthenaPool
 
-## MC15c pi+ test
-# svcMgr.EventSelector.InputCollections = [ "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2832_r8014/ESD.08446309._000227.pool.root.1"]
 ## MC15a pi+ test
-# svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._001502.pool.root.1"]
+svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._000506.pool.root.1",
+                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._001502.pool.root.1",
+                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._002564.pool.root.1",
+                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._003262.pool.root.1"]
 ## MC15a pi0 test
-# svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._001571.pool.root.1",
+# svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._000231.pool.root.1",
+#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._001571.pool.root.1",
+#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._002530.pool.root.1",
 #                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._003596.pool.root.1"]
 
 from AthenaCommon.GlobalFlags import jobproperties
