@@ -50,7 +50,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doShapeLC(false),
   m_doEventTruth(false),
   m_clusterE_min(0.5),
-  m_clusterE_max(100.0),
+  m_clusterE_max(500.0),
   m_clusterEtaAbs_max(0.7),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
@@ -784,7 +784,9 @@ StatusCode MLTreeMaker::execute() {
     float clusterPhi = cluster->phi();
 
     // Only select low energy clusters in the Barrel region (for now)
-    if (clusterE < m_clusterE_min || clusterE > m_clusterE_max || fabs(clusterEta) > m_clusterEtaAbs_max) continue;
+    if (clusterE < m_clusterE_min || 
+        clusterE > m_clusterE_max || 
+        fabs(clusterEta) > m_clusterEtaAbs_max) continue;
 
     if (m_doEventTree) {
       m_clusterE.push_back(clusterE);
@@ -883,10 +885,11 @@ StatusCode MLTreeMaker::execute() {
       float cellSizePhi[] = {0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
-      // std::cout << "------------------------" << std::endl;
-      // std::cout << "centerCellEta " << centerCellEta << std::endl; 
-      // std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
+      std::cout << "------------------------" << std::endl;
+      std::cout << "centerCellEta " << centerCellEta << std::endl; 
+      std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
       int cell_i = 0;
+      float sumCellE_i = 0.;
       for(; it_cell != it_cell_end; it_cell++){
         const CaloCell* cell = (*it_cell);
         if (!cell->caloDDE()) continue;
@@ -897,15 +900,17 @@ StatusCode MLTreeMaker::execute() {
         float cellE_norm = cellE/clusterE;
 
         m_cluster_cellE_norm.push_back(cellE_norm);
-        // std::cout << "cell #: " << cell_i << std::endl; 
-        // std::cout << "cellE_norm: " << cellE_norm << std::endl; 
-        // std::cout << "cell->eta() " << cell->eta() << std::endl; 
-        // std::cout << "cell->phi() " << cell->phi() << std::endl; 
-        // std::cout << "dEta: " << dEta << std::endl; 
-        // std::cout << "dPhi: " << dPhi << std::endl; 
-        cell_i++;
+        std::cout << "cell #: " << cell_i << std::endl; 
+        std::cout << "cellE_norm: " << cellE_norm << std::endl; 
+        std::cout << "cell->eta() " << cell->eta() << std::endl; 
+        std::cout << "cell->phi() " << cell->phi() << std::endl; 
+        std::cout << "dEta: " << dEta << std::endl; 
+        std::cout << "dPhi: " << dPhi << std::endl; 
 
         if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
+
+        cell_i++;
+        sumCellE_i += cellE;
 
         // Ugly, but will do for now
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
@@ -914,25 +919,25 @@ StatusCode MLTreeMaker::execute() {
             iPhi = floor(dPhi/cellSizePhi[0]+0.1); 
             if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
             if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            std::cout << "iEta: " << iEta << std::endl; 
+            std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB2) {
             iEta = floor(dEta/cellSizeEta[1]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[1]+0.1); 
             if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
             if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            std::cout << "iEta: " << iEta << std::endl; 
+            std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB3) {
             iEta = floor(dEta/cellSizeEta[2]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[2]+0.1); 
             if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
             if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+            std::cout << "iEta: " << iEta << std::endl; 
+            std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) {
             iEta = floor(dEta/cellSizeEta[3]+0.1); 
             iPhi = floor(dPhi/cellSizePhi[3]+0.1); 
@@ -959,13 +964,17 @@ StatusCode MLTreeMaker::execute() {
             // std::cout << "iPhi: " << iPhi << std::endl; 
         }
       }
+      
+      std::cout << "cell_i: " << cell_i << std::endl; 
+      std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
+      std::cout << "clusterE: " << clusterE << std::endl; 
 
       m_fClusterE = clusterE;
       m_fClusterPt = clusterPt;
       m_fClusterEta = clusterEta;
       m_fClusterPhi = clusterPhi; 
-      m_fCluster_nCells = nCells;
-      m_fCluster_sumCellE = sumCellE;
+      m_fCluster_nCells = cell_i;
+      m_fCluster_sumCellE = sumCellE_i;
 
       m_fCluster_cell_dR_min = dR_min;
       m_fCluster_cell_dR_max = dR_max;

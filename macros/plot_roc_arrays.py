@@ -7,11 +7,11 @@ import seaborn as sns
 
 sns.set_style("whitegrid")
 params = {'legend.fontsize': 'large',
-          'figure.figsize': (8, 8),
-          'axes.labelsize': 'x-large',
-          'axes.titlesize':'large',
-          'xtick.labelsize':'large',
-          'ytick.labelsize':'large'}
+      'figure.figsize': (8, 8),
+      'axes.labelsize': 'x-large',
+      'axes.titlesize':'large',
+      'xtick.labelsize':'large',
+      'ytick.labelsize':'large'}
 pylab.rcParams.update(params)
 
 pi0_eff_EMB2_128 = np.load('roc_pi0_eff_EMB2_128.npy')

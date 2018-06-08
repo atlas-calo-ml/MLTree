@@ -11,11 +11,11 @@ import seaborn as sns
 
 sns.set_style("whitegrid")
 params = {'legend.fontsize': 'large',
-          'figure.figsize': (8, 8),
-          'axes.labelsize': 'x-large',
-          'axes.titlesize':'large',
-          'xtick.labelsize':'large',
-          'ytick.labelsize':'large'}
+      'figure.figsize': (8, 8),
+      'axes.labelsize': 'x-large',
+      'axes.titlesize':'large',
+      'xtick.labelsize':'large',
+      'ytick.labelsize':'large'}
 pylab.rcParams.update(params)
 
 X_EMB2_flat = np.load('array_EMB2_flat.npy')[:,:,0]
@@ -42,15 +42,15 @@ pi0_eff_EMB2_128_64_32 = np.zeros((len(array),1))
 piplus_eff_EMB2_128_64_32 = np.zeros((len(array),1))
 
 for i,cut in enumerate(array):
-    print('i', i)
+  print('i', i)
 
-    x = p_EMB2_128[:,0]<cut
-    pi0_eff_EMB2_128[i] = sum(np.all([x, (1-y_test)], axis=0))/float(sum(y_test == 0))
-    piplus_eff_EMB2_128[i]  = sum(np.all([1-x, (y_test)], axis=0))/float(sum(y_test == 0))
+  x = p_EMB2_128[:,0]<cut
+  pi0_eff_EMB2_128[i] = sum(np.all([x, (1-y_test)], axis=0))/float(sum(y_test == 0))
+  piplus_eff_EMB2_128[i]  = sum(np.all([1-x, (y_test)], axis=0))/float(sum(y_test == 0))
 
-    x = p_EMB2_128_64_32[:,0]<cut
-    pi0_eff_EMB2_128_64_32[i] = sum(np.all([x, (1-y_test)], axis=0))/float(sum(y_test == 0))
-    piplus_eff_EMB2_128_64_32[i]  = sum(np.all([1-x, (y_test)], axis=0))/float(sum(y_test == 0))
+  x = p_EMB2_128_64_32[:,0]<cut
+  pi0_eff_EMB2_128_64_32[i] = sum(np.all([x, (1-y_test)], axis=0))/float(sum(y_test == 0))
+  piplus_eff_EMB2_128_64_32[i]  = sum(np.all([1-x, (y_test)], axis=0))/float(sum(y_test == 0))
 
 print ('----> Saving arrays to file')
 np.save('roc_pi0_eff_EMB2_128.npy', pi0_eff_EMB2_128)

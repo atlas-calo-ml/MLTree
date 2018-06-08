@@ -32,8 +32,8 @@ print ('---->  Running training')
 
 model_s2 = Sequential()
 model_s2.add(Convolution2D(
-        64, 6, 6, border_mode='same',
-        input_shape=X[0].shape))
+    64, 6, 6, border_mode='same',
+    input_shape=X[0].shape))
 model_s2.add(Activation('relu'))
 model_s2.add(MaxPooling2D((2, 2), dim_ordering='th'))
 model_s2.add(Dropout(0.2))
@@ -47,22 +47,22 @@ model_s2.add(Dense(1))
 model_s2.add(Activation('sigmoid'))
 
 model_s2.compile(
-    optimizer='rmsprop',
-    loss='binary_crossentropy',
-    metrics=['accuracy'])
+  optimizer='rmsprop',
+  loss='binary_crossentropy',
+  metrics=['accuracy'])
 
 model_s2.fit(
-    X_train,
-    y_train,
-    nb_epoch=20,
-    batch_size=128,
-    validation_data=(X_test, y_test),
-    # callbacks=[
-    #     EarlyStopping(verbose=True, patience=5, monitor='val_loss'),
-    #     ModelCheckpoint(
-    #         filename, monitor='val_loss',
-    #         verbose=True, save_best_only=True)]
-    )
+  X_train,
+  y_train,
+  nb_epoch=20,
+  batch_size=128,
+  validation_data=(X_test, y_test),
+  # callbacks=[
+  #   EarlyStopping(verbose=True, patience=5, monitor='val_loss'),
+  #   ModelCheckpoint(
+  #     filename, monitor='val_loss',
+  #     verbose=True, save_best_only=True)]
+  )
 
 p = model_s2.predict(X_test)
 print p

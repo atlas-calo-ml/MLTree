@@ -1,8 +1,8 @@
 /**
- * @file    mltreemaker.h
- * @author  joakim olsson <joakim.olsson@cern.ch>
+ * @file    MLTreeMaker.h
+ * @author  Joakim Olsson <joakim.olsson@cern.ch>
  * @brief   Athena package to save cell images of clusters for ML training 
- * @date    october 2016
+ * @date    October 2016
  */
 
 #ifndef MLTREE_MLTREEMAKER_H
