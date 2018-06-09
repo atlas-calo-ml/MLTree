@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(add_help=True, description='Launch grid jobs', 
 parser.add_argument('--user', required=True, type=str, dest='user', metavar='<user>', help='Username')
 parser.add_argument('--tag', required=False, type=str, dest='tag', default = __version__, metavar='<tag>', help='Output file tag')
 parser.add_argument('--datasets', type=str, dest='datasets', required=False, default='datasets.json', metavar = '<datasets.json>', help='JSON file specifying the input and output datasets.')
-parser.add_argument('--nFilesPerJob', required=False, type=int, dest='nFilesPerJob', default=10, help='Number of files per job')
+parser.add_argument('--nFilesPerJob', required=False, type=int, dest='nFilesPerJob', default=1, help='Number of files per job')
 # If sub-jobs exceed the walltime limit, they will get killed. When you want to submit long running jobs (e.g., customized G4 simulation), submit them to sites where longer walltime limit is available by specifying the expected execution time (in second) to the --maxCpuCount option.
 parser.add_argument('--maxCpuCount', required=False, type=int, dest='maxCpuCount', default=172800, help='Max CPU time (default: 48 hrs)')
 args = parser.parse_args()

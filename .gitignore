@@ -1,5 +1,6 @@
 .DS_Store
-./genConf
-./x86_*
-./cmt/*.*sh
-./cmt/*.history
+genConf
+x86_*
+cmt/*.*sh
+cmt/*.history
+.*sw*

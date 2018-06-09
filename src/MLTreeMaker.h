@@ -41,6 +41,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     bool m_doEventTree;
     bool m_doClusterTree;
     // bool m_isMC;
+    bool m_doTracking;
     bool m_doEventCleaning;
     bool m_doPileup;
     bool m_doShapeEM;
@@ -120,6 +121,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<int>   m_status;
     std::vector<int>   m_barcode;
     std::vector<float> m_truthPartPt;
+    std::vector<float> m_truthPartE;
     std::vector<float> m_truthPartMass;
     std::vector<float> m_truthPartEta;
     std::vector<float> m_truthPartPhi;

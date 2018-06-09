@@ -44,13 +44,14 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
   m_doEventTree(false),
   m_doClusterTree(true),
+  m_doTracking(false),
   m_doEventCleaning(false),
   m_doPileup(false),
   m_doShapeEM(false),
   m_doShapeLC(false),
   m_doEventTruth(false),
-  m_clusterE_min(0.5),
-  m_clusterE_max(500.0),
+  m_clusterE_min(90.0),
+  m_clusterE_max(110.0),
   m_clusterEtaAbs_max(0.7),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
@@ -69,6 +70,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("ClusterEtaAbsmax", m_clusterEtaAbs_max);
   declareProperty("EventTree", m_doEventTree);
   declareProperty("ClusterTree", m_doClusterTree);
+  declareProperty("Tracking", m_doTracking);
   declareProperty("EventCleaning", m_doEventCleaning);
   declareProperty("Pileup", m_doPileup);
   declareProperty("ShapeEM", m_doShapeEM);
@@ -168,6 +170,7 @@ StatusCode MLTreeMaker::initialize() {
     m_eventTree->Branch("status",              &m_status);
     m_eventTree->Branch("barcode",             &m_barcode);
     m_eventTree->Branch("truthPartPt",         &m_truthPartPt);
+    m_eventTree->Branch("truthPartE",          &m_truthPartE);
     m_eventTree->Branch("truthPartMass",       &m_truthPartMass);
     m_eventTree->Branch("truthPartEta",        &m_truthPartEta);
     m_eventTree->Branch("truthPartPhi",        &m_truthPartPhi);
@@ -331,11 +334,12 @@ StatusCode MLTreeMaker::execute() {
   m_x1 = m_x2 = -999;
   m_xf1 = m_xf2 = -999;
   //m_scale = m_q = m_pdf1 = m_pdf2 = -999;
- 
+
   m_pdgId.clear();
   m_status.clear();
   m_barcode.clear();
   m_truthPartPt.clear();
+  m_truthPartE.clear();
   m_truthPartMass.clear();
   m_truthPartEta.clear();
   m_truthPartPhi.clear();
@@ -423,9 +427,9 @@ StatusCode MLTreeMaker::execute() {
   m_lumiBlock         = eventInfo->lumiBlock();
   m_coreFlags         = eventInfo->eventFlags(xAOD::EventInfo::Core);
   // if (m_isMC ) {
-    m_mcEventNumber   = eventInfo->mcEventNumber();
-    m_mcChannelNumber = eventInfo->mcChannelNumber();
-    m_mcEventWeight   = eventInfo->mcEventWeight();
+  m_mcEventNumber   = eventInfo->mcEventNumber();
+  m_mcChannelNumber = eventInfo->mcChannelNumber();
+  m_mcEventWeight   = eventInfo->mcEventWeight();
   // } else {
   //   m_bcid            = eventInfo->bcid();
   // }
@@ -464,15 +468,15 @@ StatusCode MLTreeMaker::execute() {
     m_averageMu = eventInfo->averageInteractionsPerCrossing();
 
     // if (m_isMC ) {
-      static SG::AuxElement::ConstAccessor< float > weight_pileup ("PileupWeight");
-      static SG::AuxElement::ConstAccessor< float >  correct_mu("corrected_averageInteractionsPerCrossing");
-      static SG::AuxElement::ConstAccessor< unsigned int > rand_run_nr("RandomRunNumber");
-      static SG::AuxElement::ConstAccessor< unsigned int > rand_lumiblock_nr("RandomLumiBlockNumber");
+    static SG::AuxElement::ConstAccessor< float > weight_pileup ("PileupWeight");
+    static SG::AuxElement::ConstAccessor< float >  correct_mu("corrected_averageInteractionsPerCrossing");
+    static SG::AuxElement::ConstAccessor< unsigned int > rand_run_nr("RandomRunNumber");
+    static SG::AuxElement::ConstAccessor< unsigned int > rand_lumiblock_nr("RandomLumiBlockNumber");
 
-      if ( weight_pileup.isAvailable( *eventInfo ) )	 { m_weight_pileup = weight_pileup( *eventInfo ); }	    else { m_weight_pileup = 1.0; }
-      if ( correct_mu.isAvailable( *eventInfo ) )	 { m_correct_mu = correct_mu( *eventInfo ); }		    else { m_correct_mu = -1.0; }
-      if ( rand_run_nr.isAvailable( *eventInfo ) )	 { m_rand_run_nr = rand_run_nr( *eventInfo ); } 	    else { m_rand_run_nr = 900000; }
-      if ( rand_lumiblock_nr.isAvailable( *eventInfo ) ) { m_rand_lumiblock_nr = rand_lumiblock_nr( *eventInfo ); } else { m_rand_lumiblock_nr = 0; }
+    if ( weight_pileup.isAvailable( *eventInfo ) )	 { m_weight_pileup = weight_pileup( *eventInfo ); }	    else { m_weight_pileup = 1.0; }
+    if ( correct_mu.isAvailable( *eventInfo ) )	 { m_correct_mu = correct_mu( *eventInfo ); }		    else { m_correct_mu = -1.0; }
+    if ( rand_run_nr.isAvailable( *eventInfo ) )	 { m_rand_run_nr = rand_run_nr( *eventInfo ); } 	    else { m_rand_run_nr = 900000; }
+    if ( rand_lumiblock_nr.isAvailable( *eventInfo ) ) { m_rand_lumiblock_nr = rand_lumiblock_nr( *eventInfo ); } else { m_rand_lumiblock_nr = 0; }
 
     // } else {
     //   static SG::AuxElement::ConstAccessor< float > prsc_DataWeight ("prescale_DataWeight");
@@ -552,6 +556,7 @@ StatusCode MLTreeMaker::execute() {
       m_status.push_back(truth->status());
       m_barcode.push_back(truth->barcode());
       m_truthPartPt.push_back(truth->pt()/1e3);
+      m_truthPartE.push_back(truth->e()/1e3);
       m_truthPartMass.push_back(truth->m()/1e3);
       m_truthPartEta.push_back(truth->eta());
       m_truthPartPhi.push_back(truth->phi());
@@ -559,215 +564,218 @@ StatusCode MLTreeMaker::execute() {
       m_nTruthPart++;
     }
 
-    // Tracks
-    const xAOD::TrackParticleContainer* trackContainer = 0;
-    CHECK(evtStore()->retrieve(trackContainer, m_trackContainerName));
+    if (m_doTracking) {
 
-    m_nTrack = 0;
-    for (const auto& track : *trackContainer) {
+      // Tracks
+      const xAOD::TrackParticleContainer* trackContainer = 0;
+      CHECK(evtStore()->retrieve(trackContainer, m_trackContainerName));
 
-      m_trackPt.push_back(track->pt()/1e3);
-      m_trackP.push_back(TMath::Abs(1./track->qOverP())/1e3);
-      m_trackMass.push_back(track->m()/1e3);
-      m_trackEta.push_back(track->eta());
-      m_trackPhi.push_back(track->phi());
+      m_nTrack = 0;
+      for (const auto& track : *trackContainer) {
 
-      // A map to store the track parameters associated with the different layers of the calorimeter system
-      std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;
+        m_trackPt.push_back(track->pt()/1e3);
+        m_trackP.push_back(TMath::Abs(1./track->qOverP())/1e3);
+        m_trackMass.push_back(track->m()/1e3);
+        m_trackEta.push_back(track->eta());
+        m_trackPhi.push_back(track->phi());
 
-      // Get the CaloExtension object
-      const Trk::CaloExtension* extension = 0;
+        // A map to store the track parameters associated with the different layers of the calorimeter system
+        std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;
 
-      if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) {
+        // Get the CaloExtension object
+        const Trk::CaloExtension* extension = 0;
 
-        // Extract the CurvilinearParameters per each layer-track intersection
-        const std::vector<const Trk::CurvilinearParameters*>& clParametersVector = extension->caloLayerIntersections();
+        if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) {
 
-        for (auto clParameter : clParametersVector) {
+          // Extract the CurvilinearParameters per each layer-track intersection
+          const std::vector<const Trk::CurvilinearParameters*>& clParametersVector = extension->caloLayerIntersections();
 
-          unsigned int parametersIdentifier = clParameter->cIdentifier();
-          CaloCell_ID::CaloSample intLayer;
+          for (auto clParameter : clParametersVector) {
 
-          if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
-            std::cout << "Invalid Track Identifier"<< std::endl;
-            intLayer = CaloCell_ID::CaloSample::Unknown;
-          } else {
-            intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
+            unsigned int parametersIdentifier = clParameter->cIdentifier();
+            CaloCell_ID::CaloSample intLayer;
+
+            if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
+              std::cout << "Invalid Track Identifier"<< std::endl;
+              intLayer = CaloCell_ID::CaloSample::Unknown;
+            } else {
+              intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
+            }
+
+            if (parametersMap[intLayer] == NULL) {
+              parametersMap[intLayer] = clParameter->clone();
+            } else if (m_trackParametersIdHelper->isEntryToVolume(clParameter->cIdentifier())) {
+              delete parametersMap[intLayer];
+              parametersMap[intLayer] = clParameter->clone();
+            }
           }
 
-          if (parametersMap[intLayer] == NULL) {
-            parametersMap[intLayer] = clParameter->clone();
-          } else if (m_trackParametersIdHelper->isEntryToVolume(clParameter->cIdentifier())) {
-            delete parametersMap[intLayer];
-            parametersMap[intLayer] = clParameter->clone();
-          }
+        } else {
+          msg(MSG::WARNING) << "TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta() << endreq;
         }
 
-      } else {
-        msg(MSG::WARNING) << "TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta() << endreq;
+        if (!(m_theTrackExtrapolatorTool->caloExtension(*track, extension))) continue; //No valid parameters for any of the layers of interest
+
+        //  ---------Calo Sample layer Variables---------
+        //  PreSamplerB=0, EMB1, EMB2, EMB3, // LAr barrel
+        //  PreSamplerE, EME1, EME2, EME3,   // LAr EM endcap
+        //  HEC0, HEC1, HEC2, HEC3,          // Hadronic end cap cal.
+        //  TileBar0, TileBar1, TileBar2,    // Tile barrel
+        //  TileGap1, TileGap2, TileGap3,    // Tile gap (ITC & scint)
+        //  TileExt0, TileExt1, TileExt2,    // Tile extended barrel
+        //  FCAL0, FCAL1, FCAL2,             // Forward EM endcap (excluded)
+        //  Unknown
+
+        // Presampler
+        float trackEta_PreSamplerB_tmp = -999999999;
+        float trackPhi_PreSamplerB_tmp = -999999999;
+        float trackEta_PreSamplerE_tmp = -999999999;
+        float trackPhi_PreSamplerE_tmp = -999999999;
+        // LAr EM Barrel layers
+        float trackEta_EMB1_tmp = -999999999;
+        float trackPhi_EMB1_tmp = -999999999;
+        float trackEta_EMB2_tmp = -999999999;
+        float trackPhi_EMB2_tmp = -999999999;
+        float trackEta_EMB3_tmp = -999999999;
+        float trackPhi_EMB3_tmp = -999999999;
+        // LAr EM Endcap layers
+        float trackEta_EME1_tmp = -999999999;
+        float trackPhi_EME1_tmp = -999999999;
+        float trackEta_EME2_tmp = -999999999;
+        float trackPhi_EME2_tmp = -999999999;
+        float trackEta_EME3_tmp = -999999999;
+        float trackPhi_EME3_tmp = -999999999;
+        // Hadronic Endcap layers
+        float trackEta_HEC0_tmp = -999999999;
+        float trackPhi_HEC0_tmp = -999999999;
+        float trackEta_HEC1_tmp = -999999999;
+        float trackPhi_HEC1_tmp = -999999999;
+        float trackEta_HEC2_tmp = -999999999;
+        float trackPhi_HEC2_tmp = -999999999;
+        float trackEta_HEC3_tmp = -999999999;
+        float trackPhi_HEC3_tmp = -999999999;
+        // Tile Barrel layers
+        float trackEta_TileBar0_tmp = -999999999;
+        float trackPhi_TileBar0_tmp = -999999999;
+        float trackEta_TileBar1_tmp = -999999999;
+        float trackPhi_TileBar1_tmp = -999999999;
+        float trackEta_TileBar2_tmp = -999999999;
+        float trackPhi_TileBar2_tmp = -999999999;
+        // Tile Gap layers
+        float trackEta_TileGap1_tmp = -999999999;
+        float trackPhi_TileGap1_tmp = -999999999;
+        float trackEta_TileGap2_tmp = -999999999;
+        float trackPhi_TileGap2_tmp = -999999999;
+        float trackEta_TileGap3_tmp = -999999999;
+        float trackPhi_TileGap3_tmp = -999999999;
+        // Tile Extended Barrel layers
+        float trackEta_TileExt0_tmp = -999999999;
+        float trackPhi_TileExt0_tmp = -999999999;
+        float trackEta_TileExt1_tmp = -999999999;
+        float trackPhi_TileExt1_tmp = -999999999;
+        float trackEta_TileExt2_tmp = -999999999;
+        float trackPhi_TileExt2_tmp = -999999999;
+
+        if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().phi();
+
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackEta_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackPhi_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().phi();
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().eta();
+        if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().phi();
+
+        m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
+        m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
+        m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
+        m_trackPhi_PreSamplerE.push_back(trackPhi_PreSamplerE_tmp);
+
+        m_trackEta_EMB1.push_back(trackEta_EMB1_tmp); 
+        m_trackPhi_EMB1.push_back(trackPhi_EMB1_tmp); 
+        m_trackEta_EMB2.push_back(trackEta_EMB2_tmp); 
+        m_trackPhi_EMB2.push_back(trackPhi_EMB2_tmp); 
+        m_trackEta_EMB3.push_back(trackEta_EMB3_tmp); 
+        m_trackPhi_EMB3.push_back(trackPhi_EMB3_tmp); 
+
+        m_trackEta_EME1.push_back(trackEta_EME1_tmp); 
+        m_trackPhi_EME1.push_back(trackPhi_EME1_tmp); 
+        m_trackEta_EME2.push_back(trackEta_EME2_tmp); 
+        m_trackPhi_EME2.push_back(trackPhi_EME2_tmp); 
+        m_trackEta_EME3.push_back(trackEta_EME3_tmp); 
+        m_trackPhi_EME3.push_back(trackPhi_EME3_tmp); 
+
+        m_trackEta_HEC0.push_back(trackEta_HEC0_tmp); 
+        m_trackPhi_HEC0.push_back(trackPhi_HEC0_tmp); 
+        m_trackEta_HEC1.push_back(trackEta_HEC1_tmp); 
+        m_trackPhi_HEC1.push_back(trackPhi_HEC1_tmp); 
+        m_trackEta_HEC2.push_back(trackEta_HEC2_tmp); 
+        m_trackPhi_HEC2.push_back(trackPhi_HEC2_tmp); 
+        m_trackEta_HEC3.push_back(trackEta_HEC3_tmp); 
+        m_trackPhi_HEC3.push_back(trackPhi_HEC3_tmp); 
+
+        m_trackEta_TileBar0.push_back(trackEta_TileBar0_tmp); 
+        m_trackPhi_TileBar0.push_back(trackPhi_TileBar0_tmp); 
+        m_trackEta_TileBar1.push_back(trackEta_TileBar1_tmp); 
+        m_trackPhi_TileBar1.push_back(trackPhi_TileBar1_tmp); 
+        m_trackEta_TileBar2.push_back(trackEta_TileBar2_tmp); 
+        m_trackPhi_TileBar2.push_back(trackPhi_TileBar2_tmp); 
+
+        m_trackEta_TileGap1.push_back(trackEta_TileGap1_tmp); 
+        m_trackPhi_TileGap1.push_back(trackPhi_TileGap1_tmp); 
+        m_trackEta_TileGap2.push_back(trackEta_TileGap2_tmp); 
+        m_trackPhi_TileGap2.push_back(trackPhi_TileGap2_tmp); 
+        m_trackEta_TileGap3.push_back(trackEta_TileGap3_tmp); 
+        m_trackPhi_TileGap3.push_back(trackPhi_TileGap3_tmp); 
+
+        m_trackEta_TileExt0.push_back(trackEta_TileExt0_tmp);
+        m_trackPhi_TileExt0.push_back(trackPhi_TileExt0_tmp);
+        m_trackEta_TileExt1.push_back(trackEta_TileExt1_tmp);
+        m_trackPhi_TileExt1.push_back(trackPhi_TileExt1_tmp);
+        m_trackEta_TileExt2.push_back(trackEta_TileExt2_tmp);
+        m_trackPhi_TileExt2.push_back(trackPhi_TileExt2_tmp);
+
+        m_nTrack++;
       }
-
-      if (!(m_theTrackExtrapolatorTool->caloExtension(*track, extension))) continue; //No valid parameters for any of the layers of interest
-
-      //  ---------Calo Sample layer Variables---------
-      //  PreSamplerB=0, EMB1, EMB2, EMB3, // LAr barrel
-      //  PreSamplerE, EME1, EME2, EME3,   // LAr EM endcap
-      //  HEC0, HEC1, HEC2, HEC3,          // Hadronic end cap cal.
-      //  TileBar0, TileBar1, TileBar2,    // Tile barrel
-      //  TileGap1, TileGap2, TileGap3,    // Tile gap (ITC & scint)
-      //  TileExt0, TileExt1, TileExt2,    // Tile extended barrel
-      //  FCAL0, FCAL1, FCAL2,             // Forward EM endcap (excluded)
-      //  Unknown
-
-      // Presampler
-      float trackEta_PreSamplerB_tmp = -999999999;
-      float trackPhi_PreSamplerB_tmp = -999999999;
-      float trackEta_PreSamplerE_tmp = -999999999;
-      float trackPhi_PreSamplerE_tmp = -999999999;
-      // LAr EM Barrel layers
-      float trackEta_EMB1_tmp = -999999999;
-      float trackPhi_EMB1_tmp = -999999999;
-      float trackEta_EMB2_tmp = -999999999;
-      float trackPhi_EMB2_tmp = -999999999;
-      float trackEta_EMB3_tmp = -999999999;
-      float trackPhi_EMB3_tmp = -999999999;
-      // LAr EM Endcap layers
-      float trackEta_EME1_tmp = -999999999;
-      float trackPhi_EME1_tmp = -999999999;
-      float trackEta_EME2_tmp = -999999999;
-      float trackPhi_EME2_tmp = -999999999;
-      float trackEta_EME3_tmp = -999999999;
-      float trackPhi_EME3_tmp = -999999999;
-      // Hadronic Endcap layers
-      float trackEta_HEC0_tmp = -999999999;
-      float trackPhi_HEC0_tmp = -999999999;
-      float trackEta_HEC1_tmp = -999999999;
-      float trackPhi_HEC1_tmp = -999999999;
-      float trackEta_HEC2_tmp = -999999999;
-      float trackPhi_HEC2_tmp = -999999999;
-      float trackEta_HEC3_tmp = -999999999;
-      float trackPhi_HEC3_tmp = -999999999;
-      // Tile Barrel layers
-      float trackEta_TileBar0_tmp = -999999999;
-      float trackPhi_TileBar0_tmp = -999999999;
-      float trackEta_TileBar1_tmp = -999999999;
-      float trackPhi_TileBar1_tmp = -999999999;
-      float trackEta_TileBar2_tmp = -999999999;
-      float trackPhi_TileBar2_tmp = -999999999;
-      // Tile Gap layers
-      float trackEta_TileGap1_tmp = -999999999;
-      float trackPhi_TileGap1_tmp = -999999999;
-      float trackEta_TileGap2_tmp = -999999999;
-      float trackPhi_TileGap2_tmp = -999999999;
-      float trackEta_TileGap3_tmp = -999999999;
-      float trackPhi_TileGap3_tmp = -999999999;
-      // Tile Extended Barrel layers
-      float trackEta_TileExt0_tmp = -999999999;
-      float trackPhi_TileExt0_tmp = -999999999;
-      float trackEta_TileExt1_tmp = -999999999;
-      float trackPhi_TileExt1_tmp = -999999999;
-      float trackEta_TileExt2_tmp = -999999999;
-      float trackPhi_TileExt2_tmp = -999999999;
-
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackEta_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackPhi_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().phi();
-
-      m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
-      m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
-      m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
-      m_trackPhi_PreSamplerE.push_back(trackPhi_PreSamplerE_tmp);
-
-      m_trackEta_EMB1.push_back(trackEta_EMB1_tmp); 
-      m_trackPhi_EMB1.push_back(trackPhi_EMB1_tmp); 
-      m_trackEta_EMB2.push_back(trackEta_EMB2_tmp); 
-      m_trackPhi_EMB2.push_back(trackPhi_EMB2_tmp); 
-      m_trackEta_EMB3.push_back(trackEta_EMB3_tmp); 
-      m_trackPhi_EMB3.push_back(trackPhi_EMB3_tmp); 
-
-      m_trackEta_EME1.push_back(trackEta_EME1_tmp); 
-      m_trackPhi_EME1.push_back(trackPhi_EME1_tmp); 
-      m_trackEta_EME2.push_back(trackEta_EME2_tmp); 
-      m_trackPhi_EME2.push_back(trackPhi_EME2_tmp); 
-      m_trackEta_EME3.push_back(trackEta_EME3_tmp); 
-      m_trackPhi_EME3.push_back(trackPhi_EME3_tmp); 
-
-      m_trackEta_HEC0.push_back(trackEta_HEC0_tmp); 
-      m_trackPhi_HEC0.push_back(trackPhi_HEC0_tmp); 
-      m_trackEta_HEC1.push_back(trackEta_HEC1_tmp); 
-      m_trackPhi_HEC1.push_back(trackPhi_HEC1_tmp); 
-      m_trackEta_HEC2.push_back(trackEta_HEC2_tmp); 
-      m_trackPhi_HEC2.push_back(trackPhi_HEC2_tmp); 
-      m_trackEta_HEC3.push_back(trackEta_HEC3_tmp); 
-      m_trackPhi_HEC3.push_back(trackPhi_HEC3_tmp); 
-
-      m_trackEta_TileBar0.push_back(trackEta_TileBar0_tmp); 
-      m_trackPhi_TileBar0.push_back(trackPhi_TileBar0_tmp); 
-      m_trackEta_TileBar1.push_back(trackEta_TileBar1_tmp); 
-      m_trackPhi_TileBar1.push_back(trackPhi_TileBar1_tmp); 
-      m_trackEta_TileBar2.push_back(trackEta_TileBar2_tmp); 
-      m_trackPhi_TileBar2.push_back(trackPhi_TileBar2_tmp); 
-
-      m_trackEta_TileGap1.push_back(trackEta_TileGap1_tmp); 
-      m_trackPhi_TileGap1.push_back(trackPhi_TileGap1_tmp); 
-      m_trackEta_TileGap2.push_back(trackEta_TileGap2_tmp); 
-      m_trackPhi_TileGap2.push_back(trackPhi_TileGap2_tmp); 
-      m_trackEta_TileGap3.push_back(trackEta_TileGap3_tmp); 
-      m_trackPhi_TileGap3.push_back(trackPhi_TileGap3_tmp); 
-
-      m_trackEta_TileExt0.push_back(trackEta_TileExt0_tmp);
-      m_trackPhi_TileExt0.push_back(trackPhi_TileExt0_tmp);
-      m_trackEta_TileExt1.push_back(trackEta_TileExt1_tmp);
-      m_trackPhi_TileExt1.push_back(trackPhi_TileExt1_tmp);
-      m_trackEta_TileExt2.push_back(trackEta_TileExt2_tmp);
-      m_trackPhi_TileExt2.push_back(trackPhi_TileExt2_tmp);
-
-      m_nTrack++;
     }
   }
 
@@ -885,9 +893,9 @@ StatusCode MLTreeMaker::execute() {
       float cellSizePhi[] = {0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
-      std::cout << "------------------------" << std::endl;
-      std::cout << "centerCellEta " << centerCellEta << std::endl; 
-      std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
+      //std::cout << "------------------------" << std::endl;
+      //std::cout << "centerCellEta " << centerCellEta << std::endl; 
+      //std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
       int cell_i = 0;
       float sumCellE_i = 0.;
       for(; it_cell != it_cell_end; it_cell++){
@@ -900,12 +908,12 @@ StatusCode MLTreeMaker::execute() {
         float cellE_norm = cellE/clusterE;
 
         m_cluster_cellE_norm.push_back(cellE_norm);
-        std::cout << "cell #: " << cell_i << std::endl; 
-        std::cout << "cellE_norm: " << cellE_norm << std::endl; 
-        std::cout << "cell->eta() " << cell->eta() << std::endl; 
-        std::cout << "cell->phi() " << cell->phi() << std::endl; 
-        std::cout << "dEta: " << dEta << std::endl; 
-        std::cout << "dPhi: " << dPhi << std::endl; 
+        //std::cout << "cell #: " << cell_i << std::endl; 
+        //std::cout << "cellE_norm: " << cellE_norm << std::endl; 
+        //std::cout << "cell->eta() " << cell->eta() << std::endl; 
+        //std::cout << "cell->phi() " << cell->phi() << std::endl; 
+        //std::cout << "dEta: " << dEta << std::endl; 
+        //std::cout << "dPhi: " << dPhi << std::endl; 
 
         if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
 
@@ -915,59 +923,59 @@ StatusCode MLTreeMaker::execute() {
         // Ugly, but will do for now
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
         if (cellLayer == CaloCell_ID::CaloSample::EMB1) {
-            iEta = floor(dEta/cellSizeEta[0]+0.1); //+0.1 to avoid floating point errors
-            iPhi = floor(dPhi/cellSizePhi[0]+0.1); 
-            if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
-            if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[0]+0.1); //+0.1 to avoid floating point errors
+          iPhi = floor(dPhi/cellSizePhi[0]+0.1); 
+          if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
+          if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] += cellE_norm;
+          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          //std::cout << "iEta: " << iEta << std::endl; 
+          //std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB2) {
-            iEta = floor(dEta/cellSizeEta[1]+0.1); 
-            iPhi = floor(dPhi/cellSizePhi[1]+0.1); 
-            if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
-            if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[1]+0.1); 
+          iPhi = floor(dPhi/cellSizePhi[1]+0.1); 
+          if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
+          if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] += cellE_norm;
+          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          //std::cout << "iEta: " << iEta << std::endl; 
+          //std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::EMB3) {
-            iEta = floor(dEta/cellSizeEta[2]+0.1); 
-            iPhi = floor(dPhi/cellSizePhi[2]+0.1); 
-            if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
-            if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] = cellE_norm;
-            std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            std::cout << "iEta: " << iEta << std::endl; 
-            std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[2]+0.1); 
+          iPhi = floor(dPhi/cellSizePhi[2]+0.1); 
+          if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
+          if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] += cellE_norm;
+          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          //std::cout << "iEta: " << iEta << std::endl; 
+          //std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) {
-            iEta = floor(dEta/cellSizeEta[3]+0.1); 
-            iPhi = floor(dPhi/cellSizePhi[3]+0.1); 
-            if (m_TileBar0[iEta+2][iPhi+2] != 0) m_duplicate_TileBar0++; // check for duplicates
-            if (iEta < 4 && iPhi < 4) m_TileBar0[iEta+2][iPhi+2] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[3]+0.1); 
+          iPhi = floor(dPhi/cellSizePhi[3]+0.1); 
+          if (m_TileBar0[iEta+2][iPhi+2] != 0) m_duplicate_TileBar0++; // check for duplicates
+          if (iEta < 4 && iPhi < 4) m_TileBar0[iEta+2][iPhi+2] += cellE_norm;
+          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          // std::cout << "iEta: " << iEta << std::endl; 
+          // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar1) {
-            iEta = floor(dEta/cellSizeEta[4]+0.1); 
-            iPhi = floor(dPhi/cellSizePhi[4]+0.1); 
-            if (m_TileBar1[iEta+2][iPhi+2] != 0) m_duplicate_TileBar1++; // check for duplicates
-            if (iEta < 4 && iPhi < 4) m_TileBar1[iEta+2][iPhi+2] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[4]+0.1); 
+          iPhi = floor(dPhi/cellSizePhi[4]+0.1); 
+          if (m_TileBar1[iEta+2][iPhi+2] != 0) m_duplicate_TileBar1++; // check for duplicates
+          if (iEta < 4 && iPhi < 4) m_TileBar1[iEta+2][iPhi+2] += cellE_norm;
+          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          // std::cout << "iEta: " << iEta << std::endl; 
+          // std::cout << "iPhi: " << iPhi << std::endl; 
         } else if (cellLayer == CaloCell_ID::CaloSample::TileBar2) {
-            iEta = floor(dEta/cellSizeEta[5]+0.1); 
-            iPhi = floor(dPhi/cellSizePhi[5]+0.1); 
-            if (m_TileBar2[iEta+1][iPhi+2] != 0) m_duplicate_TileBar2++; // check for duplicates
-            if (iEta < 2 && iPhi < 4) m_TileBar2[iEta+1][iPhi+2] = cellE_norm;
-            // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-            // std::cout << "iEta: " << iEta << std::endl; 
-            // std::cout << "iPhi: " << iPhi << std::endl; 
+          iEta = floor(dEta/cellSizeEta[5]+0.1); 
+          iPhi = floor(dPhi/cellSizePhi[5]+0.1); 
+          if (m_TileBar2[iEta+1][iPhi+2] != 0) m_duplicate_TileBar2++; // check for duplicates
+          if (iEta < 2 && iPhi < 4) m_TileBar2[iEta+1][iPhi+2] += cellE_norm;
+          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
+          // std::cout << "iEta: " << iEta << std::endl; 
+          // std::cout << "iPhi: " << iPhi << std::endl; 
         }
       }
-      
-      std::cout << "cell_i: " << cell_i << std::endl; 
-      std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
-      std::cout << "clusterE: " << clusterE << std::endl; 
+
+      //std::cout << "cell_i: " << cell_i << std::endl; 
+      //std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
+      //std::cout << "clusterE: " << clusterE << std::endl; 
 
       m_fClusterE = clusterE;
       m_fClusterPt = clusterPt;
@@ -987,10 +995,10 @@ StatusCode MLTreeMaker::execute() {
       m_fCluster_cell_centerCellPhi = centerCellPhi;
       m_fCluster_cell_centerCellLayer = (int)centerCellLayer;
 
-      if (m_duplicate_EMB1 == 0 && m_duplicate_EMB2 == 0 && m_duplicate_EMB3 == 0 &&
-          m_duplicate_TileBar0 == 0 && m_duplicate_TileBar1 == 0 && m_duplicate_TileBar2 == 0) {
-        m_clusterTree->Fill();
-      }
+      //if (m_duplicate_EMB1 == 0 && m_duplicate_EMB2 == 0 && m_duplicate_EMB3 == 0 &&
+      //    m_duplicate_TileBar0 == 0 && m_duplicate_TileBar1 == 0 && m_duplicate_TileBar2 == 0) {
+      m_clusterTree->Fill();
+      //}
     }
 
     m_nCluster++;
