@@ -12,24 +12,16 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 
 # Input files for testing
 
+## MC15a e vs p+- at 100 GeV (50k events for each dataset)
 #svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422008.ParticleGun_single_ele_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642056._000019.pool.root.1"]
-svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422015.ParticleGun_single_pion_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642133._000031.pool.root.1"]
+#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422015.ParticleGun_single_pion_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642133._000031.pool.root.1"]
 
-## MC15a pi+ test
-#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._000506.pool.root.1",
-#                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._001502.pool.root.1",
-#                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._002564.pool.root.1",
-#                                         "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e3501_s2141_s2132_r6569/ESD.05281497._003262.pool.root.1"]
-
-## MC15a pi0 test
-# svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._000231.pool.root.1",
-#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._001571.pool.root.1",
-#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._002530.pool.root.1",
-#                                          "/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6569/ESD.05281500._003596.pool.root.1"]
+# MC15a pi0 vs. p+- (huge dataset)
+svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6474/ESD.05080662._023224.pool.root.1"]
 
 from AthenaCommon.GlobalFlags import jobproperties
-#jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-02-01-00" # For MC15a single pion logE0p2to2000 samples
-jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-03-01-00" # For MC15a single pion/electron Pt100 samples
+jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-02-01-00" # For MC15a single pion logE0p2to2000 samples
+#jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-03-01-00" # For MC15a single pion/electron Pt100 samples
 
 # from AthenaCommon.GlobalFlags import globalflags
 # globalflags.DetDescrVersion.set_Value_and_Lock("ATLAS-R2-2015-02-01-00")
