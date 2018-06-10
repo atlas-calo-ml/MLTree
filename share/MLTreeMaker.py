@@ -59,7 +59,7 @@ algSeq.MLTreeMaker.RootStreamName = "OutputStream"
 # Setup stream auditor
 from AthenaCommon.AppMgr import ServiceMgr as svcMgr
 if not hasattr(svcMgr, "DecisionSvc"):
-  svcMgr += CfgMgr.DecisionSvc()
+    svcMgr += CfgMgr.DecisionSvc()
 svcMgr.DecisionSvc.CalcStats = True
 svcMgr += CfgMgr.THistSvc()
 svcMgr.THistSvc.Output += ["OutputStream DATAFILE='mltree.pool.root' OPT='RECREATE'"]
