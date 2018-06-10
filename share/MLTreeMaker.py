@@ -21,7 +21,7 @@ svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datas
 
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-02-01-00" # For MC15a single pion logE0p2to2000 samples
-#jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-03-01-00" # For MC15a single pion/electron Pt100 samples
+#jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-03-01-00" # For MC15a single pion/electron/gamma samples
 
 # from AthenaCommon.GlobalFlags import globalflags
 # globalflags.DetDescrVersion.set_Value_and_Lock("ATLAS-R2-2015-02-01-00")
@@ -38,8 +38,8 @@ algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
                              TrackContainer = "InDetTrackParticles",
                              CaloClusterContainer = "CaloCalTopoClusters",
                              Prefix = "CALO",
-                             ClusterEmin = 50.0,
-                             ClusterEmax = 500.0,
+                             ClusterEmin = 5.0,
+                             ClusterEmax = 2000.0,
                              EventCleaning = False,
                              Tracking = False,
                              Pileup = False,

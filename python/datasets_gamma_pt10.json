@@ -1,0 +1,8 @@
+{ 
+  "inDSs": [
+    "mc15_13TeV.422005.ParticleGun_single_photon_Pt10.recon.ESD.e4459_s2726_r7143"
+  ],
+  "outDSs": [
+    "mc15_13TeV.422005.single_photon_Pt10.e4459_s2726_r7143.images"
+  ]
+}

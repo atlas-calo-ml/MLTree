@@ -1,0 +1,10 @@
+{ 
+  "inDSs": [
+    "mc15_13TeV.422006.ParticleGun_single_ele_PtFlat1_100.recon.ESD.e4459_s2726_r7143",
+    "mc15_13TeV.422013.ParticleGun_single_pion_PtFlat1_100.recon.ESD.e4459_s2726_r7143"
+  ],
+  "outDSs": [
+    "mc15_13TeV.422006.single_ele_PtFlat1_100.e4459_s2726_r7143.images",
+    "mc15_13TeV.422013.single_pion_PtFlat1_100.e4459_s2726_r7143.images"
+  ]
+}
