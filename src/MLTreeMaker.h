@@ -65,10 +65,11 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     TTree* m_eventTree;
     TTree* m_clusterTree;
 
-    // Cluster selections
+    // Cluster and cell selections
     float m_clusterE_min;
     float m_clusterE_max;
     float m_clusterEtaAbs_max;
+    float m_cellE_thres;
 
     //// Add to eventTree
 

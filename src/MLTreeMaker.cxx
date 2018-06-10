@@ -52,6 +52,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doEventTruth(false),
   m_clusterE_min(90.0),
   m_clusterE_max(110.0),
+  m_cellE_thres(0.005), // 5 MeV threshold
   m_clusterEtaAbs_max(0.7),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
@@ -906,6 +907,10 @@ StatusCode MLTreeMaker::execute() {
         float dPhi = cell->phi() - centerCellPhi;
         float cellE = cell->e()*(it_cell.weight())/1e3;
         float cellE_norm = cellE/clusterE;
+
+        // noise rejection
+        if (cellE < m_cellE_thres) continue;
+        if (cellE_norm < 0) continue;
 
         m_cluster_cellE_norm.push_back(cellE_norm);
         //std::cout << "cell #: " << cell_i << std::endl; 
