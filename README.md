@@ -6,14 +6,41 @@ For questions please contact: joakim.olsson[at]cern.ch
 
 ## Setup
 
-```
-mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
+<details>
+<summary>Using release 20</summary>
+<br>
+<pre>mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
 git clone https://github.com/jmrolsson/MLTree.git 
 setupATLAS
 #asetup 20.7.7.9,AtlasProduction,here
 asetup 20.1.0.3,AtlasProduction,here
 lsetup panda
-cmt find_packages && cmt compile 
+cmt find_packages && cmt compile</pre>
+</details>
+
+Using release 21
+
+Follow instructions for sparse checkout; this is a clunky way to get the athena/Projects directory structure.
+```
+mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
+setupATLAS
+lsetup git
+git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
+```
+
+Clone this git repository and create a package filter so athena knows to compile it
+```
+git clone https://github.com/jmrolsson/MLTree.git athena/MLTree
+echo "+ MLTree" > package_filters.txt
+echo "- .*" >> package_filters.txt
+```
+
+Now setup for an out-of-source build
+```
+mkdir build; cd build
+asetup 21.3,latest,Athena
+cmake -DATLAS_PACKAGE_FILTER_FILE=../package_filters.txt ../athena/Projects/WorkDir
+make
 ```
 
 ## Test run

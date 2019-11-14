@@ -214,6 +214,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     float m_fClusterPt;
     float m_fClusterEta;
     float m_fClusterPhi;
+  float m_fCluster_emProb;
     float m_fCluster_sumCellE;
     float m_fCluster_cell_dR_min;
     float m_fCluster_cell_dR_max;

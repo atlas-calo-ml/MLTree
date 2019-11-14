@@ -50,10 +50,6 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doShapeEM(false),
   m_doShapeLC(false),
   m_doEventTruth(false),
-  m_clusterE_min(90.0),
-  m_clusterE_max(110.0),
-  m_cellE_thres(0.005), // 5 MeV threshold
-  m_clusterEtaAbs_max(0.7),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
   m_truthContainerName("TruthParticles"),
@@ -64,7 +60,11 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool"),
   m_trackParametersIdHelper(new Trk::TrackParametersIdHelper),
   m_surfaceHelper("CaloSurfaceHelper/CaloSurfaceHelper"),
-  m_tileTBID(0)
+  m_tileTBID(0),
+  m_clusterE_min(90.0),
+  m_clusterE_max(110.0),
+  m_clusterEtaAbs_max(0.7),
+  m_cellE_thres(0.005) // 5 MeV threshold
 {
   declareProperty("ClusterEmin", m_clusterE_min);
   declareProperty("ClusterEmax", m_clusterE_max);
@@ -270,6 +270,7 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
     m_clusterTree->Branch("clusterPhi",       &m_fClusterPhi,       "clusterPhi/F");
     m_clusterTree->Branch("cluster_nCells",   &m_fCluster_nCells,   "cluster_nCells/I");
+    m_clusterTree->Branch("cluster_emProb",   &m_fCluster_emProb,   "cluster_emProb/F");
     m_clusterTree->Branch("cluster_sumCellE", &m_fCluster_sumCellE, "cluster_sumCellE/F");
 
     m_clusterTree->Branch("cluster_cell_dR_min",    &m_fCluster_cell_dR_min,   "cluster_cell_dR_min/F");
@@ -584,10 +585,13 @@ StatusCode MLTreeMaker::execute() {
         std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;
 
         // Get the CaloExtension object
-        const Trk::CaloExtension* extension = 0;
+	//For R22 replace with
+	//std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(*track);
+	//if(extension)
 
-        if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) {
-
+	const Trk::CaloExtension* extension = 0;
+	if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
+	{
           // Extract the CurvilinearParameters per each layer-track intersection
           const std::vector<const Trk::CurvilinearParameters*>& clParametersVector = extension->caloLayerIntersections();
 
@@ -611,11 +615,11 @@ StatusCode MLTreeMaker::execute() {
             }
           }
 
-        } else {
-          msg(MSG::WARNING) << "TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta() << endreq;
         }
-
-        if (!(m_theTrackExtrapolatorTool->caloExtension(*track, extension))) continue; //No valid parameters for any of the layers of interest
+	else {
+	  ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
+	  continue;
+        }
 
         //  ---------Calo Sample layer Variables---------
         //  PreSamplerB=0, EMB1, EMB2, EMB3, // LAr barrel
@@ -792,6 +796,20 @@ StatusCode MLTreeMaker::execute() {
     float clusterEta = cluster->eta();
     float clusterPhi = cluster->phi();
 
+    //ARA: adding code to retreive EM_PROBABILITY
+    double cluster_emProb = 0;
+    if( !cluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_emProb) ) 
+    {
+      cluster_emProb = -1.0;
+    }
+    else 
+    {
+      if ( cluster_emProb < 0 ) cluster_emProb = 0;
+      if ( cluster_emProb > 1 ) cluster_emProb = 1;
+    }
+
+
+    /////
     // Only select low energy clusters in the Barrel region (for now)
     if (clusterE < m_clusterE_min || 
         clusterE > m_clusterE_max || 
@@ -812,7 +830,7 @@ StatusCode MLTreeMaker::execute() {
     float dPhi_max = 1e8;
     float centerCellEta = 1e8;
     float centerCellPhi = 1e8;
-    CaloCell_ID::CaloSample centerCellLayer;
+    CaloCell_ID::CaloSample centerCellLayer=CaloCell_ID::Unknown;
 
     int nCells = 0;
     float sumCellE = 0;
@@ -987,6 +1005,7 @@ StatusCode MLTreeMaker::execute() {
       m_fClusterEta = clusterEta;
       m_fClusterPhi = clusterPhi; 
       m_fCluster_nCells = cell_i;
+      m_fCluster_emProb = cluster_emProb;
       m_fCluster_sumCellE = sumCellE_i;
 
       m_fCluster_cell_dR_min = dR_min;
