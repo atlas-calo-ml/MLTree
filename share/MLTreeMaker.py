@@ -16,15 +16,11 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 #svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422008.ParticleGun_single_ele_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642056._000019.pool.root.1"]
 #svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422015.ParticleGun_single_pion_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642133._000031.pool.root.1"]
 
-# MC15a pi0 vs. p+- (huge dataset)
-svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e3496_s2139_s2132_r6474/ESD.05080662._023224.pool.root.1"]
+# MC16 pi- (testing dataset)
+svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428002.ParticleGun_single_piminus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269624._000146.pool.root.1"]
 
 from AthenaCommon.GlobalFlags import jobproperties
-#jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-02-01-00" # For MC15a single pion logE0p2to2000 samples
-jobproperties.Global.DetDescrVersion="ATLAS-R2-2015-03-01-00" # For MC15a single pion/electron/gamma samples
-
-# from AthenaCommon.GlobalFlags import globalflags
-# globalflags.DetDescrVersion.set_Value_and_Lock("ATLAS-R2-2015-02-01-00")
+jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
 
 # Suggestion from Peter Loch to turn off local cluster calibration
 from CaloRec.CaloTopoClusterFlags import jobproperties
