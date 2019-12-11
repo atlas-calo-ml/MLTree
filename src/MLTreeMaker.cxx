@@ -39,6 +39,7 @@
 #include <cmath>
 #include <utility>
 #include <limits>
+#include <map>
 
 MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
@@ -265,6 +266,12 @@ StatusCode MLTreeMaker::initialize() {
 
     m_clusterTree->Branch("runNumber",        &m_runNumber,         "runNumber/I");
     m_clusterTree->Branch("eventNumber",      &m_eventNumber,       "eventNumber/I");
+
+    m_clusterTree->Branch("truthE",           &m_fClusterTruthE,    "truthE/F");
+    m_clusterTree->Branch("truthPt",          &m_fClusterTruthPt,   "truthPt/F");
+    m_clusterTree->Branch("truthEta",         &m_fClusterTruthEta,  "truthEta/F");
+    m_clusterTree->Branch("truthPhi",         &m_fClusterTruthPhi,  "truthPhi/F");
+    m_clusterTree->Branch("clusterIndex",     &m_fClusterIndex,     "clusterIndex/I");
     m_clusterTree->Branch("clusterE",         &m_fClusterE,         "clusterE/F");
     m_clusterTree->Branch("clusterPt",        &m_fClusterPt,        "clusterPt/F");
     m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
@@ -545,6 +552,25 @@ StatusCode MLTreeMaker::execute() {
     }
   }
 
+  if(m_doClusterTree)
+  {
+    const xAOD::TruthParticleContainer* truthContainer = 0;
+    CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
+    if(truthContainer->size()==0)
+    {
+      m_fClusterTruthE=-999;
+      m_fClusterTruthPt=-999;
+      m_fClusterTruthEta=-999;
+      m_fClusterTruthPhi=-999;
+    }
+    else
+    {
+      m_fClusterTruthE=(*truthContainer)[0]->e()*1e-3;
+      m_fClusterTruthPt=(*truthContainer)[0]->pt()*1e-3;
+      m_fClusterTruthEta=(*truthContainer)[0]->eta();
+      m_fClusterTruthPhi=(*truthContainer)[0]->phi();
+    }
+  }
   if (m_doEventTree) {
 
     // Truth particles
@@ -562,7 +588,6 @@ StatusCode MLTreeMaker::execute() {
       m_truthPartMass.push_back(truth->m()/1e3);
       m_truthPartEta.push_back(truth->eta());
       m_truthPartPhi.push_back(truth->phi());
-
       m_nTruthPart++;
     }
 
@@ -788,9 +813,29 @@ StatusCode MLTreeMaker::execute() {
   const xAOD::CaloClusterContainer* clusterContainer = 0; 
   CHECK(evtStore()->retrieve(clusterContainer, m_caloClusterContainerName));
 
-  m_nCluster = 0;
-  for (const auto& cluster : *clusterContainer) {
+  //first sort the clusters by energy
+  //fill a (multi)map with key = energy and value = index of cluster in list
+  std::multimap<float,unsigned int,std::greater<float> > clusterRanks;
+  for (unsigned int iCluster=0; iCluster < clusterContainer->size(); iCluster++)
+  {
+    auto cluster=(*clusterContainer)[iCluster];
+    float clusterE = cluster->e()/1e3;
+    float clusterEta = cluster->eta();
 
+    if (clusterE < m_clusterE_min || 
+        clusterE > m_clusterE_max || 
+        fabs(clusterEta) > m_clusterEtaAbs_max) continue;
+
+    clusterRanks.emplace_hint(clusterRanks.end(),clusterE,iCluster);
+  }  
+  m_nCluster = clusterRanks.size();
+
+  //loop over clusters in order of their energies
+  //clusters failing E or eta cut are not included in loop
+  unsigned int jCluster=0;
+  for(auto mpair : clusterRanks)
+  {
+    auto cluster=(*clusterContainer)[mpair.second];    
     float clusterE = cluster->e()/1e3;
     float clusterPt = cluster->pt()/1e3;
     float clusterEta = cluster->eta();
@@ -807,13 +852,6 @@ StatusCode MLTreeMaker::execute() {
       if ( cluster_emProb < 0 ) cluster_emProb = 0;
       if ( cluster_emProb > 1 ) cluster_emProb = 1;
     }
-
-
-    /////
-    // Only select low energy clusters in the Barrel region (for now)
-    if (clusterE < m_clusterE_min || 
-        clusterE > m_clusterE_max || 
-        fabs(clusterEta) > m_clusterEtaAbs_max) continue;
 
     if (m_doEventTree) {
       m_clusterE.push_back(clusterE);
@@ -999,6 +1037,8 @@ StatusCode MLTreeMaker::execute() {
       //std::cout << "cell_i: " << cell_i << std::endl; 
       //std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
       //std::cout << "clusterE: " << clusterE << std::endl; 
+      m_fClusterIndex = jCluster;
+      jCluster++;
 
       m_fClusterE = clusterE;
       m_fClusterPt = clusterPt;
@@ -1024,8 +1064,6 @@ StatusCode MLTreeMaker::execute() {
       m_clusterTree->Fill();
       //}
     }
-
-    m_nCluster++;
   }
 
   if (m_doEventTree) m_eventTree->Fill();

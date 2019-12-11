@@ -210,11 +210,16 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     //// Add to clusterTree
     
     int   m_fCluster_nCells;
+    float m_fClusterTruthE;
+    float m_fClusterTruthPt;
+    float m_fClusterTruthEta;
+    float m_fClusterTruthPhi;
+    int   m_fClusterIndex;
     float m_fClusterE;
     float m_fClusterPt;
     float m_fClusterEta;
     float m_fClusterPhi;
-  float m_fCluster_emProb;
+    float m_fCluster_emProb;
     float m_fCluster_sumCellE;
     float m_fCluster_cell_dR_min;
     float m_fCluster_cell_dR_max;
