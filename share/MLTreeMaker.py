@@ -17,8 +17,8 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 #svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422015.ParticleGun_single_pion_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642133._000031.pool.root.1"]
 
 # MC16 pi- (testing dataset)
-svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428002.ParticleGun_single_piminus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269624._000146.pool.root.1"]
-
+#svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428002.ParticleGun_single_piminus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269624._000146.pool.root.1"]
+svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/work/a/angerami/private/JetML/mc16_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269610._001596.pool.root.1"]
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
 
@@ -35,7 +35,8 @@ algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
                              CaloClusterContainer = "CaloCalTopoClusters",
                              Prefix = "CALO",
                              ClusterEmin = 1.0,
-                             ClusterEmax = 200.0,
+                             ClusterEmax = 2000.0,
+                             ClusterEtaAbsmax = 0.7,
                              EventCleaning = False,
                              Tracking = False,
                              Pileup = False,
