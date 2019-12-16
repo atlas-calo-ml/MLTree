@@ -22,28 +22,41 @@ svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/work/a/angerami/private/J
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
 
-# Suggestion from Peter Loch to turn off local cluster calibration
-from CaloRec.CaloTopoClusterFlags import jobproperties
-jobproperties.CaloTopoClusterFlags.doTopoClusterLocalCalib.set_Value_and_Lock(False)
-from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
 
-# Setup MLTreeMaker algorithm
-from AthenaCommon import CfgMgr
-algSeq = CfgMgr.AthSequencer("AthAlgSeq")
-algSeq += CfgMgr.MLTreeMaker(name = "MLTreeMaker",
-                             TrackContainer = "InDetTrackParticles",
-                             CaloClusterContainer = "CaloCalTopoClusters",
-                             Prefix = "CALO",
-                             ClusterEmin = 1.0,
-                             ClusterEmax = 2000.0,
-                             ClusterEtaAbsmax = 0.7,
-                             EventCleaning = False,
-                             Tracking = False,
-                             Pileup = False,
-                             EventTree = False,
-                             ClusterTree = True,
-                             OutputLevel = DEBUG)
-algSeq.MLTreeMaker.RootStreamName = "OutputStream"
+from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
+oks = ObjKeyStore()
+oks.addStreamESD("CaloCellContainer", ["AllCalo"] )
+
+
+
+#Rerun topocluseters to produce calib hit moments
+from CaloRec.CaloTopoClusterFlags import jobproperties
+jobproperties.CaloTopoClusterFlags.doCalibHitMoments=True
+from CaloRec.CaloClusterTopoGetter import CaloClusterTopoGetter
+CaloClusterTopoGetter()
+
+from AthenaCommon.AlgSequence import AlgSequence
+topSequence = AlgSequence()
+topSequence.CaloTopoCluster.TopoCalibMoments.MomentsNames += ["ENG_CALIB_TOT","ENG_CALIB_OUT_T","ENG_CALIB_DEAD_TOT"]
+topSequence.CaloTopoCluster.TopoCalibMoments.DMCalibrationHitContainerNames = ["LArCalibrationHitDeadMaterial_DEAD","TileCalibHitDeadMaterial"]
+
+#add MLTreeMaker directly to top sequence to ensure its run *after* topoclustering
+from MLTree.MLTreeConf import MLTreeMaker
+topSequence += MLTreeMaker(name = "MLTreeMaker",
+                           TrackContainer = "InDetTrackParticles",
+                           CaloClusterContainer = "CaloCalTopoClusters",
+                           Prefix = "CALO",
+                           ClusterEmin = 1.0,
+                           ClusterEmax = 2000.0,
+                           ClusterEtaAbsmax = 0.7,
+                           EventCleaning = False,
+                           Tracking = False,
+                           Pileup = False,
+                           EventTree = False,
+                           ClusterTree = True,
+                           OutputLevel = INFO)
+topSequence.MLTreeMaker.RootStreamName = "OutputStream"
+
 
 # Setup stream auditor
 from AthenaCommon.AppMgr import ServiceMgr as svcMgr
@@ -59,6 +72,3 @@ from AthenaCommon.CfgGetter import getService
 getService("AtlasTrackingGeometrySvc")
 
 # Configure object key store to recognize calo cells
-from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
-oks = ObjKeyStore()
-oks.addStreamESD("CaloCellContainer", ["AllCalo"] )

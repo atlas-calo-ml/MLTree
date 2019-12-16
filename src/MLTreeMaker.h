@@ -40,6 +40,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   private: 
     bool m_doEventTree;
     bool m_doClusterTree;
+  bool m_doClusterMoments;
     // bool m_isMC;
     bool m_doTracking;
     bool m_doEventCleaning;
@@ -214,13 +215,24 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     float m_fClusterTruthPt;
     float m_fClusterTruthEta;
     float m_fClusterTruthPhi;
-    int   m_fClusterIndex;
+  int   m_fClusterIndex;
     float m_fClusterE;
     float m_fClusterPt;
     float m_fClusterEta;
     float m_fClusterPhi;
-    float m_fCluster_emProb;
     float m_fCluster_sumCellE;
+
+  float m_fCluster_ENG_CALIB_TOT;
+  float m_fCluster_ENG_CALIB_OUT_T;
+  float m_fCluster_ENG_CALIB_DEAD_TOT;
+
+    float m_fCluster_EM_PROBABILITY;
+  float m_fCluster_HAD_WEIGHT;
+  float m_fCluster_OOC_WEIGHT;
+  float m_fCluster_DM_WEIGHT;
+  float m_fCluster_CENTER_MAG;
+  float m_fCluster_FIRST_ENG_DENS;
+
     float m_fCluster_cell_dR_min;
     float m_fCluster_cell_dR_max;
     float m_fCluster_cell_dEta_min;

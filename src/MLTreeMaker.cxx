@@ -45,6 +45,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
   m_doEventTree(false),
   m_doClusterTree(true),
+  m_doClusterMoments(true),
   m_doTracking(false),
   m_doEventCleaning(false),
   m_doPileup(false),
@@ -72,6 +73,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("ClusterEtaAbsmax", m_clusterEtaAbs_max);
   declareProperty("EventTree", m_doEventTree);
   declareProperty("ClusterTree", m_doClusterTree);
+  declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("Tracking", m_doTracking);
   declareProperty("EventCleaning", m_doEventCleaning);
   declareProperty("Pileup", m_doPileup);
@@ -277,8 +279,20 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
     m_clusterTree->Branch("clusterPhi",       &m_fClusterPhi,       "clusterPhi/F");
     m_clusterTree->Branch("cluster_nCells",   &m_fCluster_nCells,   "cluster_nCells/I");
-    m_clusterTree->Branch("cluster_emProb",   &m_fCluster_emProb,   "cluster_emProb/F");
     m_clusterTree->Branch("cluster_sumCellE", &m_fCluster_sumCellE, "cluster_sumCellE/F");
+
+    if(m_doClusterMoments)
+    {
+      m_clusterTree->Branch("cluster_ENG_CALIB_TOT",     &m_fCluster_ENG_CALIB_TOT,      "cluster_ENG_CALIB_TOT/F");
+      m_clusterTree->Branch("cluster_ENG_CALIB_OUT_T",   &m_fCluster_ENG_CALIB_OUT_T,    "cluster_ENG_CALIB_OUT_T/F");
+      m_clusterTree->Branch("cluster_ENG_CALIB_DEAD_TOT",&m_fCluster_ENG_CALIB_DEAD_TOT, "cluster_ENG_CALIB_DEAD_TOT/F");
+      m_clusterTree->Branch("cluster_EM_PROBABILITY",   &m_fCluster_EM_PROBABILITY,   "cluster_EM_PROBABILITY/F");
+      m_clusterTree->Branch("cluster_HAD_WEIGHT", &m_fCluster_HAD_WEIGHT,  "cluster_HAD_WEIGHT/F");
+      m_clusterTree->Branch("cluster_OOC_WEIGHT", &m_fCluster_OOC_WEIGHT,  "cluster_OOC_WEIGHT/F");
+      m_clusterTree->Branch("cluster_DM_WEIGHT", &m_fCluster_DM_WEIGHT,  "cluster_DM_WEIGHT/F");
+      m_clusterTree->Branch("cluster_CENTER_MAG", &m_fCluster_CENTER_MAG,  "cluster_CENTER_MAG/F");
+      m_clusterTree->Branch("cluster_FIRST_ENG_DENS", &m_fCluster_FIRST_ENG_DENS,  "cluster_FIRST_ENG_DENS/F");
+    }
 
     m_clusterTree->Branch("cluster_cell_dR_min",    &m_fCluster_cell_dR_min,   "cluster_cell_dR_min/F");
     m_clusterTree->Branch("cluster_cell_dR_max",    &m_fCluster_cell_dR_max,   "cluster_cell_dR_max/F");
@@ -842,16 +856,37 @@ StatusCode MLTreeMaker::execute() {
     float clusterPhi = cluster->phi();
 
     //ARA: adding code to retreive EM_PROBABILITY
-    double cluster_emProb = 0;
-    if( !cluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_emProb) ) 
+    double cluster_ENG_CALIB_TOT = 0;
+    double cluster_ENG_CALIB_OUT_T = 0;
+    double cluster_ENG_CALIB_DEAD_TOT = 0;
+
+    double cluster_EM_PROBABILITY = 0;
+    double cluster_HAD_WEIGHT = 0;
+    double cluster_OOC_WEIGHT = 0;
+    double cluster_DM_WEIGHT = 0;
+    double cluster_CENTER_MAG = 0;
+    double cluster_FIRST_ENG_DENS = 0;
+
+    if(m_doClusterMoments)
     {
-      cluster_emProb = -1.0;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT) ) cluster_ENG_CALIB_TOT=-1.;
+      else cluster_ENG_CALIB_TOT*=1e-3;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_OUT_T, cluster_ENG_CALIB_OUT_T) ) cluster_ENG_CALIB_OUT_T=-1.;
+      else cluster_ENG_CALIB_OUT_T*=1e-3;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, cluster_ENG_CALIB_DEAD_TOT) ) cluster_ENG_CALIB_DEAD_TOT=-1.;
+      else cluster_ENG_CALIB_DEAD_TOT*=1e-3;
+
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY) ) cluster_EM_PROBABILITY = -1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT) ) cluster_HAD_WEIGHT=-1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT) ) cluster_OOC_WEIGHT=-1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT) ) cluster_DM_WEIGHT=-1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG) ) cluster_CENTER_MAG=-1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS) ) cluster_FIRST_ENG_DENS=-1.;
+      else cluster_FIRST_ENG_DENS*=1e-3;
     }
-    else 
-    {
-      if ( cluster_emProb < 0 ) cluster_emProb = 0;
-      if ( cluster_emProb > 1 ) cluster_emProb = 1;
-    }
+
+
+
 
     if (m_doEventTree) {
       m_clusterE.push_back(clusterE);
@@ -1040,13 +1075,28 @@ StatusCode MLTreeMaker::execute() {
       m_fClusterIndex = jCluster;
       jCluster++;
 
+
       m_fClusterE = clusterE;
       m_fClusterPt = clusterPt;
       m_fClusterEta = clusterEta;
       m_fClusterPhi = clusterPhi; 
       m_fCluster_nCells = cell_i;
-      m_fCluster_emProb = cluster_emProb;
       m_fCluster_sumCellE = sumCellE_i;
+
+
+      if(m_doClusterMoments)
+      {
+	m_fCluster_ENG_CALIB_TOT=cluster_ENG_CALIB_TOT;
+	m_fCluster_ENG_CALIB_OUT_T=cluster_ENG_CALIB_OUT_T;
+	m_fCluster_ENG_CALIB_DEAD_TOT=cluster_ENG_CALIB_DEAD_TOT;
+	
+	m_fCluster_EM_PROBABILITY = cluster_EM_PROBABILITY;
+	m_fCluster_HAD_WEIGHT=cluster_HAD_WEIGHT;
+	m_fCluster_OOC_WEIGHT=cluster_OOC_WEIGHT;
+	m_fCluster_DM_WEIGHT=cluster_DM_WEIGHT;
+	m_fCluster_CENTER_MAG=cluster_CENTER_MAG;
+	m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS*1e-3;
+      }
 
       m_fCluster_cell_dR_min = dR_min;
       m_fCluster_cell_dR_max = dR_max;
