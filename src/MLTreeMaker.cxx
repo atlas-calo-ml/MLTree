@@ -46,6 +46,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doEventTree(false),
   m_doClusterTree(true),
   m_doClusterMoments(true),
+  m_doUncalibratedClusters(true),
   m_doTracking(false),
   m_doEventCleaning(false),
   m_doPileup(false),
@@ -74,6 +75,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("EventTree", m_doEventTree);
   declareProperty("ClusterTree", m_doClusterTree);
   declareProperty("ClusterMoments", m_doClusterMoments);
+  declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
   declareProperty("Tracking", m_doTracking);
   declareProperty("EventCleaning", m_doEventCleaning);
   declareProperty("Pileup", m_doPileup);
@@ -275,6 +277,7 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("truthPhi",         &m_fClusterTruthPhi,  "truthPhi/F");
     m_clusterTree->Branch("clusterIndex",     &m_fClusterIndex,     "clusterIndex/I");
     m_clusterTree->Branch("clusterE",         &m_fClusterE,         "clusterE/F");
+    m_clusterTree->Branch("clusterECalib",    &m_fClusterECalib,    "clusterECalib/F");
     m_clusterTree->Branch("clusterPt",        &m_fClusterPt,        "clusterPt/F");
     m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
     m_clusterTree->Branch("clusterPhi",       &m_fClusterPhi,       "clusterPhi/F");
@@ -830,12 +833,15 @@ StatusCode MLTreeMaker::execute() {
   //first sort the clusters by energy
   //fill a (multi)map with key = energy and value = index of cluster in list
   std::multimap<float,unsigned int,std::greater<float> > clusterRanks;
+
   for (unsigned int iCluster=0; iCluster < clusterContainer->size(); iCluster++)
   {
-    auto cluster=(*clusterContainer)[iCluster];
+    auto calibratedCluster=(*clusterContainer)[iCluster];
+    auto cluster=calibratedCluster;
+    if(m_doUncalibratedClusters) cluster=calibratedCluster->getSisterCluster();
+
     float clusterE = cluster->e()/1e3;
     float clusterEta = cluster->eta();
-
     if (clusterE < m_clusterE_min || 
         clusterE > m_clusterE_max || 
         fabs(clusterEta) > m_clusterEtaAbs_max) continue;
@@ -849,7 +855,9 @@ StatusCode MLTreeMaker::execute() {
   unsigned int jCluster=0;
   for(auto mpair : clusterRanks)
   {
-    auto cluster=(*clusterContainer)[mpair.second];    
+    auto calibratedCluster=(*clusterContainer)[mpair.second];
+    auto cluster=calibratedCluster;
+    if(m_doUncalibratedClusters) cluster=calibratedCluster->getSisterCluster();
     float clusterE = cluster->e()/1e3;
     float clusterPt = cluster->pt()/1e3;
     float clusterEta = cluster->eta();
@@ -876,13 +884,15 @@ StatusCode MLTreeMaker::execute() {
       if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, cluster_ENG_CALIB_DEAD_TOT) ) cluster_ENG_CALIB_DEAD_TOT=-1.;
       else cluster_ENG_CALIB_DEAD_TOT*=1e-3;
 
-      if( !cluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY) ) cluster_EM_PROBABILITY = -1.;
-      if( !cluster->retrieveMoment( xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT) ) cluster_HAD_WEIGHT=-1.;
-      if( !cluster->retrieveMoment( xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT) ) cluster_OOC_WEIGHT=-1.;
-      if( !cluster->retrieveMoment( xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT) ) cluster_DM_WEIGHT=-1.;
       if( !cluster->retrieveMoment( xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG) ) cluster_CENTER_MAG=-1.;
       if( !cluster->retrieveMoment( xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS) ) cluster_FIRST_ENG_DENS=-1.;
       else cluster_FIRST_ENG_DENS*=1e-3;
+
+      //for moments related to the calibration, use calibratedCluster or they will be undefined
+      if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY) ) cluster_EM_PROBABILITY = -1.;
+      if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT) ) cluster_HAD_WEIGHT=-1.;
+      if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT) ) cluster_OOC_WEIGHT=-1.;
+      if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT) ) cluster_DM_WEIGHT=-1.;
     }
 
 
@@ -907,6 +917,8 @@ StatusCode MLTreeMaker::execute() {
 
     int nCells = 0;
     float sumCellE = 0;
+    float sumWeights=0;
+    float sumCellE_unweighted=0;
     bool fillCellValidation = false;
 
     // Figure out which cell is at the center if the cluster and fill some validation plots
@@ -941,6 +953,8 @@ StatusCode MLTreeMaker::execute() {
 
       fillCellValidation = true;
       sumCellE += cell->e()*(it_cell.weight())/1e3;
+      sumCellE_unweighted += cell->e()*1e-3;
+      sumWeights += it_cell.weight();
       nCells++;
     }
 
@@ -1077,6 +1091,7 @@ StatusCode MLTreeMaker::execute() {
 
 
       m_fClusterE = clusterE;
+      m_fClusterECalib = calibratedCluster->e()*1e-3;
       m_fClusterPt = clusterPt;
       m_fClusterEta = clusterEta;
       m_fClusterPhi = clusterPhi; 
@@ -1111,6 +1126,7 @@ StatusCode MLTreeMaker::execute() {
 
       //if (m_duplicate_EMB1 == 0 && m_duplicate_EMB2 == 0 && m_duplicate_EMB3 == 0 &&
       //    m_duplicate_TileBar0 == 0 && m_duplicate_TileBar1 == 0 && m_duplicate_TileBar2 == 0) {
+
       m_clusterTree->Fill();
       //}
     }

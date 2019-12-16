@@ -18,7 +18,8 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 
 # MC16 pi- (testing dataset)
 #svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428002.ParticleGun_single_piminus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269624._000146.pool.root.1"]
-svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/work/a/angerami/private/JetML/mc16_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269610._001596.pool.root.1"]
+#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/work/a/angerami/private/JetML/mc16_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269610._001596.pool.root.1"]
+svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269616._000058.pool.root.1"]
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
 
@@ -54,6 +55,8 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            Pileup = False,
                            EventTree = False,
                            ClusterTree = True,
+                           ClusterMoments = True,
+                           UncalibratedClusters = True,
                            OutputLevel = INFO)
 topSequence.MLTreeMaker.RootStreamName = "OutputStream"
 
