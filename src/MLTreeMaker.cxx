@@ -276,6 +276,7 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("truthEta",         &m_fClusterTruthEta,  "truthEta/F");
     m_clusterTree->Branch("truthPhi",         &m_fClusterTruthPhi,  "truthPhi/F");
     m_clusterTree->Branch("clusterIndex",     &m_fClusterIndex,     "clusterIndex/I");
+    m_clusterTree->Branch("nCluster",         &m_nCluster,          "nCluster/I");
     m_clusterTree->Branch("clusterE",         &m_fClusterE,         "clusterE/F");
     m_clusterTree->Branch("clusterECalib",    &m_fClusterECalib,    "clusterECalib/F");
     m_clusterTree->Branch("clusterPt",        &m_fClusterPt,        "clusterPt/F");
