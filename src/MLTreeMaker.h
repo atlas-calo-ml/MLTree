@@ -44,19 +44,21 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   bool m_doUncalibratedClusters;
     // bool m_isMC;
     bool m_doTracking;
+  bool m_doJets;
     bool m_doEventCleaning;
     bool m_doPileup;
     bool m_doShapeEM;
     bool m_doShapeLC;
     bool m_doEventTruth;
-
+  bool m_doTruthParticles;
+  bool m_keepOnlyStableTruthParticles;
     std::string m_prefix;
     std::string m_eventInfoContainerName;
     std::string m_truthContainerName;
     std::string m_vxContainerName;
     std::string m_trackContainerName;
     std::string m_caloClusterContainerName;
-
+  std::vector<std::string> m_jetContainerNames;
     ToolHandle<Trk::IExtrapolator> m_extrapolator;
     ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
     Trk::TrackParametersIdHelper* m_trackParametersIdHelper;
@@ -189,6 +191,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_trackPhi_TileExt2;
 
     // Clusters and cells 
+    long m_clusterCount;
     int m_nCluster;
     std::vector<int> m_cluster_nCells;
     std::vector<float> m_clusterE;
@@ -208,8 +211,12 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_cluster_cell_centerCellEta;
     std::vector<float> m_cluster_cell_centerCellPhi;
     std::vector<int>   m_cluster_cell_centerCellLayer;
-
-    //// Add to clusterTree
+  std::vector<std::vector<float> > m_jet_pt;
+  std::vector<std::vector<float> > m_jet_eta;
+  std::vector<std::vector<float> > m_jet_phi;
+  std::vector<std::vector<float> > m_jet_E;
+  std::vector<std::vector<int> > m_jet_flavor;
+  //// Add to clusterTree
     
     int   m_fCluster_nCells;
     float m_fClusterTruthE;
@@ -234,6 +241,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   float m_fCluster_DM_WEIGHT;
   float m_fCluster_CENTER_MAG;
   float m_fCluster_FIRST_ENG_DENS;
+  float m_fCluster_ENERGY_DigiHSTruth;
 
     float m_fCluster_cell_dR_min;
     float m_fCluster_cell_dR_max;

@@ -8,6 +8,10 @@
 #include "xAODTracking/VertexContainer.h"
 #include "xAODTracking/VertexAuxContainer.h"
 
+//Jets
+#include "xAODJet/JetTypes.h"
+#include "xAODJet/JetContainer.h"
+
 // Extrapolation to the calo
 #include "TrkCaloExtension/CaloExtension.h"
 #include "TrkCaloExtension/CaloExtensionCollection.h"
@@ -48,11 +52,14 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
   m_doTracking(false),
+  m_doJets(false),
   m_doEventCleaning(false),
   m_doPileup(false),
   m_doShapeEM(false),
   m_doShapeLC(false),
   m_doEventTruth(false),
+  m_doTruthParticles(false),
+  m_keepOnlyStableTruthParticles(true),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
   m_truthContainerName("TruthParticles"),
@@ -67,7 +74,8 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_clusterE_min(90.0),
   m_clusterE_max(110.0),
   m_clusterEtaAbs_max(0.7),
-  m_cellE_thres(0.005) // 5 MeV threshold
+  m_cellE_thres(0.005),  // 5 MeV threshold
+  m_clusterCount(0)
 {
   declareProperty("ClusterEmin", m_clusterE_min);
   declareProperty("ClusterEmax", m_clusterE_max);
@@ -77,15 +85,19 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
   declareProperty("Tracking", m_doTracking);
+  declareProperty("Jets", m_doJets);
   declareProperty("EventCleaning", m_doEventCleaning);
   declareProperty("Pileup", m_doPileup);
   declareProperty("ShapeEM", m_doShapeEM);
   declareProperty("ShapeLC", m_doShapeLC);
   declareProperty("EventTruth", m_doEventTruth);
+  declareProperty("TruthParticles", m_doTruthParticles);
+  declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
   declareProperty("Prefix", m_prefix);
   declareProperty("EventContainer", m_eventInfoContainerName);
   declareProperty("TrackContainer", m_trackContainerName);
   declareProperty("CaloClusterContainer", m_caloClusterContainerName);
+  declareProperty("JetContainers", m_jetContainerNames);
   declareProperty("Extrapolator", m_extrapolator);
   declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
 }
@@ -171,76 +183,81 @@ StatusCode MLTreeMaker::initialize() {
     } 
 
     // Truth particles
-    m_eventTree->Branch("nTruthPart",          &m_nTruthPart, "nTruthPart/I");
-    m_eventTree->Branch("pdgId",               &m_pdgId);
-    m_eventTree->Branch("status",              &m_status);
-    m_eventTree->Branch("barcode",             &m_barcode);
-    m_eventTree->Branch("truthPartPt",         &m_truthPartPt);
-    m_eventTree->Branch("truthPartE",          &m_truthPartE);
-    m_eventTree->Branch("truthPartMass",       &m_truthPartMass);
-    m_eventTree->Branch("truthPartEta",        &m_truthPartEta);
-    m_eventTree->Branch("truthPartPhi",        &m_truthPartPhi);
-
+    if(m_doTruthParticles)
+    {
+      m_eventTree->Branch("nTruthPart",          &m_nTruthPart, "nTruthPart/I");
+      m_eventTree->Branch("pdgId",               &m_pdgId);
+      m_eventTree->Branch("status",              &m_status);
+      m_eventTree->Branch("barcode",             &m_barcode);
+      m_eventTree->Branch("truthPartPt",         &m_truthPartPt);
+      m_eventTree->Branch("truthPartE",          &m_truthPartE);
+      m_eventTree->Branch("truthPartMass",       &m_truthPartMass);
+      m_eventTree->Branch("truthPartEta",        &m_truthPartEta);
+      m_eventTree->Branch("truthPartPhi",        &m_truthPartPhi);
+    }
     // Track variables
-    m_eventTree->Branch("nTrack",              &m_nTrack, "nTrack/I");
-    m_eventTree->Branch("trackPt",             &m_trackPt);
-    m_eventTree->Branch("trackP",              &m_trackP);
-    m_eventTree->Branch("trackMass",           &m_trackMass);
-    m_eventTree->Branch("trackEta",            &m_trackEta);
-    m_eventTree->Branch("trackPhi",            &m_trackPhi);
+    if (m_doTracking)
+    {
+      m_eventTree->Branch("nTrack",              &m_nTrack, "nTrack/I");
+      m_eventTree->Branch("trackPt",             &m_trackPt);
+      m_eventTree->Branch("trackP",              &m_trackP);
+      m_eventTree->Branch("trackMass",           &m_trackMass);
+      m_eventTree->Branch("trackEta",            &m_trackEta);
+      m_eventTree->Branch("trackPhi",            &m_trackPhi);
 
-    // Track extrapolation
-    // Presampler
-    m_eventTree->Branch("trackEta_PreSamplerB",  &m_trackEta_PreSamplerB);
-    m_eventTree->Branch("trackPhi_PreSamplerB",  &m_trackPhi_PreSamplerB);
-    m_eventTree->Branch("trackEta_PreSamplerE",  &m_trackEta_PreSamplerE);
-    m_eventTree->Branch("trackPhi_PreSamplerE",  &m_trackPhi_PreSamplerE);
-    // LAr EM Barrel layers
-    m_eventTree->Branch("trackEta_EMB1",         &m_trackEta_EMB1); 
-    m_eventTree->Branch("trackPhi_EMB1",         &m_trackPhi_EMB1); 
-    m_eventTree->Branch("trackEta_EMB2",         &m_trackEta_EMB2); 
-    m_eventTree->Branch("trackPhi_EMB2",         &m_trackPhi_EMB2); 
-    m_eventTree->Branch("trackEta_EMB3",         &m_trackEta_EMB3); 
-    m_eventTree->Branch("trackPhi_EMB3",         &m_trackPhi_EMB3); 
-    // LAr EM Endcap layers
-    m_eventTree->Branch("trackEta_EME1",         &m_trackEta_EME1); 
-    m_eventTree->Branch("trackPhi_EME1",         &m_trackPhi_EME1); 
-    m_eventTree->Branch("trackEta_EME2",         &m_trackEta_EME2); 
-    m_eventTree->Branch("trackPhi_EME2",         &m_trackPhi_EME2); 
-    m_eventTree->Branch("trackEta_EME3",         &m_trackEta_EME3); 
-    m_eventTree->Branch("trackPhi_EME3",         &m_trackPhi_EME3); 
-    // Hadronic Endcap layers
-    m_eventTree->Branch("trackEta_HEC0",         &m_trackEta_HEC0); 
-    m_eventTree->Branch("trackPhi_HEC0",         &m_trackPhi_HEC0); 
-    m_eventTree->Branch("trackEta_HEC1",         &m_trackEta_HEC1); 
-    m_eventTree->Branch("trackPhi_HEC1",         &m_trackPhi_HEC1); 
-    m_eventTree->Branch("trackEta_HEC2",         &m_trackEta_HEC2); 
-    m_eventTree->Branch("trackPhi_HEC2",         &m_trackPhi_HEC2); 
-    m_eventTree->Branch("trackEta_HEC3",         &m_trackEta_HEC3); 
-    m_eventTree->Branch("trackPhi_HEC3",         &m_trackPhi_HEC3); 
-    // Tile Barrel layers
-    m_eventTree->Branch("trackEta_TileBar0",     &m_trackEta_TileBar0); 
-    m_eventTree->Branch("trackPhi_TileBar0",     &m_trackPhi_TileBar0); 
-    m_eventTree->Branch("trackEta_TileBar1",     &m_trackEta_TileBar1); 
-    m_eventTree->Branch("trackPhi_TileBar1",     &m_trackPhi_TileBar1); 
-    m_eventTree->Branch("trackEta_TileBar2",     &m_trackEta_TileBar2); 
-    m_eventTree->Branch("trackPhi_TileBar2",     &m_trackPhi_TileBar2); 
-    // Tile Gap layers
-    m_eventTree->Branch("trackEta_TileGap1",     &m_trackEta_TileGap1); 
-    m_eventTree->Branch("trackPhi_TileGap1",     &m_trackPhi_TileGap1); 
-    m_eventTree->Branch("trackEta_TileGap2",     &m_trackEta_TileGap2); 
-    m_eventTree->Branch("trackPhi_TileGap2",     &m_trackPhi_TileGap2); 
-    m_eventTree->Branch("trackEta_TileGap3",     &m_trackEta_TileGap3); 
-    m_eventTree->Branch("trackPhi_TileGap3",     &m_trackPhi_TileGap3); 
-    // Tile Extended Barrel layers
-    m_eventTree->Branch("trackEta_TileExt0",     &m_trackEta_TileExt0);
-    m_eventTree->Branch("trackPhi_TileExt0",     &m_trackPhi_TileExt0);
-    m_eventTree->Branch("trackEta_TileExt1",     &m_trackEta_TileExt1);
-    m_eventTree->Branch("trackPhi_TileExt1",     &m_trackPhi_TileExt1);
-    m_eventTree->Branch("trackEta_TileExt2",     &m_trackEta_TileExt2);
-    m_eventTree->Branch("trackPhi_TileExt2",     &m_trackPhi_TileExt2);
-
+      // Track extrapolation
+      // Presampler
+      m_eventTree->Branch("trackEta_PreSamplerB",  &m_trackEta_PreSamplerB);
+      m_eventTree->Branch("trackPhi_PreSamplerB",  &m_trackPhi_PreSamplerB);
+      m_eventTree->Branch("trackEta_PreSamplerE",  &m_trackEta_PreSamplerE);
+      m_eventTree->Branch("trackPhi_PreSamplerE",  &m_trackPhi_PreSamplerE);
+      // LAr EM Barrel layers
+      m_eventTree->Branch("trackEta_EMB1",         &m_trackEta_EMB1); 
+      m_eventTree->Branch("trackPhi_EMB1",         &m_trackPhi_EMB1); 
+      m_eventTree->Branch("trackEta_EMB2",         &m_trackEta_EMB2); 
+      m_eventTree->Branch("trackPhi_EMB2",         &m_trackPhi_EMB2); 
+      m_eventTree->Branch("trackEta_EMB3",         &m_trackEta_EMB3); 
+      m_eventTree->Branch("trackPhi_EMB3",         &m_trackPhi_EMB3); 
+      // LAr EM Endcap layers
+      m_eventTree->Branch("trackEta_EME1",         &m_trackEta_EME1); 
+      m_eventTree->Branch("trackPhi_EME1",         &m_trackPhi_EME1); 
+      m_eventTree->Branch("trackEta_EME2",         &m_trackEta_EME2); 
+      m_eventTree->Branch("trackPhi_EME2",         &m_trackPhi_EME2); 
+      m_eventTree->Branch("trackEta_EME3",         &m_trackEta_EME3); 
+      m_eventTree->Branch("trackPhi_EME3",         &m_trackPhi_EME3); 
+      // Hadronic Endcap layers
+      m_eventTree->Branch("trackEta_HEC0",         &m_trackEta_HEC0); 
+      m_eventTree->Branch("trackPhi_HEC0",         &m_trackPhi_HEC0); 
+      m_eventTree->Branch("trackEta_HEC1",         &m_trackEta_HEC1); 
+      m_eventTree->Branch("trackPhi_HEC1",         &m_trackPhi_HEC1); 
+      m_eventTree->Branch("trackEta_HEC2",         &m_trackEta_HEC2); 
+      m_eventTree->Branch("trackPhi_HEC2",         &m_trackPhi_HEC2); 
+      m_eventTree->Branch("trackEta_HEC3",         &m_trackEta_HEC3); 
+      m_eventTree->Branch("trackPhi_HEC3",         &m_trackPhi_HEC3); 
+      // Tile Barrel layers
+      m_eventTree->Branch("trackEta_TileBar0",     &m_trackEta_TileBar0); 
+      m_eventTree->Branch("trackPhi_TileBar0",     &m_trackPhi_TileBar0); 
+      m_eventTree->Branch("trackEta_TileBar1",     &m_trackEta_TileBar1); 
+      m_eventTree->Branch("trackPhi_TileBar1",     &m_trackPhi_TileBar1); 
+      m_eventTree->Branch("trackEta_TileBar2",     &m_trackEta_TileBar2); 
+      m_eventTree->Branch("trackPhi_TileBar2",     &m_trackPhi_TileBar2); 
+      // Tile Gap layers
+      m_eventTree->Branch("trackEta_TileGap1",     &m_trackEta_TileGap1); 
+      m_eventTree->Branch("trackPhi_TileGap1",     &m_trackPhi_TileGap1); 
+      m_eventTree->Branch("trackEta_TileGap2",     &m_trackEta_TileGap2); 
+      m_eventTree->Branch("trackPhi_TileGap2",     &m_trackPhi_TileGap2); 
+      m_eventTree->Branch("trackEta_TileGap3",     &m_trackEta_TileGap3); 
+      m_eventTree->Branch("trackPhi_TileGap3",     &m_trackPhi_TileGap3); 
+      // Tile Extended Barrel layers
+      m_eventTree->Branch("trackEta_TileExt0",     &m_trackEta_TileExt0);
+      m_eventTree->Branch("trackPhi_TileExt0",     &m_trackPhi_TileExt0);
+      m_eventTree->Branch("trackEta_TileExt1",     &m_trackEta_TileExt1);
+      m_eventTree->Branch("trackPhi_TileExt1",     &m_trackPhi_TileExt1);
+      m_eventTree->Branch("trackEta_TileExt2",     &m_trackEta_TileExt2);
+      m_eventTree->Branch("trackPhi_TileExt2",     &m_trackPhi_TileExt2);
+    }
     // Clusters 
+    m_eventTree->Branch("clusterCount",           &m_clusterCount, "clusterCount/L");
     m_eventTree->Branch("nCluster",               &m_nCluster, "nCluster/I");
     m_eventTree->Branch("clusterE",               &m_clusterE);
     m_eventTree->Branch("clusterPt",              &m_clusterPt);
@@ -260,6 +277,41 @@ StatusCode MLTreeMaker::initialize() {
     m_eventTree->Branch("m_cluster_cell_centerCellEta",    &m_cluster_cell_centerCellEta);
     m_eventTree->Branch("m_cluster_cell_centerCellPhi",    &m_cluster_cell_centerCellPhi);
     m_eventTree->Branch("m_cluster_cell_centerCellLayer",  &m_cluster_cell_centerCellLayer);
+
+    if(m_doJets)
+    {
+      m_jet_pt.assign(m_jetContainerNames.size(),std::vector<float>());
+      m_jet_eta.assign(m_jetContainerNames.size(),std::vector<float>());
+      m_jet_phi.assign(m_jetContainerNames.size(),std::vector<float>());
+      m_jet_E.assign(m_jetContainerNames.size(),std::vector<float>());
+      m_jet_flavor.assign(m_jetContainerNames.size(),std::vector<int>());
+      for(unsigned int iColl=0; iColl < m_jetContainerNames.size(); iColl++)
+      {
+	std::string jet_name(m_jetContainerNames.at(iColl));
+	std::stringstream ss;
+	ss << jet_name << "Pt";
+	m_eventTree->Branch(ss.str().c_str(),&(m_jet_pt[iColl]));
+	
+	ss.str("");
+	ss << jet_name << "Eta";
+	m_eventTree->Branch(ss.str().c_str(),&(m_jet_eta[iColl]));
+
+	ss.str("");
+	ss << jet_name << "Phi";
+	m_eventTree->Branch(ss.str().c_str(),&(m_jet_phi[iColl]));
+
+	ss.str("");
+	ss << jet_name << "E";
+	m_eventTree->Branch(ss.str().c_str(),&(m_jet_E[iColl]));
+
+	if(jet_name.find("Truth")!=std::string::npos)
+	{
+	  ss.str("");
+	  ss << jet_name << "Flavor";
+	  m_eventTree->Branch(ss.str().c_str(),&(m_jet_flavor[iColl]));
+	}
+      }
+    }
   }
 
   if (m_doClusterTree) {
@@ -296,6 +348,7 @@ StatusCode MLTreeMaker::initialize() {
       m_clusterTree->Branch("cluster_DM_WEIGHT", &m_fCluster_DM_WEIGHT,  "cluster_DM_WEIGHT/F");
       m_clusterTree->Branch("cluster_CENTER_MAG", &m_fCluster_CENTER_MAG,  "cluster_CENTER_MAG/F");
       m_clusterTree->Branch("cluster_FIRST_ENG_DENS", &m_fCluster_FIRST_ENG_DENS,  "cluster_FIRST_ENG_DENS/F");
+      m_clusterTree->Branch("cluster_ENERGY_DigiHSTruth", &m_fCluster_ENERGY_DigiHSTruth,  "cluster_ENERGY_DigiHSTruth/F");
     }
 
     m_clusterTree->Branch("cluster_cell_dR_min",    &m_fCluster_cell_dR_min,   "cluster_cell_dR_min/F");
@@ -483,7 +536,7 @@ StatusCode MLTreeMaker::execute() {
 
     const xAOD::VertexContainer* vertices = 0;
     CHECK( evtStore()->retrieve( vertices, m_vxContainerName));
-    int m_npv = 0;
+    m_npv = 0;
     unsigned int Ntracks = 2;
     for (const auto& vertex : *vertices)
     {
@@ -541,6 +594,7 @@ StatusCode MLTreeMaker::execute() {
     CHECK(evtStore()->retrieve( truthEventContainer, "TruthEvents"));
     if (truthEventContainer ) {
       const xAOD::TruthEvent* truthEventContainervent = truthEventContainer->at(0);
+
       truthEventContainervent->pdfInfoParameter(m_pdgId1,   xAOD::TruthEvent::PDGID1);
       truthEventContainervent->pdfInfoParameter(m_pdgId2,   xAOD::TruthEvent::PDGID2);
       truthEventContainervent->pdfInfoParameter(m_pdfId1,   xAOD::TruthEvent::PDFID1);
@@ -592,21 +646,24 @@ StatusCode MLTreeMaker::execute() {
   if (m_doEventTree) {
 
     // Truth particles
-    const xAOD::TruthParticleContainer* truthContainer = 0;
-    CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
+    if(m_doTruthParticles)
+    {
+      const xAOD::TruthParticleContainer* truthContainer = 0;
+      CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
 
-    m_nTruthPart = 0;
-    for (const auto& truth: *truthContainer) {
-
-      m_pdgId.push_back(truth->pdgId());
-      m_status.push_back(truth->status());
-      m_barcode.push_back(truth->barcode());
-      m_truthPartPt.push_back(truth->pt()/1e3);
-      m_truthPartE.push_back(truth->e()/1e3);
-      m_truthPartMass.push_back(truth->m()/1e3);
-      m_truthPartEta.push_back(truth->eta());
-      m_truthPartPhi.push_back(truth->phi());
-      m_nTruthPart++;
+      m_nTruthPart = 0;
+      for (const auto& truth: *truthContainer) {
+	if(truth->status() < 0 && m_keepOnlyStableTruthParticles) continue;
+	m_pdgId.push_back(truth->pdgId());
+	m_status.push_back(truth->status());
+	m_barcode.push_back(truth->barcode());
+	m_truthPartPt.push_back(truth->pt()/1e3);
+	m_truthPartE.push_back(truth->e()/1e3);
+	m_truthPartMass.push_back(truth->m()/1e3);
+	m_truthPartEta.push_back(truth->eta());
+	m_truthPartPhi.push_back(truth->phi());
+	m_nTruthPart++;
+      }
     }
 
     if (m_doTracking) {
@@ -825,6 +882,53 @@ StatusCode MLTreeMaker::execute() {
         m_nTrack++;
       }
     }
+    if(m_doJets)
+    {
+      for(unsigned int iColl=0; iColl < m_jetContainerNames.size(); iColl++)
+      {
+	std::string jetCollName(m_jetContainerNames.at(iColl));
+	bool isTruthJetColl=(jetCollName.find("Truth")!=std::string::npos);
+	const xAOD::JetContainer* jetColl = nullptr;
+	CHECK( evtStore()->retrieve( jetColl,jetCollName));
+	std::vector<float>& v_pt=m_jet_pt.at(iColl);
+	std::vector<float>& v_eta=m_jet_eta.at(iColl);
+	std::vector<float>& v_phi=m_jet_phi.at(iColl);
+	std::vector<float>& v_E=m_jet_E.at(iColl);
+	std::vector<int>& v_flavor=m_jet_flavor.at(iColl);
+	v_pt.clear();
+	v_eta.clear();
+	v_phi.clear();
+	v_E.clear();
+	v_pt.reserve(jetColl->size());
+	v_eta.reserve(jetColl->size());
+	v_phi.reserve(jetColl->size());
+	v_E.reserve(jetColl->size());
+
+	if(isTruthJetColl) 
+	{
+	  v_flavor.clear();
+	  v_flavor.reserve(jetColl->size());
+	}
+	for(auto jet : *jetColl)
+	{
+	  xAOD::JetFourMom_t jet_p4;
+	  if(isTruthJetColl)
+	  {
+	    jet_p4=jet->jetP4();
+	    int jetFlavor=-1;
+	    bool status = jet->getAttribute<int>("PartonTruthLabelID", jetFlavor);
+	    if(status) jet->getAttribute("PartonTruthLabelID",jetFlavor);
+	    v_flavor.push_back(jetFlavor);
+	  }
+	  else jet_p4=jet->jetP4(xAOD::JetConstitScaleMomentum);
+	  v_pt.push_back(jet_p4.Pt());
+	  v_eta.push_back(jet_p4.Eta());
+	  v_phi.push_back(jet_p4.Phi());
+	  v_E.push_back(jet_p4.E());
+	}
+      }
+    }
+
   }
 
   // Calo clusters
@@ -850,7 +954,6 @@ StatusCode MLTreeMaker::execute() {
     clusterRanks.emplace_hint(clusterRanks.end(),clusterE,iCluster);
   }  
   m_nCluster = clusterRanks.size();
-
   //loop over clusters in order of their energies
   //clusters failing E or eta cut are not included in loop
   unsigned int jCluster=0;
@@ -875,7 +978,7 @@ StatusCode MLTreeMaker::execute() {
     double cluster_DM_WEIGHT = 0;
     double cluster_CENTER_MAG = 0;
     double cluster_FIRST_ENG_DENS = 0;
-
+    double cluster_ENERGY_DigiHSTruth = 0;
     if(m_doClusterMoments)
     {
       if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT) ) cluster_ENG_CALIB_TOT=-1.;
@@ -894,6 +997,7 @@ StatusCode MLTreeMaker::execute() {
       if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT) ) cluster_HAD_WEIGHT=-1.;
       if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT) ) cluster_OOC_WEIGHT=-1.;
       if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT) ) cluster_DM_WEIGHT=-1.;
+      if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::ENERGY_DigiHSTruth, cluster_ENERGY_DigiHSTruth) ) cluster_ENERGY_DigiHSTruth=-999.;
     }
 
 
@@ -1112,6 +1216,7 @@ StatusCode MLTreeMaker::execute() {
 	m_fCluster_DM_WEIGHT=cluster_DM_WEIGHT;
 	m_fCluster_CENTER_MAG=cluster_CENTER_MAG;
 	m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS*1e-3;
+	m_fCluster_ENERGY_DigiHSTruth=cluster_ENERGY_DigiHSTruth;
       }
 
       m_fCluster_cell_dR_min = dR_min;
@@ -1127,14 +1232,12 @@ StatusCode MLTreeMaker::execute() {
 
       //if (m_duplicate_EMB1 == 0 && m_duplicate_EMB2 == 0 && m_duplicate_EMB3 == 0 &&
       //    m_duplicate_TileBar0 == 0 && m_duplicate_TileBar1 == 0 && m_duplicate_TileBar2 == 0) {
-
       m_clusterTree->Fill();
       //}
     }
   }
-
   if (m_doEventTree) m_eventTree->Fill();
-
+  m_clusterCount+=m_nCluster;
   return StatusCode::SUCCESS;
 }
 
