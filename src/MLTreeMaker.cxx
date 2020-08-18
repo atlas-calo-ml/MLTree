@@ -364,20 +364,37 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("cluster_cellE_norm", &m_cluster_cellE_norm);
 
     // Images
+    m_clusterTree->Branch("PSB",            &m_PSB[0],          "PSB[16][4]/F");
     m_clusterTree->Branch("EMB1",           &m_EMB1[0],         "EMB1[128][4]/F");
     m_clusterTree->Branch("EMB2",           &m_EMB2[0],         "EMB2[16][16]/F");
     m_clusterTree->Branch("EMB3",           &m_EMB3[0],         "EMB3[8][16]/F");
     m_clusterTree->Branch("TileBar0",       &m_TileBar0[0],     "TileBar0[4][4]/F");
     m_clusterTree->Branch("TileBar1",       &m_TileBar1[0],     "TileBar1[4][4]/F");
     m_clusterTree->Branch("TileBar2",       &m_TileBar2[0],     "TileBar2[2][4]/F");
+    //Can I move this outside the event loop?
+    m_v_PSB.insert(m_v_PSB.end(),m_PSB,m_PSB+16);
+    m_v_EMB1.insert(m_v_EMB1.end(),m_EMB1,m_EMB1+128);
+    m_v_EMB2.insert(m_v_EMB2.end(),m_EMB2,m_EMB2+16);
+    m_v_EMB3.insert(m_v_EMB3.end(),m_EMB3,m_EMB3+8);
+    m_v_TileBar0.insert(m_v_TileBar0.end(),m_TileBar0,m_TileBar0+4);
+    m_v_TileBar1.insert(m_v_TileBar1.end(),m_TileBar1,m_TileBar1+4);
+    m_v_TileBar2.insert(m_v_TileBar2.end(),m_TileBar2,m_TileBar2+2);
+
+    m_v_images={&m_v_PSB,&m_v_EMB1,&m_v_EMB2,&m_v_EMB3,&m_v_TileBar0,&m_v_TileBar1,&m_v_TileBar2};
 
     // Check for duplicates
+    m_clusterTree->Branch("duplicate_PSB",        &m_duplicate_PSB,      "duplicate_PSB/I");
     m_clusterTree->Branch("duplicate_EMB1",       &m_duplicate_EMB1,     "duplicate_EMB1/I");
     m_clusterTree->Branch("duplicate_EMB2",       &m_duplicate_EMB2,     "duplicate_EMB2/I");
     m_clusterTree->Branch("duplicate_EMB3",       &m_duplicate_EMB3,     "duplicate_EMB3/I");
     m_clusterTree->Branch("duplicate_TileBar0",   &m_duplicate_TileBar0, "duplicate_TileBar0/I");
     m_clusterTree->Branch("duplicate_TileBar1",   &m_duplicate_TileBar1, "duplicate_TileBar1/I");
     m_clusterTree->Branch("duplicate_TileBar2",   &m_duplicate_TileBar2, "duplicate_TileBar2/I");
+
+    m_v_duplicates={&m_duplicate_PSB, &m_duplicate_EMB1,&m_duplicate_EMB2, &m_duplicate_EMB3, 
+		    &m_duplicate_TileBar0, &m_duplicate_TileBar1,&m_duplicate_TileBar2};
+
+
   }
 
   return StatusCode::SUCCESS;
@@ -653,7 +670,7 @@ StatusCode MLTreeMaker::execute() {
 
       m_nTruthPart = 0;
       for (const auto& truth: *truthContainer) {
-	if(truth->status() < 0 && m_keepOnlyStableTruthParticles) continue;
+	if(truth->status()==1 && m_keepOnlyStableTruthParticles) continue;
 	m_pdgId.push_back(truth->pdgId());
 	m_status.push_back(truth->status());
 	m_barcode.push_back(truth->barcode());
@@ -1081,13 +1098,17 @@ StatusCode MLTreeMaker::execute() {
     if (m_doClusterTree) {
 
       // Clear images
+      memset(m_PSB, 0, sizeof(m_PSB[0][0]) * 16 * 4);
       memset(m_EMB1, 0, sizeof(m_EMB1[0][0]) * 128 * 4);
       memset(m_EMB2, 0, sizeof(m_EMB2[0][0]) * 16 * 16);
       memset(m_EMB3, 0, sizeof(m_EMB3[0][0]) * 8 * 16);
       memset(m_TileBar0, 0, sizeof(m_TileBar0[0][0]) * 4 * 4);
       memset(m_TileBar1, 0, sizeof(m_TileBar1[0][0]) * 4 * 4);
       memset(m_TileBar2, 0, sizeof(m_TileBar2[0][0]) * 2 * 4);
+      
 
+
+      m_duplicate_PSB = 0;
       m_duplicate_EMB1 = 0;
       m_duplicate_EMB2 = 0;
       m_duplicate_EMB3 = 0;
@@ -1098,10 +1119,11 @@ StatusCode MLTreeMaker::execute() {
       m_cluster_cellE_norm.clear();
 
       // Fill images 
-      int iEta = 0;
-      int iPhi = 0;
-      float cellSizeEta[] = {0.0031, 0.0250, 0.0500, 0.1, 0.1, 0.2};
-      float cellSizePhi[] = {0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
+      float cellSizeEta[] = {0.025, 0.0031, 0.0250, 0.0500, 0.1, 0.1, 0.2};
+      float cellSizePhi[] = {0.0980,0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
+      int numEtaBins[] = {16,128,16,8,4,4,2};
+      int numPhiBins[] = {4,4,16,16,4,4,4};
+
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
       //std::cout << "------------------------" << std::endl;
@@ -1137,58 +1159,32 @@ StatusCode MLTreeMaker::execute() {
 
         // Ugly, but will do for now
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
-        if (cellLayer == CaloCell_ID::CaloSample::EMB1) {
-          iEta = floor(dEta/cellSizeEta[0]+0.1); //+0.1 to avoid floating point errors
-          iPhi = floor(dPhi/cellSizePhi[0]+0.1); 
-          if (m_EMB1[iEta+64][iPhi+2] != 0) m_duplicate_EMB1++; // check for duplicates
-          if (iEta < 128 && iPhi < 4) m_EMB1[iEta+64][iPhi+2] += cellE_norm;
-          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          //std::cout << "iEta: " << iEta << std::endl; 
-          //std::cout << "iPhi: " << iPhi << std::endl; 
-        } else if (cellLayer == CaloCell_ID::CaloSample::EMB2) {
-          iEta = floor(dEta/cellSizeEta[1]+0.1); 
-          iPhi = floor(dPhi/cellSizePhi[1]+0.1); 
-          if (m_EMB2[iEta+8][iPhi+8] != 0) m_duplicate_EMB2++; // check for duplicates
-          if (iEta < 16 && iPhi < 16) m_EMB2[iEta+8][iPhi+8] += cellE_norm;
-          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          //std::cout << "iEta: " << iEta << std::endl; 
-          //std::cout << "iPhi: " << iPhi << std::endl; 
-        } else if (cellLayer == CaloCell_ID::CaloSample::EMB3) {
-          iEta = floor(dEta/cellSizeEta[2]+0.1); 
-          iPhi = floor(dPhi/cellSizePhi[2]+0.1); 
-          if (m_EMB2[iEta+4][iPhi+8] != 0) m_duplicate_EMB3++; // check for duplicates
-          if (iEta < 8 && iPhi < 16) m_EMB3[iEta+4][iPhi+8] += cellE_norm;
-          //std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          //std::cout << "iEta: " << iEta << std::endl; 
-          //std::cout << "iPhi: " << iPhi << std::endl; 
-        } else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) {
-          iEta = floor(dEta/cellSizeEta[3]+0.1); 
-          iPhi = floor(dPhi/cellSizePhi[3]+0.1); 
-          if (m_TileBar0[iEta+2][iPhi+2] != 0) m_duplicate_TileBar0++; // check for duplicates
-          if (iEta < 4 && iPhi < 4) m_TileBar0[iEta+2][iPhi+2] += cellE_norm;
-          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          // std::cout << "iEta: " << iEta << std::endl; 
-          // std::cout << "iPhi: " << iPhi << std::endl; 
-        } else if (cellLayer == CaloCell_ID::CaloSample::TileBar1) {
-          iEta = floor(dEta/cellSizeEta[4]+0.1); 
-          iPhi = floor(dPhi/cellSizePhi[4]+0.1); 
-          if (m_TileBar1[iEta+2][iPhi+2] != 0) m_duplicate_TileBar1++; // check for duplicates
-          if (iEta < 4 && iPhi < 4) m_TileBar1[iEta+2][iPhi+2] += cellE_norm;
-          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          // std::cout << "iEta: " << iEta << std::endl; 
-          // std::cout << "iPhi: " << iPhi << std::endl; 
-        } else if (cellLayer == CaloCell_ID::CaloSample::TileBar2) {
-          iEta = floor(dEta/cellSizeEta[5]+0.1); 
-          iPhi = floor(dPhi/cellSizePhi[5]+0.1); 
-          if (m_TileBar2[iEta+1][iPhi+2] != 0) m_duplicate_TileBar2++; // check for duplicates
-          if (iEta < 2 && iPhi < 4) m_TileBar2[iEta+1][iPhi+2] += cellE_norm;
-          // std::cout << "cellLayer: " << (int)cellLayer << std::endl; 
-          // std::cout << "iEta: " << iEta << std::endl; 
-          // std::cout << "iPhi: " << iPhi << std::endl; 
-        }
+
+	unsigned int samplingIndex=0;
+        if (cellLayer == CaloCell_ID::CaloSample::EMB1) samplingIndex=1;
+        else if (cellLayer == CaloCell_ID::CaloSample::EMB2) samplingIndex=2;
+        else if (cellLayer == CaloCell_ID::CaloSample::EMB3) samplingIndex=3;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) samplingIndex=4;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar1) samplingIndex=5;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar2) samplingIndex=6;
+
+	int nEta=numEtaBins[samplingIndex];
+	int nPhi=numPhiBins[samplingIndex];
+	std::vector<float*>& image_data=*m_v_images[samplingIndex];
+	int iEta = floor(dEta/cellSizeEta[samplingIndex]+0.1); //+0.1 to avoid floating point errors
+	int iPhi = floor(dPhi/cellSizePhi[samplingIndex]+0.1); 
+	int etaIndex=iEta+nEta/2;
+	int phiIndex=iPhi+nPhi/2;
+	if(image_data[etaIndex][phiIndex] != 0 )
+	{
+	  (*m_v_duplicates[samplingIndex])++;
+	}
+	if(iEta < nEta && iPhi < nPhi) 
+	{
+	  image_data[etaIndex][phiIndex]+=cellE_norm;
+	}
       }
 
-      //std::cout << "cell_i: " << cell_i << std::endl; 
       //std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
       //std::cout << "clusterE: " << clusterE << std::endl; 
       m_fClusterIndex = jCluster;

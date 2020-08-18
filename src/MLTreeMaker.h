@@ -257,6 +257,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_cluster_cellE_norm;
 
     // Images: eta x phi = 0.4 x 0.4 
+  float m_PSB[16][4];
     float m_EMB1[128][4];
     float m_EMB2[16][16];
     float m_EMB3[8][16];
@@ -264,12 +265,25 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     float m_TileBar1[4][4];
     float m_TileBar2[2][4];
 
+    int m_duplicate_PSB;
     int m_duplicate_EMB1;
     int m_duplicate_EMB2;
     int m_duplicate_EMB3;
     int m_duplicate_TileBar0;
     int m_duplicate_TileBar1;
     int m_duplicate_TileBar2;
+
+
+  std::vector<float*> m_v_PSB;
+  std::vector<float*> m_v_EMB1;
+  std::vector<float*> m_v_EMB2;
+  std::vector<float*> m_v_EMB3;
+  std::vector<float*> m_v_TileBar0;
+  std::vector<float*> m_v_TileBar1;
+  std::vector<float*> m_v_TileBar2;
+
+  std::vector<int*> m_v_duplicates;
+  std::vector<std::vector<float*>*> m_v_images;
 
 }; 
 
