@@ -241,6 +241,8 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   float m_fCluster_DM_WEIGHT;
   float m_fCluster_CENTER_MAG;
   float m_fCluster_FIRST_ENG_DENS;
+  float m_fCluster_CENTER_LAMBDA;
+  float m_fCluster_ISOLATION;
   float m_fCluster_ENERGY_DigiHSTruth;
 
     float m_fCluster_cell_dR_min;
@@ -284,6 +286,11 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
 
   std::vector<int*> m_v_duplicates;
   std::vector<std::vector<float*>*> m_v_images;
+
+  static constexpr unsigned int NUMSAMPLINGS=7;
+  static constexpr unsigned int NUMETABINS[NUMSAMPLINGS]={16,128,16,8,4,4,2};
+  static constexpr unsigned int NUMPHIBINS[NUMSAMPLINGS]={4,4,16,16,4,4,4};
+  static constexpr const char*  SAMPLINGNAMES[NUMSAMPLINGS]={"PSB","EMB1","EMB2","EMB3","TileBar0","TileBar1","TileBar2"};
 
 }; 
 

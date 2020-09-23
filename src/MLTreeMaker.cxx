@@ -348,6 +348,8 @@ StatusCode MLTreeMaker::initialize() {
       m_clusterTree->Branch("cluster_DM_WEIGHT", &m_fCluster_DM_WEIGHT,  "cluster_DM_WEIGHT/F");
       m_clusterTree->Branch("cluster_CENTER_MAG", &m_fCluster_CENTER_MAG,  "cluster_CENTER_MAG/F");
       m_clusterTree->Branch("cluster_FIRST_ENG_DENS", &m_fCluster_FIRST_ENG_DENS,  "cluster_FIRST_ENG_DENS/F");
+      m_clusterTree->Branch("cluster_CENTER_LAMBDA", &m_fCluster_CENTER_LAMBDA,  "cluster_CENTER_LAMBDA/F");
+      m_clusterTree->Branch("cluster_ISOLATION", &m_fCluster_ISOLATION,  "cluster_ISOLATION/F");
       m_clusterTree->Branch("cluster_ENERGY_DigiHSTruth", &m_fCluster_ENERGY_DigiHSTruth,  "cluster_ENERGY_DigiHSTruth/F");
     }
 
@@ -364,6 +366,13 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("cluster_cellE_norm", &m_cluster_cellE_norm);
 
     // Images
+    //some cleanup?
+    //m_v_images.reserve(num samplings)
+    //std::vector<> x={&m_PSB[0],...}
+        //for(...) 
+    //{
+    //branch->(name[i],x[i],name[i]<<numetabins[i]<<.../F'
+    //m_vimages.push_back(new std::vector<float*>(x[i],x[i]+numetabins[i]));}
     m_clusterTree->Branch("PSB",            &m_PSB[0],          "PSB[16][4]/F");
     m_clusterTree->Branch("EMB1",           &m_EMB1[0],         "EMB1[128][4]/F");
     m_clusterTree->Branch("EMB2",           &m_EMB2[0],         "EMB2[16][16]/F");
@@ -371,7 +380,7 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("TileBar0",       &m_TileBar0[0],     "TileBar0[4][4]/F");
     m_clusterTree->Branch("TileBar1",       &m_TileBar1[0],     "TileBar1[4][4]/F");
     m_clusterTree->Branch("TileBar2",       &m_TileBar2[0],     "TileBar2[2][4]/F");
-    //Can I move this outside the event loop?
+
     m_v_PSB.insert(m_v_PSB.end(),m_PSB,m_PSB+16);
     m_v_EMB1.insert(m_v_EMB1.end(),m_EMB1,m_EMB1+128);
     m_v_EMB2.insert(m_v_EMB2.end(),m_EMB2,m_EMB2+16);
@@ -995,6 +1004,8 @@ StatusCode MLTreeMaker::execute() {
     double cluster_DM_WEIGHT = 0;
     double cluster_CENTER_MAG = 0;
     double cluster_FIRST_ENG_DENS = 0;
+    double cluster_CENTER_LAMBDA = 0;
+    double cluster_ISOLATION = 0;
     double cluster_ENERGY_DigiHSTruth = 0;
     if(m_doClusterMoments)
     {
@@ -1008,6 +1019,9 @@ StatusCode MLTreeMaker::execute() {
       if( !cluster->retrieveMoment( xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG) ) cluster_CENTER_MAG=-1.;
       if( !cluster->retrieveMoment( xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS) ) cluster_FIRST_ENG_DENS=-1.;
       else cluster_FIRST_ENG_DENS*=1e-3;
+
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::CENTER_LAMBDA, cluster_CENTER_LAMBDA) ) cluster_CENTER_LAMBDA=-1.;
+      if( !cluster->retrieveMoment( xAOD::CaloCluster::ISOLATION, cluster_ISOLATION) ) cluster_ISOLATION=-1.;
 
       //for moments related to the calibration, use calibratedCluster or they will be undefined
       if( !calibratedCluster->retrieveMoment( xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY) ) cluster_EM_PROBABILITY = -1.;
@@ -1211,7 +1225,9 @@ StatusCode MLTreeMaker::execute() {
 	m_fCluster_OOC_WEIGHT=cluster_OOC_WEIGHT;
 	m_fCluster_DM_WEIGHT=cluster_DM_WEIGHT;
 	m_fCluster_CENTER_MAG=cluster_CENTER_MAG;
-	m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS*1e-3;
+	m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS;
+	m_fCluster_CENTER_LAMBDA=cluster_CENTER_LAMBDA;
+	m_fCluster_ISOLATION=cluster_ISOLATION;
 	m_fCluster_ENERGY_DigiHSTruth=cluster_ENERGY_DigiHSTruth;
       }
 
