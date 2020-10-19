@@ -411,7 +411,6 @@ StatusCode MLTreeMaker::initialize() {
 
 StatusCode MLTreeMaker::execute() {  
 
-  ATH_MSG_DEBUG ("Executing " << name() << "...");
 
   // Clear all variables from previous event
   m_runNumber = m_eventNumber = m_mcEventNumber = m_mcChannelNumber = m_bcid = m_lumiBlock = 0;
@@ -613,7 +612,6 @@ StatusCode MLTreeMaker::execute() {
       m_rhoEM = -999;
     }
   }
-
   if (m_doEventTruth /*&& m_isMC*/ ) {
 
     const xAOD::TruthEventContainer* truthEventContainer = 0;
@@ -691,7 +689,7 @@ StatusCode MLTreeMaker::execute() {
 	m_nTruthPart++;
       }
     }
-
+  
     if (m_doTracking) {
 
       // Tracks
@@ -960,7 +958,6 @@ StatusCode MLTreeMaker::execute() {
   // Calo clusters
   const xAOD::CaloClusterContainer* clusterContainer = 0; 
   CHECK(evtStore()->retrieve(clusterContainer, m_caloClusterContainerName));
-
   //first sort the clusters by energy
   //fill a (multi)map with key = energy and value = index of cluster in list
   std::multimap<float,unsigned int,std::greater<float> > clusterRanks;
@@ -969,8 +966,16 @@ StatusCode MLTreeMaker::execute() {
   {
     auto calibratedCluster=(*clusterContainer)[iCluster];
     auto cluster=calibratedCluster;
-    if(m_doUncalibratedClusters) cluster=calibratedCluster->getSisterCluster();
-
+    if(m_doUncalibratedClusters) 
+    {
+      auto sisterCluster=calibratedCluster->getSisterCluster();
+      if(sisterCluster) cluster=sisterCluster;
+      else 
+      {
+	ATH_MSG_ERROR("Sister cluster returns nullptr");
+	return StatusCode::FAILURE;
+      }
+    }
     float clusterE = cluster->e()/1e3;
     float clusterEta = cluster->eta();
     if (clusterE < m_clusterE_min || 
@@ -983,6 +988,7 @@ StatusCode MLTreeMaker::execute() {
   //loop over clusters in order of their energies
   //clusters failing E or eta cut are not included in loop
   unsigned int jCluster=0;
+
   for(auto mpair : clusterRanks)
   {
     auto calibratedCluster=(*clusterContainer)[mpair.second];
@@ -1007,6 +1013,7 @@ StatusCode MLTreeMaker::execute() {
     double cluster_CENTER_LAMBDA = 0;
     double cluster_ISOLATION = 0;
     double cluster_ENERGY_DigiHSTruth = 0;
+
     if(m_doClusterMoments)
     {
       if( !cluster->retrieveMoment( xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT) ) cluster_ENG_CALIB_TOT=-1.;
@@ -1140,12 +1147,11 @@ StatusCode MLTreeMaker::execute() {
 
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
-      //std::cout << "------------------------" << std::endl;
-      //std::cout << "centerCellEta " << centerCellEta << std::endl; 
-      //std::cout << "centerCellPhi " << centerCellPhi << std::endl; 
+
       int cell_i = 0;
       float sumCellE_i = 0.;
-      for(; it_cell != it_cell_end; it_cell++){
+      for(; it_cell != it_cell_end; it_cell++)
+      {
         const CaloCell* cell = (*it_cell);
         if (!cell->caloDDE()) continue;
 
@@ -1159,21 +1165,16 @@ StatusCode MLTreeMaker::execute() {
         if (cellE_norm < 0) continue;
 
         m_cluster_cellE_norm.push_back(cellE_norm);
-        //std::cout << "cell #: " << cell_i << std::endl; 
-        //std::cout << "cellE_norm: " << cellE_norm << std::endl; 
-        //std::cout << "cell->eta() " << cell->eta() << std::endl; 
-        //std::cout << "cell->phi() " << cell->phi() << std::endl; 
-        //std::cout << "dEta: " << dEta << std::endl; 
-        //std::cout << "dPhi: " << dPhi << std::endl; 
 
-        if (fabs(dEta) > 0.2 || fabs(dPhi) > 0.2) continue;
+
+        if (fabs(dEta) >= 0.19999 || fabs(dPhi) >= 0.19999) continue;
 
         cell_i++;
         sumCellE_i += cellE;
 
         // Ugly, but will do for now
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
-
+	//
 	unsigned int samplingIndex=0;
         if (cellLayer == CaloCell_ID::CaloSample::EMB1) samplingIndex=1;
         else if (cellLayer == CaloCell_ID::CaloSample::EMB2) samplingIndex=2;
@@ -1189,18 +1190,18 @@ StatusCode MLTreeMaker::execute() {
 	int iPhi = floor(dPhi/cellSizePhi[samplingIndex]+0.1); 
 	int etaIndex=iEta+nEta/2;
 	int phiIndex=iPhi+nPhi/2;
-	if(image_data[etaIndex][phiIndex] != 0 )
-	{
-	  (*m_v_duplicates[samplingIndex])++;
-	}
+
 	if(iEta < nEta && iPhi < nPhi) 
 	{
+	  if(image_data[etaIndex][phiIndex] != 0 )  (*m_v_duplicates[samplingIndex])++;
 	  image_data[etaIndex][phiIndex]+=cellE_norm;
 	}
+	else ATH_MSG_ERROR("Cell index is out of bounds, skipping cells ,iEta/nEta,iPhi/nPhi,sampling " 
+			   << iEta << "/"<< nEta << ", "
+			   << iPhi << "/"<< nPhi << ", "
+			   << samplingIndex);
       }
 
-      //std::cout << "sumCellE_i: " << sumCellE_i << std::endl; 
-      //std::cout << "clusterE: " << clusterE << std::endl; 
       m_fClusterIndex = jCluster;
       jCluster++;
 
