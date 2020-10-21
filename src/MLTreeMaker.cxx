@@ -980,7 +980,7 @@ StatusCode MLTreeMaker::execute() {
     float clusterEta = cluster->eta();
     if (clusterE < m_clusterE_min || 
         clusterE > m_clusterE_max || 
-        fabs(clusterEta) > m_clusterEtaAbs_max) continue;
+        std::abs(clusterEta) > m_clusterEtaAbs_max) continue;
 
     clusterRanks.emplace_hint(clusterRanks.end(),clusterE,iCluster);
   }  
@@ -1073,7 +1073,7 @@ StatusCode MLTreeMaker::execute() {
 
       float dEta = cell->eta() - clusterEta;
       float dPhi = cell->phi() - clusterPhi;
-      // if (fabs(dPhi) > TMath::Pi()) dPhi = 2*TMath::Pi()-fabs(dPhi);
+      // if (std::abs(dPhi) > TMath::Pi()) dPhi = 2*TMath::Pi()-std::abs(dPhi);
       if (m_doEventTree) {
         m_cluster_cell_dEta.push_back(dEta);
         m_cluster_cell_dPhi.push_back(dPhi);
@@ -1140,11 +1140,14 @@ StatusCode MLTreeMaker::execute() {
       m_cluster_cellE_norm.clear();
 
       // Fill images 
-      float cellSizeEta[] = {0.025, 0.0031, 0.0250, 0.0500, 0.1, 0.1, 0.2};
-      float cellSizePhi[] = {0.0980,0.0980, 0.0245, 0.0245, 0.1, 0.1, 0.1};
+      double cellSizeEta[] = {0.025, 0.003125, 0.0250, 0.0500, 0.1, 0.1, 0.2};
+      double cellSizePhi[] = {0.098174770,0.098174770, 0.024543693, 0.024543693, 0.098174770, 0.098174770, 0.098174770};
       int numEtaBins[] = {16,128,16,8,4,4,2};
       int numPhiBins[] = {4,4,16,16,4,4,4};
 
+      double reg=1e-4;
+      double window_eta=0.2-reg;
+      double window_phi=0.19634954-reg;
       it_cell = cluster->cell_begin();
       it_cell_end = cluster->cell_end();
 
@@ -1155,8 +1158,8 @@ StatusCode MLTreeMaker::execute() {
         const CaloCell* cell = (*it_cell);
         if (!cell->caloDDE()) continue;
 
-        float dEta = cell->eta() - centerCellEta;
-        float dPhi = cell->phi() - centerCellPhi;
+        double dEta = cell->eta() - centerCellEta;
+	double dPhi = TVector2::Phi_mpi_pi(cell->phi() - centerCellPhi);
         float cellE = cell->e()*(it_cell.weight())/1e3;
         float cellE_norm = cellE/clusterE;
 
@@ -1167,7 +1170,7 @@ StatusCode MLTreeMaker::execute() {
         m_cluster_cellE_norm.push_back(cellE_norm);
 
 
-        if (fabs(dEta) >= 0.19999 || fabs(dPhi) >= 0.19999) continue;
+        if (std::abs(dEta) >= window_eta || std::abs(dPhi) >= window_phi) continue;
 
         cell_i++;
         sumCellE_i += cellE;
@@ -1176,30 +1179,33 @@ StatusCode MLTreeMaker::execute() {
         CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
 	//
 	unsigned int samplingIndex=0;
-        if (cellLayer == CaloCell_ID::CaloSample::EMB1) samplingIndex=1;
-        else if (cellLayer == CaloCell_ID::CaloSample::EMB2) samplingIndex=2;
-        else if (cellLayer == CaloCell_ID::CaloSample::EMB3) samplingIndex=3;
-        else if (cellLayer == CaloCell_ID::CaloSample::TileBar0) samplingIndex=4;
-        else if (cellLayer == CaloCell_ID::CaloSample::TileBar1) samplingIndex=5;
-        else if (cellLayer == CaloCell_ID::CaloSample::TileBar2) samplingIndex=6;
+        if (cellLayer == CaloCell_ID::CaloSample::EMB1 || cellLayer == CaloCell_ID::CaloSample::EME1) samplingIndex=1;
+        else if (cellLayer == CaloCell_ID::CaloSample::EMB2 || cellLayer == CaloCell_ID::CaloSample::EME2) samplingIndex=2;
+        else if (cellLayer == CaloCell_ID::CaloSample::EMB3 || cellLayer == CaloCell_ID::CaloSample::EME3) samplingIndex=3;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar0 || cellLayer == CaloCell_ID::CaloSample::TileExt0 || cellLayer == CaloCell_ID::CaloSample::HEC0) samplingIndex=4;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar1 || cellLayer == CaloCell_ID::CaloSample::TileExt1 || cellLayer == CaloCell_ID::CaloSample::HEC1) samplingIndex=5;
+        else if (cellLayer == CaloCell_ID::CaloSample::TileBar2 || cellLayer == CaloCell_ID::CaloSample::TileExt2 
+		 || cellLayer == CaloCell_ID::CaloSample::HEC2  || cellLayer == CaloCell_ID::CaloSample::HEC3 ) samplingIndex=6;
+
 
 	int nEta=numEtaBins[samplingIndex];
 	int nPhi=numPhiBins[samplingIndex];
 	std::vector<float*>& image_data=*m_v_images[samplingIndex];
-	int iEta = floor(dEta/cellSizeEta[samplingIndex]+0.1); //+0.1 to avoid floating point errors
-	int iPhi = floor(dPhi/cellSizePhi[samplingIndex]+0.1); 
+	int iEta = std::floor(dEta/cellSizeEta[samplingIndex]+reg); //+0.01 to avoid floating point errors
+	int iPhi = std::floor(dPhi/cellSizePhi[samplingIndex]+reg); 
 	int etaIndex=iEta+nEta/2;
 	int phiIndex=iPhi+nPhi/2;
 
-	if(iEta < nEta && iPhi < nPhi) 
+	if(etaIndex>=0 && etaIndex < nEta && phiIndex >=0 &&phiIndex < nPhi) 
 	{
 	  if(image_data[etaIndex][phiIndex] != 0 )  (*m_v_duplicates[samplingIndex])++;
 	  image_data[etaIndex][phiIndex]+=cellE_norm;
 	}
-	else ATH_MSG_ERROR("Cell index is out of bounds, skipping cells ,iEta/nEta,iPhi/nPhi,sampling " 
-			   << iEta << "/"<< nEta << ", "
-			   << iPhi << "/"<< nPhi << ", "
-			   << samplingIndex);
+      	else ATH_MSG_ERROR("Cell index is out of bounds, skipping cells ,iEta/nEta,iPhi/nPhi,sampling " 
+      			   << iEta << "/"<< nEta << ", "
+      			   << iPhi << "/"<< nPhi << ", "
+      			   << samplingIndex << "\t" << cellLayer);
+      
       }
 
       m_fClusterIndex = jCluster;
