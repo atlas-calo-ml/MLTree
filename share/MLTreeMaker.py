@@ -58,6 +58,7 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            ClusterMoments = True,
                            UncalibratedClusters = True,
                            OutputLevel = INFO)
+topSequence.MLTreeMaker.TrackSelectionTool.CutLevel = "TightPrimary"
 topSequence.MLTreeMaker.RootStreamName = "OutputStream"
 
 

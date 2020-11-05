@@ -8,6 +8,9 @@
 #include "xAODTracking/VertexContainer.h"
 #include "xAODTracking/VertexAuxContainer.h"
 
+// Track selection
+#include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
+
 // Extrapolation to the calo
 #include "TrkCaloExtension/CaloExtension.h"
 #include "TrkCaloExtension/CaloExtensionCollection.h"
@@ -67,7 +70,8 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_clusterE_min(90.0),
   m_clusterE_max(110.0),
   m_clusterEtaAbs_max(0.7),
-  m_cellE_thres(0.005) // 5 MeV threshold
+  m_cellE_thres(0.005), // 5 MeV threshold
+  m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this)  
 {
   declareProperty("ClusterEmin", m_clusterE_min);
   declareProperty("ClusterEmax", m_clusterE_max);
@@ -88,6 +92,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("CaloClusterContainer", m_caloClusterContainerName);
   declareProperty("Extrapolator", m_extrapolator);
   declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
+  declareProperty("TrackSelectionTool", m_trkSelectionTool);
 }
 
 MLTreeMaker::~MLTreeMaker() {}
@@ -106,6 +111,7 @@ StatusCode MLTreeMaker::initialize() {
   ATH_CHECK( m_extrapolator.retrieve() );
   ATH_CHECK( m_theTrackExtrapolatorTool.retrieve() );
   ATH_CHECK( m_surfaceHelper.retrieve() );
+  ATH_CHECK( m_trkSelectionTool.retrieve() );
   // Get the test beam identifier for the MBTS
   ATH_CHECK( detStore()->retrieve(m_tileTBID) );
 
@@ -618,6 +624,11 @@ StatusCode MLTreeMaker::execute() {
       m_nTrack = 0;
       for (const auto& track : *trackContainer) {
 
+        if ( !m_trkSelectionTool->accept(track) ) {
+          std::cout << "Track not accepted" << std::endl;
+          continue;
+        }
+
         m_trackPt.push_back(track->pt()/1e3);
         m_trackP.push_back(TMath::Abs(1./track->qOverP())/1e3);
         m_trackMass.push_back(track->m()/1e3);
@@ -628,13 +639,13 @@ StatusCode MLTreeMaker::execute() {
         std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;
 
         // Get the CaloExtension object
-	//For R22 replace with
-	//std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(*track);
-	//if(extension)
+	    //For R22 replace with
+	    //std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(*track);
+	    //if(extension)
 
-	const Trk::CaloExtension* extension = 0;
-	if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
-	{
+	    const Trk::CaloExtension* extension = 0;
+	    if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
+	    {
           // Extract the CurvilinearParameters per each layer-track intersection
           const std::vector<const Trk::CurvilinearParameters*>& clParametersVector = extension->caloLayerIntersections();
 
@@ -657,11 +668,10 @@ StatusCode MLTreeMaker::execute() {
               parametersMap[intLayer] = clParameter->clone();
             }
           }
-
         }
-	else {
-	  ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
-	  continue;
+	    else {
+	      ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
+	      continue;
         }
 
         //  ---------Calo Sample layer Variables---------

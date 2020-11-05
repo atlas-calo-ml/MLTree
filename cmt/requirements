@@ -34,6 +34,7 @@ use GeoPrimitives               GeoPrimitives-*    	    DetectorDescription
 use TrkCaloExtension            TrkCaloExtension-*      Tracking/TrkEvent
 use CaloDetDescr                CaloDetDescr-*          Calorimeter
 use TrkParametersIdentificationHelpers  TrkParametersIdentificationHelpers-* Tracking/TrkEvent
+use InDetTrackSelectionTool     InDetTrackSelectionTool-*   InnerDetector/InDetRecTools
 
 ##############################################################################
 
