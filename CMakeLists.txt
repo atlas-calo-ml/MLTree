@@ -30,7 +30,8 @@ atlas_depends_on_subdirs(	PRIVATE
 				DetectorDescription/GeoPrimitives
 				Tracking/TrkEvent/TrkCaloExtension
 				Calorimeter/CaloDetDescr
-				Tracking/TrkEvent/TrkParametersIdentificationHelpers)
+				Tracking/TrkEvent/TrkParametersIdentificationHelpers
+				InnerDetector/InDetRecTools/InDetTrackSelectionTool)
 
 # Define long list of link libraries as a local variable
 set(	_athLINKLIBS	AthenaBaseComps
@@ -54,7 +55,8 @@ set(	_athLINKLIBS	AthenaBaseComps
 			GeoPrimitives
 			TrkCaloExtension
 			CaloDetDescr
-			TrkParametersIdentificationHelpers)
+			TrkParametersIdentificationHelpers
+			InDetTrackSelectionTool)
 
 
 
