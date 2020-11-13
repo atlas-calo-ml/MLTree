@@ -11,6 +11,7 @@
 #include <string>
 
 #include "AthenaBaseComps/AthHistogramAlgorithm.h"
+#include "AthenaBaseComps/AthAlgorithm.h"
 #include "GaudiKernel/ToolHandle.h"
 #include "GaudiKernel/ServiceHandle.h"
 #include "CaloIdentifier/CaloCell_ID.h"
@@ -27,6 +28,10 @@ namespace Trk {
   class TrackParametersIdHelper;
 }
 
+namespace InDet {
+    class IInDetTrackSelectionTool;
+}
+
 class MLTreeMaker: public ::AthHistogramAlgorithm { 
 
   public: 
@@ -40,8 +45,8 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   private: 
     bool m_doEventTree;
     bool m_doClusterTree;
-  bool m_doClusterMoments;
-  bool m_doUncalibratedClusters;
+    bool m_doClusterMoments;
+    bool m_doUncalibratedClusters;
     // bool m_isMC;
     bool m_doTracking;
   bool m_doJets;
@@ -61,6 +66,7 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
   std::vector<std::string> m_jetContainerNames;
     ToolHandle<Trk::IExtrapolator> m_extrapolator;
     ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
+    ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
     Trk::TrackParametersIdHelper* m_trackParametersIdHelper;
     ToolHandle<ICaloSurfaceHelper> m_surfaceHelper;
     const TileTBID* m_tileTBID; 
