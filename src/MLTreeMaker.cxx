@@ -77,8 +77,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_clusterE_max(110.0),
   m_clusterEtaAbs_max(0.7),
   m_cellE_thres(0.005),  // 5 MeV threshold
-  m_clusterCount(0)
-  m_cellE_thres(0.005), // 5 MeV threshold
+  m_clusterCount(0),
   m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this)  
 {
   declareProperty("ClusterEmin", m_clusterE_min);
