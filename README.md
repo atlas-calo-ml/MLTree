@@ -28,6 +28,13 @@ lsetup git
 git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
 ```
 
+Due to recent changes on the master branch, the 21.3 branch must be used
+```
+cd athena
+git checkout -b 21.3 upstream/21.3
+cd ..
+```
+
 Clone this git repository and create a package filter so athena knows to compile it
 ```
 git clone https://github.com/angerami/MLTree.git athena/MLTree
