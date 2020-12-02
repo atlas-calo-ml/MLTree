@@ -8,7 +8,7 @@
 #include "xAODTracking/VertexContainer.h"
 #include "xAODTracking/VertexAuxContainer.h"
 
-// Track selection
+// Track selection and quality
 #include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
 
 // Extrapolation to the calo
@@ -194,6 +194,26 @@ StatusCode MLTreeMaker::initialize() {
     m_eventTree->Branch("trackMass",           &m_trackMass);
     m_eventTree->Branch("trackEta",            &m_trackEta);
     m_eventTree->Branch("trackPhi",            &m_trackPhi);
+
+    // Track quality variables
+    m_eventTree->Branch("trackNumberOfPixelHits",   &m_trackNumberOfPixelHits);
+    m_eventTree->Branch("trackNumberOfSCTHits",   &m_trackNumberOfSCTHits);
+    m_eventTree->Branch("trackNumberOfPixelDeadSensors",   &m_trackNumberOfPixelDeadSensors);
+    m_eventTree->Branch("trackNumberOfSCTDeadSensors",   &m_trackNumberOfSCTDeadSensors);
+    m_eventTree->Branch("trackNumberOfPixelSharedHits",   &m_trackNumberOfPixelSharedHits);
+    m_eventTree->Branch("trackNumberOfSCTSharedHits",   &m_trackNumberOfSCTSharedHits);
+    m_eventTree->Branch("trackNumberOfPixelHoles",   &m_trackNumberOfPixelHoles);
+    m_eventTree->Branch("trackNumberOfSCTHoles",   &m_trackNumberOfSCTHoles);
+    m_eventTree->Branch("trackNumberOfInnermostPixelLayerHits",   &m_trackNumberOfInnermostPixelLayerHits);
+    m_eventTree->Branch("trackNumberOfNextToInnermostPixelLayerHits",   &m_trackNumberOfNextToInnermostPixelLayerHits);
+    m_eventTree->Branch("trackExpectInnermostPixelLayerHit",   &m_trackExpectInnermostPixelLayerHit);
+    m_eventTree->Branch("trackExpectNextToInnermostPixelLayerHit",   &m_trackExpectNextToInnermostPixelLayerHit);
+    m_eventTree->Branch("trackNumberOfTRTHits",   &m_trackNumberOfTRTHits);
+    m_eventTree->Branch("trackNumberOfTRTOutliers",   &m_trackNumberOfTRTOutliers);
+    m_eventTree->Branch("trackChiSquared",   &m_trackChiSquared);
+    m_eventTree->Branch("trackNumberDOF",   &m_trackNumberDOF);
+    m_eventTree->Branch("trackD0",   &m_trackD0);
+    m_eventTree->Branch("trackZ0",   &m_trackZ0);
 
     // Track extrapolation
     // Presampler
@@ -382,6 +402,25 @@ StatusCode MLTreeMaker::execute() {
   m_trackMass.clear();
   m_trackEta.clear();
   m_trackPhi.clear();
+
+  m_trackNumberOfPixelHits.clear();
+  m_trackNumberOfSCTHits.clear();
+  m_trackNumberOfPixelDeadSensors.clear();
+  m_trackNumberOfSCTDeadSensors.clear();
+  m_trackNumberOfPixelSharedHits.clear();
+  m_trackNumberOfSCTSharedHits.clear();
+  m_trackNumberOfPixelHoles.clear();
+  m_trackNumberOfSCTHoles.clear();
+  m_trackNumberOfInnermostPixelLayerHits.clear();
+  m_trackNumberOfNextToInnermostPixelLayerHits.clear();
+  m_trackExpectInnermostPixelLayerHit.clear();
+  m_trackExpectNextToInnermostPixelLayerHit.clear();
+  m_trackNumberOfTRTHits.clear();
+  m_trackNumberOfTRTOutliers.clear();
+  m_trackChiSquared.clear();
+  m_trackNumberDOF.clear();
+  m_trackD0.clear();
+  m_trackZ0.clear();
 
   m_trackEta_PreSamplerB.clear();
   m_trackPhi_PreSamplerB.clear();
@@ -625,7 +664,6 @@ StatusCode MLTreeMaker::execute() {
       for (const auto& track : *trackContainer) {
 
         if ( !m_trkSelectionTool->accept(track) ) {
-          std::cout << "Track not accepted" << std::endl;
           continue;
         }
 
@@ -634,6 +672,42 @@ StatusCode MLTreeMaker::execute() {
         m_trackMass.push_back(track->m()/1e3);
         m_trackEta.push_back(track->eta());
         m_trackPhi.push_back(track->phi());
+
+        // Load track quality variables
+        track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
+        track->summaryValue(m_numberOfSCTHits, xAOD::numberOfSCTHits);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelHoles, xAOD::numberOfPixelHoles);
+        track->summaryValue(m_numberOfSCTHoles, xAOD::numberOfSCTHoles);
+        track->summaryValue(m_numberOfInnermostPixelLayerHits, xAOD::numberOfInnermostPixelLayerHits);
+        track->summaryValue(m_numberOfNextToInnermostPixelLayerHits, xAOD::numberOfNextToInnermostPixelLayerHits);
+        track->summaryValue(m_expectInnermostPixelLayerHit, xAOD::expectInnermostPixelLayerHit);
+        track->summaryValue(m_expectNextToInnermostPixelLayerHit, xAOD::expectNextToInnermostPixelLayerHit);
+        track->summaryValue(m_numberOfTRTHits, xAOD::numberOfTRTHits);
+        track->summaryValue(m_numberOfTRTOutliers, xAOD::numberOfTRTOutliers);
+
+        m_trackNumberOfPixelHits.push_back(m_numberOfPixelHits);
+        m_trackNumberOfSCTHits.push_back(m_numberOfSCTHits);
+        m_trackNumberOfPixelDeadSensors.push_back(m_numberOfPixelDeadSensors);
+        m_trackNumberOfSCTDeadSensors.push_back(m_numberOfSCTDeadSensors);
+        m_trackNumberOfPixelSharedHits.push_back(m_numberOfPixelSharedHits);
+        m_trackNumberOfSCTSharedHits.push_back(m_numberOfSCTSharedHits);
+        m_trackNumberOfPixelHoles.push_back(m_numberOfPixelHoles);
+        m_trackNumberOfSCTHoles.push_back(m_numberOfSCTHoles);
+        m_trackNumberOfInnermostPixelLayerHits.push_back(m_numberOfInnermostPixelLayerHits);
+        m_trackNumberOfNextToInnermostPixelLayerHits.push_back(m_numberOfNextToInnermostPixelLayerHits);
+        m_trackExpectInnermostPixelLayerHit.push_back(m_expectInnermostPixelLayerHit);
+        m_trackExpectNextToInnermostPixelLayerHit.push_back(m_expectNextToInnermostPixelLayerHit);
+        m_trackNumberOfTRTHits.push_back(m_numberOfTRTHits);
+        m_trackNumberOfTRTOutliers.push_back(m_numberOfTRTOutliers);
+        m_trackChiSquared.push_back(track->chiSquared());
+        m_trackNumberDOF.push_back(track->numberDoF());
+        m_trackD0.push_back(track->definingParameters()[0]);
+        m_trackZ0.push_back(track->definingParameters()[1]);
+
 
         // A map to store the track parameters associated with the different layers of the calorimeter system
         std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;

@@ -143,6 +143,41 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     std::vector<float> m_trackEta;
     std::vector<float> m_trackPhi;
 
+    // Track quality variables
+    uint8_t m_numberOfPixelHits;
+    uint8_t m_numberOfSCTHits;
+    uint8_t m_numberOfPixelDeadSensors;
+    uint8_t m_numberOfSCTDeadSensors;
+    uint8_t m_numberOfPixelSharedHits;
+    uint8_t m_numberOfSCTSharedHits;
+    uint8_t m_numberOfPixelHoles;
+    uint8_t m_numberOfSCTHoles;
+    uint8_t m_numberOfInnermostPixelLayerHits;
+    uint8_t m_numberOfNextToInnermostPixelLayerHits;
+    uint8_t m_expectInnermostPixelLayerHit;
+    uint8_t m_expectNextToInnermostPixelLayerHit;
+    uint8_t m_numberOfTRTHits;
+    uint8_t m_numberOfTRTOutliers;
+
+    std::vector<int> m_trackNumberOfPixelHits;
+    std::vector<int> m_trackNumberOfSCTHits;
+    std::vector<int> m_trackNumberOfPixelDeadSensors;
+    std::vector<int> m_trackNumberOfSCTDeadSensors;
+    std::vector<int> m_trackNumberOfPixelSharedHits;
+    std::vector<int> m_trackNumberOfSCTSharedHits;
+    std::vector<int> m_trackNumberOfPixelHoles;
+    std::vector<int> m_trackNumberOfSCTHoles;
+    std::vector<int> m_trackNumberOfInnermostPixelLayerHits;
+    std::vector<int> m_trackNumberOfNextToInnermostPixelLayerHits;
+    std::vector<int> m_trackExpectInnermostPixelLayerHit;
+    std::vector<int> m_trackExpectNextToInnermostPixelLayerHit;
+    std::vector<int> m_trackNumberOfTRTHits;
+    std::vector<int> m_trackNumberOfTRTOutliers;
+    std::vector<float> m_trackChiSquared;
+    std::vector<int> m_trackNumberDOF;
+    std::vector<float> m_trackD0;
+    std::vector<float> m_trackZ0;
+
     // Track extrapolation
     // Presampler
     std::vector<float> m_trackEta_PreSamplerB;
