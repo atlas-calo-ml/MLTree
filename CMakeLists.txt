@@ -17,6 +17,7 @@ atlas_depends_on_subdirs(	PRIVATE
 				Event/xAOD/xAODEventInfo
 				Event/xAOD/xAODTruth
 				Event/xAOD/xAODEventShape
+				Event/xAOD/xAODJet
 				Calorimeter/CaloEvent
 				Calorimeter/CaloUtils
 				TileCalorimeter/TileIdentifier
@@ -42,6 +43,7 @@ set(	_athLINKLIBS	AthenaBaseComps
 			xAODEventInfo
 			xAODTruth
 			xAODEventShape
+			xAODJet
 			CaloEvent
 			CaloUtils
 			TileIdentifier
