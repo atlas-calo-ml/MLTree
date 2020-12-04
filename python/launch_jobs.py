@@ -35,6 +35,7 @@ doBuildAll = True
 
 setup = "MLTree/MLTreeMaker.py"
 #config = "--nFilesPerJob "+str(args.nFilesPerJob)+" --maxCpuCount "+str(args.maxCpuCount)
+#config = "--nFilesPerJob "+str(args.nFilesPerJob)+" --allowTaskDuplication"
 config = "--nFilesPerJob "+str(args.nFilesPerJob)
 
 comFirst = "pathena {} --outDS {} --inDS {} {}"
