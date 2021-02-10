@@ -106,6 +106,8 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            Pileup = True,
                            EventTree = True,
                            ClusterTree = True,
+                           ClusterCells = True,
+                           ClusterImage = True,
                            ClusterMoments = True,
                            UncalibratedClusters = True,
                            TruthParticles = True,
@@ -116,6 +118,22 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            OutputLevel = INFO)
 topSequence.MLTreeMaker.TrackSelectionTool.CutLevel = "TightPrimary"
 topSequence.MLTreeMaker.RootStreamName = "OutputStream"
+
+#if cluster cells requested, write out calo cell geometry tree too
+if topSequence.MLTreeMaker.ClusterCells:
+    #add the calo noise tool
+    from AthenaCommon.AppMgr import ToolSvc
+    if not hasattr(ToolSvc, "CaloNoiseToolDefault"):
+        from CaloTools.CaloNoiseFlags import jobproperties
+        jobproperties.CaloNoiseFlags.FixedLuminosity.set_Value_and_Lock(13.793)#nominal high mu run 2 settings
+        from CaloTools.CaloNoiseToolDefault import CaloNoiseToolDefault
+        theCaloNoiseTool = CaloNoiseToolDefault()
+        ToolSvc += theCaloNoiseTool
+    ToolSvc.CaloNoiseToolDefault.OutputLevel=VERBOSE
+
+    from MLTree.MLTreeConf import CellGeometryTreeMaker
+    topSequence += CellGeometryTreeMaker(name = "CellGeometryTreeMaker")
+    topSequence.CellGeometryTreeMaker.RootStreamName = "OutputStream"
 
 
 # Setup stream auditor
