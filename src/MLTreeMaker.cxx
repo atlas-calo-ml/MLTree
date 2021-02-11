@@ -33,7 +33,7 @@
 #include "CaloUtils/CaloClusterSignalState.h"
 #include "CaloEvent/CaloClusterCellLinkContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
-
+#include "CaloSimEvent/CaloCalibrationHitContainer.h"
 // Other xAOD incudes
 #include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/TruthParticleContainer.h"
@@ -53,6 +53,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doEventTree(false),
   m_doClusterTree(true),
   m_doClusterCells(true),
+  m_doCalibHits(true),
   m_doClusterImage(true),
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
@@ -89,6 +90,8 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("EventTree", m_doEventTree);
   declareProperty("ClusterTree", m_doClusterTree);
   declareProperty("ClusterCells", m_doClusterCells);
+  declareProperty("ClusterCalibHits", m_doCalibHits);
+  declareProperty("CalibrationHitContainerNames",m_CalibrationHitContainerKeys);
   declareProperty("ClusterImage", m_doClusterImage);
   declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
@@ -408,8 +411,15 @@ StatusCode MLTreeMaker::initialize() {
 
     if(m_doClusterCells)
     {
-      m_clusterTree->Branch("clusterCellID",&m_cluster_cell_ID);
-      m_clusterTree->Branch("clusterCellE",&m_cluster_cell_E);
+      m_clusterTree->Branch("clusterCell_ID",&m_cluster_cell_ID);
+      m_clusterTree->Branch("clusterCell_E",&m_cluster_cell_E);
+      if(m_doCalibHits)
+      {
+	m_clusterTree->Branch("clusterCell_hitsE_EM",&m_cluster_cell_E_EM);	  
+	m_clusterTree->Branch("clusterCell_hitsE_nonEM",&m_cluster_cell_E_nonEM);	  
+	m_clusterTree->Branch("clusterCell_hitsE_Invisible",&m_cluster_cell_E_Invisible);
+	m_clusterTree->Branch("clusterCell_hitsE_Escaped", &m_cluster_cell_E_Escaped);  
+      }
     }
     if(m_doClusterImage)
     {
@@ -706,7 +716,7 @@ StatusCode MLTreeMaker::execute() {
       //   }
     }
   }
-
+  std::vector<const CaloCalibrationHitContainer *> v_cchc;
   if(m_doClusterTree)
   {
     const xAOD::TruthParticleContainer* truthContainer = 0;
@@ -724,6 +734,15 @@ StatusCode MLTreeMaker::execute() {
       m_fClusterTruthPt=(*truthContainer)[0]->pt()*1e-3;
       m_fClusterTruthEta=(*truthContainer)[0]->eta();
       m_fClusterTruthPhi=(*truthContainer)[0]->phi();
+    }
+    if(m_doClusterCells && m_doCalibHits)
+    {
+      const DataHandle<CaloCalibrationHitContainer> cchc;      
+      for(auto cname : m_CalibrationHitContainerKeys)
+      {
+	CHECK(evtStore()->retrieve(cchc,cname));
+	v_cchc.push_back(cchc);
+      }
     }
   }
   if (m_doEventTree) {
@@ -1164,23 +1183,67 @@ StatusCode MLTreeMaker::execute() {
 
     if(m_doClusterCells)
     {
+      auto nCells_cl=cluster->size();
       m_cluster_cell_ID.clear();
-      m_cluster_cell_ID.reserve(cluster->size());
       m_cluster_cell_E.clear();
-      m_cluster_cell_E.reserve(cluster->size());
+      m_cluster_cell_ID.reserve(nCells_cl);
+      m_cluster_cell_E.reserve(nCells_cl);
+
+      if(m_doCalibHits)
+      {
+	m_cluster_cell_ID.clear();
+	m_cluster_cell_E_EM.clear();
+	m_cluster_cell_E_nonEM.clear();
+	m_cluster_cell_E_Invisible.clear();
+	m_cluster_cell_E_Escaped.clear();
+	
+	m_cluster_cell_ID.reserve(nCells_cl);
+	m_cluster_cell_E_EM.reserve(nCells_cl);
+	m_cluster_cell_E_nonEM.reserve(nCells_cl);
+	m_cluster_cell_E_Invisible.reserve(nCells_cl);
+	m_cluster_cell_E_Escaped.reserve(nCells_cl);
+      }
+
     }
 
     // Figure out which cell is at the center if the cluster and fill some validation plots
     CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin();
     CaloClusterCellLink::const_iterator it_cell_end = cluster->cell_end();
-    for(; it_cell != it_cell_end; it_cell++){
+    for(; it_cell != it_cell_end; it_cell++)
+    {
       const CaloCell* cell = (*it_cell);
       if(m_doClusterCells)
       {
 	m_cluster_cell_ID.push_back(cell->ID().get_identifier32().get_compact());
 	float cellE = cell->e()*(it_cell.weight())/1e3;
 	m_cluster_cell_E.push_back(cellE);
-      }
+	if(m_doCalibHits)
+	{
+	  float energy_EM=0.;
+	  float energy_nonEM=0.;
+	  float energy_Invisible=0.;
+	  float energy_Escaped=0.;
+	  
+	  for(auto hit_container : v_cchc)
+	  {
+	    
+	    for(auto ch : *hit_container)
+	    {
+	      if (ch->cellID()!=cell->ID()) continue;
+	      energy_EM+=ch->energyEM();
+	      energy_nonEM+=ch->energyNonEM();
+	      energy_Invisible+=ch->energyInvisible();
+	      energy_Escaped+=ch->energyEscaped();
+
+	    }
+	  }//end loop on calib hits containers
+	  m_cluster_cell_E_EM.push_back(energy_EM*1e-3);
+	  m_cluster_cell_E_nonEM.push_back(energy_nonEM*1e-3);
+	  m_cluster_cell_E_Invisible.push_back(energy_Invisible*1e-3);
+	  m_cluster_cell_E_Escaped.push_back(energy_Escaped*1e-3);
+	  
+	}//end m_doCalibHits
+      }//end m_doClusterCells
 
       if (!cell->caloDDE()) continue;
 

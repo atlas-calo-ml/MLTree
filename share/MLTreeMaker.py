@@ -107,6 +107,7 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            EventTree = True,
                            ClusterTree = True,
                            ClusterCells = True,
+                           ClusterCalibHits = True,
                            ClusterImage = True,
                            ClusterMoments = True,
                            UncalibratedClusters = True,
@@ -118,6 +119,10 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            OutputLevel = INFO)
 topSequence.MLTreeMaker.TrackSelectionTool.CutLevel = "TightPrimary"
 topSequence.MLTreeMaker.RootStreamName = "OutputStream"
+
+if topSequence.MLTreeMaker.ClusterCalibHits:
+    topSequence.MLTreeMaker.CalibrationHitContainerNames = CalibrationHitContainerNames
+
 
 #if cluster cells requested, write out calo cell geometry tree too
 if topSequence.MLTreeMaker.ClusterCells:

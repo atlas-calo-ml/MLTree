@@ -46,6 +46,8 @@ private:
   bool m_doEventTree;
   bool m_doClusterTree;
   bool m_doClusterCells;
+  bool m_doCalibHits;
+  std::vector<std::string> m_CalibrationHitContainerKeys;
   bool m_doClusterImage;
   bool m_doClusterMoments;
   bool m_doUncalibratedClusters;
@@ -337,6 +339,10 @@ private:
 
   std::vector<size_t> m_cluster_cell_ID;
   std::vector<float> m_cluster_cell_E;
+  std::vector<float> m_cluster_cell_E_EM;
+  std::vector<float> m_cluster_cell_E_nonEM;
+  std::vector<float> m_cluster_cell_E_Invisible;
+  std::vector<float> m_cluster_cell_E_Escaped;  
 
 }; 
 
