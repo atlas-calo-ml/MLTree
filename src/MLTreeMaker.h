@@ -48,7 +48,6 @@ private:
   bool m_doClusterCells;
   bool m_doCalibHits;
   std::vector<std::string> m_CalibrationHitContainerKeys;
-  bool m_doClusterImage;
   bool m_doClusterMoments;
   bool m_doUncalibratedClusters;
   // bool m_isMC;
@@ -243,15 +242,6 @@ private:
   std::vector<float> m_clusterPt;
   std::vector<float> m_clusterEta;
   std::vector<float> m_clusterPhi;
-  std::vector<float> m_cluster_sumCellE;
-  std::vector<float> m_cluster_cell_dEta;
-  std::vector<float> m_cluster_cell_dPhi;
-  std::vector<float> m_cluster_cell_dR_min;
-  std::vector<float> m_cluster_cell_dR_max;
-  std::vector<float> m_cluster_cell_dEta_min;
-  std::vector<float> m_cluster_cell_dEta_max;
-  std::vector<float> m_cluster_cell_dPhi_min;
-  std::vector<float> m_cluster_cell_dPhi_max;
 
   std::vector<float> m_cluster_cell_centerCellEta;
   std::vector<float> m_cluster_cell_centerCellPhi;
@@ -274,7 +264,6 @@ private:
   float m_fClusterPt;
   float m_fClusterEta;
   float m_fClusterPhi;
-  float m_fCluster_sumCellE;
 
   float m_fCluster_ENG_CALIB_TOT;
   float m_fCluster_ENG_CALIB_OUT_T;
@@ -289,53 +278,6 @@ private:
   float m_fCluster_CENTER_LAMBDA;
   float m_fCluster_ISOLATION;
   float m_fCluster_ENERGY_DigiHSTruth;
-
-  float m_fCluster_cell_dR_min;
-  float m_fCluster_cell_dR_max;
-  float m_fCluster_cell_dEta_min;
-  float m_fCluster_cell_dEta_max;
-  float m_fCluster_cell_dPhi_min;
-  float m_fCluster_cell_dPhi_max;
-
-  float m_fCluster_cell_centerCellEta;
-  float m_fCluster_cell_centerCellPhi;
-  int   m_fCluster_cell_centerCellLayer;
-
-  std::vector<float> m_cluster_cellE_norm;
-
-  // Images: eta x phi = 0.4 x 0.4 
-  float m_PSB[16][4];
-  float m_EMB1[128][4];
-  float m_EMB2[16][16];
-  float m_EMB3[8][16];
-  float m_TileBar0[4][4];
-  float m_TileBar1[4][4];
-  float m_TileBar2[2][4];
-
-  int m_duplicate_PSB;
-  int m_duplicate_EMB1;
-  int m_duplicate_EMB2;
-  int m_duplicate_EMB3;
-  int m_duplicate_TileBar0;
-  int m_duplicate_TileBar1;
-  int m_duplicate_TileBar2;
-
-
-  std::vector<float*> m_v_PSB;
-  std::vector<float*> m_v_EMB1;
-  std::vector<float*> m_v_EMB2;
-  std::vector<float*> m_v_EMB3;
-  std::vector<float*> m_v_TileBar0;
-  std::vector<float*> m_v_TileBar1;
-  std::vector<float*> m_v_TileBar2;
-
-  std::vector<int*> m_v_duplicates;
-  std::vector<std::vector<float*>*> m_v_images;
-
-  static constexpr unsigned int NUMSAMPLINGS=7;
-  static constexpr unsigned int NUMETABINS[NUMSAMPLINGS]={16,128,16,8,4,4,2};
-  static constexpr unsigned int NUMPHIBINS[NUMSAMPLINGS]={4,4,16,16,4,4,4};
-  static constexpr const char*  SAMPLINGNAMES[NUMSAMPLINGS]={"PSB","EMB1","EMB2","EMB3","TileBar0","TileBar1","TileBar2"};
 
   std::vector<size_t> m_cluster_cell_ID;
   std::vector<float> m_cluster_cell_E;

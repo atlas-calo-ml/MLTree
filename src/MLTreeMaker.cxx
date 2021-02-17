@@ -54,7 +54,6 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doClusterTree(true),
   m_doClusterCells(true),
   m_doCalibHits(true),
-  m_doClusterImage(true),
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
   m_doTracking(false),
@@ -92,7 +91,6 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("ClusterCells", m_doClusterCells);
   declareProperty("ClusterCalibHits", m_doCalibHits);
   declareProperty("CalibrationHitContainerNames",m_CalibrationHitContainerKeys);
-  declareProperty("ClusterImage", m_doClusterImage);
   declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
   declareProperty("Tracking", m_doTracking);
@@ -299,19 +297,6 @@ StatusCode MLTreeMaker::initialize() {
     m_eventTree->Branch("clusterEta",             &m_clusterEta);
     m_eventTree->Branch("clusterPhi",             &m_clusterPhi);
     m_eventTree->Branch("cluster_nCells",         &m_cluster_nCells);
-    m_eventTree->Branch("cluster_sumCellE",       &m_cluster_sumCellE);
-    m_eventTree->Branch("cluster_cell_dEta",      &m_cluster_cell_dEta);
-    m_eventTree->Branch("cluster_cell_dPhi",      &m_cluster_cell_dPhi);
-    m_eventTree->Branch("cluster_cell_dR_min",    &m_cluster_cell_dR_min);
-    m_eventTree->Branch("cluster_cell_dR_max",    &m_cluster_cell_dR_max);
-    m_eventTree->Branch("cluster_cell_dEta_min",  &m_cluster_cell_dEta_min);
-    m_eventTree->Branch("cluster_cell_dEta_max",  &m_cluster_cell_dEta_max);
-    m_eventTree->Branch("cluster_cell_dPhi_min",  &m_cluster_cell_dPhi_min);
-    m_eventTree->Branch("cluster_cell_dPhi_max",  &m_cluster_cell_dPhi_max);
-
-    m_eventTree->Branch("m_cluster_cell_centerCellEta",    &m_cluster_cell_centerCellEta);
-    m_eventTree->Branch("m_cluster_cell_centerCellPhi",    &m_cluster_cell_centerCellPhi);
-    m_eventTree->Branch("m_cluster_cell_centerCellLayer",  &m_cluster_cell_centerCellLayer);
 
     if(m_doJets)
     {
@@ -370,7 +355,6 @@ StatusCode MLTreeMaker::initialize() {
     m_clusterTree->Branch("clusterEta",       &m_fClusterEta,       "clusterEta/F");
     m_clusterTree->Branch("clusterPhi",       &m_fClusterPhi,       "clusterPhi/F");
     m_clusterTree->Branch("cluster_nCells",   &m_fCluster_nCells,   "cluster_nCells/I");
-    m_clusterTree->Branch("cluster_sumCellE", &m_fCluster_sumCellE, "cluster_sumCellE/F");
 
     if(m_doClusterMoments)
     {
@@ -388,27 +372,6 @@ StatusCode MLTreeMaker::initialize() {
       m_clusterTree->Branch("cluster_ENERGY_DigiHSTruth", &m_fCluster_ENERGY_DigiHSTruth,  "cluster_ENERGY_DigiHSTruth/F");
     }
 
-    m_clusterTree->Branch("cluster_cell_dR_min",    &m_fCluster_cell_dR_min,   "cluster_cell_dR_min/F");
-    m_clusterTree->Branch("cluster_cell_dR_max",    &m_fCluster_cell_dR_max,   "cluster_cell_dR_max/F");
-    m_clusterTree->Branch("cluster_cell_dEta_min",  &m_fCluster_cell_dEta_min, "cluster_cell_dEta_min/F");
-    m_clusterTree->Branch("cluster_cell_dEta_max",  &m_fCluster_cell_dEta_max, "cluster_cell_dEta_max/F");
-    m_clusterTree->Branch("cluster_cell_dPhi_min",  &m_fCluster_cell_dPhi_min, "cluster_cell_dPhi_min/F");
-    m_clusterTree->Branch("cluster_cell_dPhi_max",  &m_fCluster_cell_dPhi_max, "cluster_cell_dPhi_max/F");
-    m_clusterTree->Branch("cluster_cell_centerCellEta",    &m_fCluster_cell_centerCellEta,   "cluster_cell_centerCellEta/F");
-    m_clusterTree->Branch("cluster_cell_centerCellPhi",    &m_fCluster_cell_centerCellPhi,   "cluster_cell_centerCellPhi/F");
-    m_clusterTree->Branch("cluster_cell_centerCellLayer",  &m_fCluster_cell_centerCellLayer, "cluster_cell_centerCellLayer/I");
-
-    m_clusterTree->Branch("cluster_cellE_norm", &m_cluster_cellE_norm);
-
-    // Images
-    //some cleanup?
-    //m_v_images.reserve(num samplings)
-    //std::vector<> x={&m_PSB[0],...}
-        //for(...) 
-    //{
-    //branch->(name[i],x[i],name[i]<<numetabins[i]<<.../F'
-    //m_vimages.push_back(new std::vector<float*>(x[i],x[i]+numetabins[i]));}
-
     if(m_doClusterCells)
     {
       m_clusterTree->Branch("clusterCell_ID",&m_cluster_cell_ID);
@@ -420,39 +383,6 @@ StatusCode MLTreeMaker::initialize() {
 	m_clusterTree->Branch("clusterCell_hitsE_Invisible",&m_cluster_cell_E_Invisible);
 	m_clusterTree->Branch("clusterCell_hitsE_Escaped", &m_cluster_cell_E_Escaped);  
       }
-    }
-    if(m_doClusterImage)
-    {
-      m_clusterTree->Branch("PSB",            &m_PSB[0],          "PSB[16][4]/F");
-      m_clusterTree->Branch("EMB1",           &m_EMB1[0],         "EMB1[128][4]/F");
-      m_clusterTree->Branch("EMB2",           &m_EMB2[0],         "EMB2[16][16]/F");
-      m_clusterTree->Branch("EMB3",           &m_EMB3[0],         "EMB3[8][16]/F");
-      m_clusterTree->Branch("TileBar0",       &m_TileBar0[0],     "TileBar0[4][4]/F");
-      m_clusterTree->Branch("TileBar1",       &m_TileBar1[0],     "TileBar1[4][4]/F");
-      m_clusterTree->Branch("TileBar2",       &m_TileBar2[0],     "TileBar2[2][4]/F");
-
-      m_v_PSB.insert(m_v_PSB.end(),m_PSB,m_PSB+16);
-      m_v_EMB1.insert(m_v_EMB1.end(),m_EMB1,m_EMB1+128);
-      m_v_EMB2.insert(m_v_EMB2.end(),m_EMB2,m_EMB2+16);
-      m_v_EMB3.insert(m_v_EMB3.end(),m_EMB3,m_EMB3+8);
-      m_v_TileBar0.insert(m_v_TileBar0.end(),m_TileBar0,m_TileBar0+4);
-      m_v_TileBar1.insert(m_v_TileBar1.end(),m_TileBar1,m_TileBar1+4);
-      m_v_TileBar2.insert(m_v_TileBar2.end(),m_TileBar2,m_TileBar2+2);
-
-      m_v_images={&m_v_PSB,&m_v_EMB1,&m_v_EMB2,&m_v_EMB3,&m_v_TileBar0,&m_v_TileBar1,&m_v_TileBar2};
-
-      // Check for duplicates
-      m_clusterTree->Branch("duplicate_PSB",        &m_duplicate_PSB,      "duplicate_PSB/I");
-      m_clusterTree->Branch("duplicate_EMB1",       &m_duplicate_EMB1,     "duplicate_EMB1/I");
-      m_clusterTree->Branch("duplicate_EMB2",       &m_duplicate_EMB2,     "duplicate_EMB2/I");
-      m_clusterTree->Branch("duplicate_EMB3",       &m_duplicate_EMB3,     "duplicate_EMB3/I");
-      m_clusterTree->Branch("duplicate_TileBar0",   &m_duplicate_TileBar0, "duplicate_TileBar0/I");
-      m_clusterTree->Branch("duplicate_TileBar1",   &m_duplicate_TileBar1, "duplicate_TileBar1/I");
-      m_clusterTree->Branch("duplicate_TileBar2",   &m_duplicate_TileBar2, "duplicate_TileBar2/I");
-
-      m_v_duplicates={&m_duplicate_PSB, &m_duplicate_EMB1,&m_duplicate_EMB2, &m_duplicate_EMB3, 
-		      &m_duplicate_TileBar0, &m_duplicate_TileBar1,&m_duplicate_TileBar2};
-
     }
   }
 
@@ -578,19 +508,7 @@ StatusCode MLTreeMaker::execute() {
   m_clusterEta.clear();
   m_clusterPhi.clear();
   m_cluster_nCells.clear();
-  m_cluster_sumCellE.clear();
-  m_cluster_cell_dEta.clear();
-  m_cluster_cell_dPhi.clear();
-  m_cluster_cell_dR_min.clear();
-  m_cluster_cell_dR_max.clear();
-  m_cluster_cell_dEta_min.clear();
-  m_cluster_cell_dEta_max.clear();
-  m_cluster_cell_dPhi_min.clear();
-  m_cluster_cell_dPhi_max.clear();
 
-  m_cluster_cell_centerCellEta.clear();
-  m_cluster_cell_centerCellPhi.clear();
-  m_cluster_cell_centerCellLayer.clear();
 
   // General event information
   const xAOD::EventInfo* eventInfo(nullptr);
@@ -1165,21 +1083,6 @@ StatusCode MLTreeMaker::execute() {
       m_clusterPhi.push_back(clusterPhi);
     }
 
-    float dR_min = 1e8;
-    float dR_max = -1;
-    float dEta_min = 1e8;
-    float dEta_max = 1e8;
-    float dPhi_min = 1e8;
-    float dPhi_max = 1e8;
-    float centerCellEta = 1e8;
-    float centerCellPhi = 1e8;
-    CaloCell_ID::CaloSample centerCellLayer=CaloCell_ID::Unknown;
-
-    int nCells = 0;
-    float sumCellE = 0;
-    float sumWeights=0;
-    float sumCellE_unweighted=0;
-    bool fillCellValidation = false;
 
     if(m_doClusterCells)
     {
@@ -1206,7 +1109,6 @@ StatusCode MLTreeMaker::execute() {
 
     }
 
-    // Figure out which cell is at the center if the cluster and fill some validation plots
     CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin();
     CaloClusterCellLink::const_iterator it_cell_end = cluster->cell_end();
     for(; it_cell != it_cell_end; it_cell++)
@@ -1244,197 +1146,39 @@ StatusCode MLTreeMaker::execute() {
 	  
 	}//end m_doCalibHits
       }//end m_doClusterCells
-
-      if (!cell->caloDDE()) continue;
-
-      float dEta = cell->eta() - clusterEta;
-      float dPhi = cell->phi() - clusterPhi;
-      // if (std::abs(dPhi) > TMath::Pi()) dPhi = 2*TMath::Pi()-std::abs(dPhi);
-      if (m_doEventTree) {
-        m_cluster_cell_dEta.push_back(dEta);
-        m_cluster_cell_dPhi.push_back(dPhi);
-      }
-
-      float dR_tmp = sqrt(pow(dEta,2) + pow(dPhi,2));
-      if (dR_min > dR_tmp) {
-        dR_min = dR_tmp;
-        dEta_min = dEta;
-        dPhi_min = dPhi;
-        centerCellEta = cell->eta();
-        centerCellPhi = cell->phi();
-        centerCellLayer = cell->caloDDE()->getSampling();
-      };
-      if (dR_max < dR_tmp) {
-        dR_max = dR_tmp;
-        dEta_max = dEta;
-        dPhi_max = dPhi;
-      };
-
-      fillCellValidation = true;
-      sumCellE += cell->e()*(it_cell.weight())/1e3;
-      sumCellE_unweighted += cell->e()*1e-3;
-      sumWeights += it_cell.weight();
-      nCells++;
     }
 
-    if (fillCellValidation && m_doEventTree) {
-      m_cluster_nCells.push_back(nCells);
-      m_cluster_sumCellE.push_back(sumCellE);
-      m_cluster_cell_dR_min.push_back(dR_min);
-      m_cluster_cell_dR_max.push_back(dR_max);
-      m_cluster_cell_dEta_min.push_back(dEta_min);
-      m_cluster_cell_dEta_max.push_back(dEta_max);
-      m_cluster_cell_dPhi_min.push_back(dPhi_min);
-      m_cluster_cell_dPhi_max.push_back(dPhi_max);
-
-      m_cluster_cell_centerCellEta.push_back(centerCellEta);
-      m_cluster_cell_centerCellPhi.push_back(centerCellPhi);
-      m_cluster_cell_centerCellLayer.push_back((int)centerCellLayer);
-    }
-
-    if (m_doClusterTree) {
-
-      // Clear images
-      memset(m_PSB, 0, sizeof(m_PSB[0][0]) * 16 * 4);
-      memset(m_EMB1, 0, sizeof(m_EMB1[0][0]) * 128 * 4);
-      memset(m_EMB2, 0, sizeof(m_EMB2[0][0]) * 16 * 16);
-      memset(m_EMB3, 0, sizeof(m_EMB3[0][0]) * 8 * 16);
-      memset(m_TileBar0, 0, sizeof(m_TileBar0[0][0]) * 4 * 4);
-      memset(m_TileBar1, 0, sizeof(m_TileBar1[0][0]) * 4 * 4);
-      memset(m_TileBar2, 0, sizeof(m_TileBar2[0][0]) * 2 * 4);
+    m_fClusterIndex = jCluster;
+    jCluster++;
+    
+    
+    m_fClusterE = clusterE;
+    m_fClusterECalib = calibratedCluster->e()*1e-3;
+    m_fClusterPt = clusterPt;
+    m_fClusterEta = clusterEta;
+    m_fClusterPhi = clusterPhi; 
+    m_fCluster_nCells = cluster->size();
+    
+    
+    if(m_doClusterMoments)
+    {
+      m_fCluster_ENG_CALIB_TOT=cluster_ENG_CALIB_TOT;
+      m_fCluster_ENG_CALIB_OUT_T=cluster_ENG_CALIB_OUT_T;
+      m_fCluster_ENG_CALIB_DEAD_TOT=cluster_ENG_CALIB_DEAD_TOT;
       
-
-
-      m_duplicate_PSB = 0;
-      m_duplicate_EMB1 = 0;
-      m_duplicate_EMB2 = 0;
-      m_duplicate_EMB3 = 0;
-      m_duplicate_TileBar0 = 0;
-      m_duplicate_TileBar1 = 0;
-      m_duplicate_TileBar2 = 0;
-
-      m_cluster_cellE_norm.clear();
-
-      // Fill images 
-      double cellSizeEta[] = {0.025, 0.003125, 0.0250, 0.0500, 0.1, 0.1, 0.2};
-      double cellSizePhi[] = {0.098174770,0.098174770, 0.024543693, 0.024543693, 0.098174770, 0.098174770, 0.098174770};
-      int numEtaBins[] = {16,128,16,8,4,4,2};
-      int numPhiBins[] = {4,4,16,16,4,4,4};
-
-      double reg=1e-4;
-      double window_eta=0.2-reg;
-      double window_phi=0.19634954-reg;
-      it_cell = cluster->cell_begin();
-      it_cell_end = cluster->cell_end();
-
-      int cell_i = 0;
-      float sumCellE_i = 0.;
-
-      if(m_doClusterImage)
-      {
-	for(; it_cell != it_cell_end; it_cell++)
-	{
-	  const CaloCell* cell = (*it_cell);
-	  if (!cell->caloDDE()) continue;
-
-	  double dEta = cell->eta() - centerCellEta;
-	  double dPhi = TVector2::Phi_mpi_pi(cell->phi() - centerCellPhi);
-	  float cellE = cell->e()*(it_cell.weight())/1e3;
-	  float cellE_norm = cellE/clusterE;
-
-	  // noise rejection
-	  if (cellE < m_cellE_thres) continue;
-	  if (cellE_norm < 0) continue;
-
-	  m_cluster_cellE_norm.push_back(cellE_norm);
-
-
-	  if (std::abs(dEta) >= window_eta || std::abs(dPhi) >= window_phi) continue;
-
-	  cell_i++;
-	  sumCellE_i += cellE;
-
-	  // Ugly, but will do for now
-	  CaloCell_ID::CaloSample cellLayer = cell->caloDDE()->getSampling();
-	  //
-	  unsigned int samplingIndex=0;
-	  if (cellLayer == CaloCell_ID::CaloSample::EMB1 || cellLayer == CaloCell_ID::CaloSample::EME1) samplingIndex=1;
-	  else if (cellLayer == CaloCell_ID::CaloSample::EMB2 || cellLayer == CaloCell_ID::CaloSample::EME2) samplingIndex=2;
-	  else if (cellLayer == CaloCell_ID::CaloSample::EMB3 || cellLayer == CaloCell_ID::CaloSample::EME3) samplingIndex=3;
-	  else if (cellLayer == CaloCell_ID::CaloSample::TileBar0 || cellLayer == CaloCell_ID::CaloSample::TileExt0 || cellLayer == CaloCell_ID::CaloSample::HEC0) samplingIndex=4;
-	  else if (cellLayer == CaloCell_ID::CaloSample::TileBar1 || cellLayer == CaloCell_ID::CaloSample::TileExt1 || cellLayer == CaloCell_ID::CaloSample::HEC1) samplingIndex=5;
-	  else if (cellLayer == CaloCell_ID::CaloSample::TileBar2 || cellLayer == CaloCell_ID::CaloSample::TileExt2 
-		   || cellLayer == CaloCell_ID::CaloSample::HEC2  || cellLayer == CaloCell_ID::CaloSample::HEC3 ) samplingIndex=6;
-
-
-	  int nEta=numEtaBins[samplingIndex];
-	  int nPhi=numPhiBins[samplingIndex];
-	  std::vector<float*>& image_data=*m_v_images[samplingIndex];
-	  int iEta = std::floor(dEta/cellSizeEta[samplingIndex]+reg); //+0.01 to avoid floating point errors
-	  int iPhi = std::floor(dPhi/cellSizePhi[samplingIndex]+reg); 
-	  int etaIndex=iEta+nEta/2;
-	  int phiIndex=iPhi+nPhi/2;
-
-	  if(etaIndex>=0 && etaIndex < nEta && phiIndex >=0 &&phiIndex < nPhi) 
-	  {
-	    if(image_data[etaIndex][phiIndex] != 0 )  (*m_v_duplicates[samplingIndex])++;
-	    image_data[etaIndex][phiIndex]+=cellE_norm;
-	  }
-	  else ATH_MSG_ERROR("Cell index is out of bounds, skipping cells ,iEta/nEta,iPhi/nPhi,sampling " 
-			     << iEta << "/"<< nEta << ", "
-			     << iPhi << "/"<< nPhi << ", "
-			     << samplingIndex << "\t" << cellLayer);
-      
-	}//end cell loop
-      }//end m_doClusterImage
-
-      m_fClusterIndex = jCluster;
-      jCluster++;
-
-
-      m_fClusterE = clusterE;
-      m_fClusterECalib = calibratedCluster->e()*1e-3;
-      m_fClusterPt = clusterPt;
-      m_fClusterEta = clusterEta;
-      m_fClusterPhi = clusterPhi; 
-      m_fCluster_nCells = cell_i;
-      m_fCluster_sumCellE = sumCellE_i;
-
-
-      if(m_doClusterMoments)
-      {
-	m_fCluster_ENG_CALIB_TOT=cluster_ENG_CALIB_TOT;
-	m_fCluster_ENG_CALIB_OUT_T=cluster_ENG_CALIB_OUT_T;
-	m_fCluster_ENG_CALIB_DEAD_TOT=cluster_ENG_CALIB_DEAD_TOT;
-	
-	m_fCluster_EM_PROBABILITY = cluster_EM_PROBABILITY;
-	m_fCluster_HAD_WEIGHT=cluster_HAD_WEIGHT;
-	m_fCluster_OOC_WEIGHT=cluster_OOC_WEIGHT;
-	m_fCluster_DM_WEIGHT=cluster_DM_WEIGHT;
-	m_fCluster_CENTER_MAG=cluster_CENTER_MAG;
-	m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS;
-	m_fCluster_CENTER_LAMBDA=cluster_CENTER_LAMBDA;
-	m_fCluster_ISOLATION=cluster_ISOLATION;
-	m_fCluster_ENERGY_DigiHSTruth=cluster_ENERGY_DigiHSTruth;
-      }
-
-      m_fCluster_cell_dR_min = dR_min;
-      m_fCluster_cell_dR_max = dR_max;
-      m_fCluster_cell_dEta_min = dEta_min;
-      m_fCluster_cell_dEta_max = dEta_max;
-      m_fCluster_cell_dPhi_min = dPhi_min;
-      m_fCluster_cell_dPhi_max = dPhi_max;
-
-      m_fCluster_cell_centerCellEta = centerCellEta;
-      m_fCluster_cell_centerCellPhi = centerCellPhi;
-      m_fCluster_cell_centerCellLayer = (int)centerCellLayer;
-
-      //if (m_duplicate_EMB1 == 0 && m_duplicate_EMB2 == 0 && m_duplicate_EMB3 == 0 &&
-      //    m_duplicate_TileBar0 == 0 && m_duplicate_TileBar1 == 0 && m_duplicate_TileBar2 == 0) {
-      m_clusterTree->Fill();
-      //}
+      m_fCluster_EM_PROBABILITY = cluster_EM_PROBABILITY;
+      m_fCluster_HAD_WEIGHT=cluster_HAD_WEIGHT;
+      m_fCluster_OOC_WEIGHT=cluster_OOC_WEIGHT;
+      m_fCluster_DM_WEIGHT=cluster_DM_WEIGHT;
+      m_fCluster_CENTER_MAG=cluster_CENTER_MAG;
+      m_fCluster_FIRST_ENG_DENS=cluster_FIRST_ENG_DENS;
+      m_fCluster_CENTER_LAMBDA=cluster_CENTER_LAMBDA;
+      m_fCluster_ISOLATION=cluster_ISOLATION;
+      m_fCluster_ENERGY_DigiHSTruth=cluster_ENERGY_DigiHSTruth;
     }
+    if(m_doClusterTree) m_clusterTree->Fill();
   }
+
   if (m_doEventTree) m_eventTree->Fill();
   m_clusterCount+=m_nCluster;
   return StatusCode::SUCCESS;
