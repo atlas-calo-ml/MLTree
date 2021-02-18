@@ -43,7 +43,6 @@ StatusCode CellGeometryTreeMaker::execute()
   CHECK(evtStore()->retrieve(CellContainer,m_cellContainerKey));
   //
   auto nCells=CellContainer->size();
-  ATH_MSG_INFO("Number of cells " << nCells);
 
   if(m_cellGeometryTree->GetEntries() > 0) return StatusCode::SUCCESS;
 
