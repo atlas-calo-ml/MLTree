@@ -266,10 +266,12 @@ private:
 
   std::vector<std::vector<size_t> > m_cluster_cell_ID;
   std::vector<std::vector<float> > m_cluster_cell_E;
-  std::vector<std::vector<float> > m_cluster_cell_E_EM;
-  std::vector<std::vector<float> > m_cluster_cell_E_nonEM;
-  std::vector<std::vector<float> > m_cluster_cell_E_Invisible;
-  std::vector<std::vector<float> > m_cluster_cell_E_Escaped;  
-}; 
+  std::vector<std::vector<float> > m_cluster_cell_hitsE_EM;
+  std::vector<std::vector<float> > m_cluster_cell_hitsE_nonEM;
+  std::vector<std::vector<float> > m_cluster_cell_hitsE_Invisible;
+  std::vector<std::vector<float> > m_cluster_cell_hitsE_Escaped; 
+  std::vector<std::vector<int> > m_cluster_hitsTruthIndex; 
+  std::vector<std::vector<float> > m_cluster_hitsTruthE; 
+};
 
 #endif

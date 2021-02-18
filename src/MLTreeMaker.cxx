@@ -324,24 +324,25 @@ StatusCode MLTreeMaker::initialize() {
     // Clusters 
     m_eventTree->Branch("nCluster",               &m_nCluster, "nCluster/I");
     m_eventTree->Branch("cluster_E",               &m_cluster_E);
+    m_eventTree->Branch("cluster_E_LCCalib",       &m_cluster_E_LCCalib);
     m_eventTree->Branch("cluster_Pt",              &m_cluster_Pt);
     m_eventTree->Branch("cluster_Eta",             &m_cluster_Eta);
     m_eventTree->Branch("cluster_Phi",             &m_cluster_Phi);
     m_eventTree->Branch("cluster_nCells",         &m_cluster_nCells);
     if(m_doClusterMoments)
     {
-      m_eventTree->Branch("cluster_ENG_CALIB_TOT",     &m_cluster_ENG_CALIB_TOT,      "cluster_ENG_CALIB_TOT/F");
-      m_eventTree->Branch("cluster_ENG_CALIB_OUT_T",   &m_cluster_ENG_CALIB_OUT_T,    "cluster_ENG_CALIB_OUT_T/F");
-      m_eventTree->Branch("cluster_ENG_CALIB_DEAD_TOT",&m_cluster_ENG_CALIB_DEAD_TOT, "cluster_ENG_CALIB_DEAD_TOT/F");
-      m_eventTree->Branch("cluster_EM_PROBABILITY",   &m_cluster_EM_PROBABILITY,   "cluster_EM_PROBABILITY/F");
-      m_eventTree->Branch("cluster_HAD_WEIGHT", &m_cluster_HAD_WEIGHT,  "cluster_HAD_WEIGHT/F");
-      m_eventTree->Branch("cluster_OOC_WEIGHT", &m_cluster_OOC_WEIGHT,  "cluster_OOC_WEIGHT/F");
-      m_eventTree->Branch("cluster_DM_WEIGHT", &m_cluster_DM_WEIGHT,  "cluster_DM_WEIGHT/F");
-      m_eventTree->Branch("cluster_CENTER_MAG", &m_cluster_CENTER_MAG,  "cluster_CENTER_MAG/F");
-      m_eventTree->Branch("cluster_FIRST_ENG_DENS", &m_cluster_FIRST_ENG_DENS,  "cluster_FIRST_ENG_DENS/F");
-      m_eventTree->Branch("cluster_CENTER_LAMBDA", &m_cluster_CENTER_LAMBDA,  "cluster_CENTER_LAMBDA/F");
-      m_eventTree->Branch("cluster_ISOLATION", &m_cluster_ISOLATION,  "cluster_ISOLATION/F");
-      m_eventTree->Branch("cluster_ENERGY_DigiHSTruth", &m_cluster_ENERGY_DigiHSTruth,  "cluster_ENERGY_DigiHSTruth/F");
+      m_eventTree->Branch("cluster_ENG_CALIB_TOT",     &m_cluster_ENG_CALIB_TOT);
+      m_eventTree->Branch("cluster_ENG_CALIB_OUT_T",   &m_cluster_ENG_CALIB_OUT_T);
+      m_eventTree->Branch("cluster_ENG_CALIB_DEAD_TOT",&m_cluster_ENG_CALIB_DEAD_TOT);
+      m_eventTree->Branch("cluster_EM_PROBABILITY",   &m_cluster_EM_PROBABILITY);
+      m_eventTree->Branch("cluster_HAD_WEIGHT", &m_cluster_HAD_WEIGHT);
+      m_eventTree->Branch("cluster_OOC_WEIGHT", &m_cluster_OOC_WEIGHT);
+      m_eventTree->Branch("cluster_DM_WEIGHT", &m_cluster_DM_WEIGHT);
+      m_eventTree->Branch("cluster_CENTER_MAG", &m_cluster_CENTER_MAG);
+      m_eventTree->Branch("cluster_FIRST_ENG_DENS", &m_cluster_FIRST_ENG_DENS);
+      m_eventTree->Branch("cluster_CENTER_LAMBDA", &m_cluster_CENTER_LAMBDA);
+      m_eventTree->Branch("cluster_ISOLATION", &m_cluster_ISOLATION);
+      m_eventTree->Branch("cluster_ENERGY_DigiHSTruth", &m_cluster_ENERGY_DigiHSTruth);
     }
 
     if(m_doClusterCells)
@@ -350,10 +351,15 @@ StatusCode MLTreeMaker::initialize() {
       m_eventTree->Branch("cluster_cell_E",&m_cluster_cell_E);
       if(m_doCalibHits)
       {
-	m_eventTree->Branch("cluster_cell_hitsE_EM",&m_cluster_cell_E_EM);	  
-	m_eventTree->Branch("cluster_cell_hitsE_nonEM",&m_cluster_cell_E_nonEM);	  
-	m_eventTree->Branch("cluster_cell_hitsE_Invisible",&m_cluster_cell_E_Invisible);
-	m_eventTree->Branch("cluster_cell_hitsE_Escaped", &m_cluster_cell_E_Escaped);  
+	m_eventTree->Branch("cluster_cell_hitsE_EM",&m_cluster_cell_hitsE_EM);	  
+	m_eventTree->Branch("cluster_cell_hitsE_nonEM",&m_cluster_cell_hitsE_nonEM);	  
+	m_eventTree->Branch("cluster_cell_hitsE_Invisible",&m_cluster_cell_hitsE_Invisible);
+	m_eventTree->Branch("cluster_cell_hitsE_Escaped", &m_cluster_cell_hitsE_Escaped);  
+	if(m_doTruthParticles) 
+	{
+	  m_eventTree->Branch("cluster_hitsTruthIndex", &m_cluster_hitsTruthIndex);  
+	  m_eventTree->Branch("cluster_hitsTruthE", &m_cluster_hitsTruthE);  
+	}
       }
     }
   }
@@ -619,15 +625,22 @@ StatusCode MLTreeMaker::execute() {
     }
   }
   // Truth particles
+
+  //calibration hits are associated with truth particles via barcode
+  //construct mapping between barcode and index in output particle list for lookup later
+  //note this index is not necessarily the same as the index in the truthContainer
+  //e.g. you filter some of the particles
+  std::map<int,unsigned int> truthBarcodeMap;
   if(m_doTruthParticles)
   {
     const xAOD::TruthParticleContainer* truthContainer = 0;
     CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
     
     m_nTruthPart = 0;
-    for (const auto& truth: *truthContainer) 
+    for(unsigned int iTruth=0; iTruth<truthContainer->size(); iTruth++)
     {
-      if(truth->status()==1 && m_keepOnlyStableTruthParticles) continue;
+      const auto& truth=truthContainer->at(iTruth);
+      if(truth->status()!=1 && m_keepOnlyStableTruthParticles) continue;
       m_pdgId.push_back(truth->pdgId());
       m_status.push_back(truth->status());
       m_barcode.push_back(truth->barcode());
@@ -636,10 +649,11 @@ StatusCode MLTreeMaker::execute() {
       m_truthPartMass.push_back(truth->m()*1e-3);
       m_truthPartEta.push_back(truth->eta());
       m_truthPartPhi.push_back(truth->phi());
+      if(m_doCalibHits) truthBarcodeMap.emplace_hint(truthBarcodeMap.end(),truth->barcode(),m_nTruthPart);
       m_nTruthPart++;
+
     }
   }
-  
   if (m_doTracking) 
   {
       // Tracks
@@ -1015,10 +1029,13 @@ StatusCode MLTreeMaker::execute() {
     {
       m_cluster_cell_ID.assign(m_nCluster,std::vector<size_t>());
       m_cluster_cell_E.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_E_EM.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_E_nonEM.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_E_Invisible.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_E_Escaped.assign(m_nCluster,std::vector<float>());  
+      m_cluster_cell_hitsE_EM.assign(m_nCluster,std::vector<float>());
+      m_cluster_cell_hitsE_nonEM.assign(m_nCluster,std::vector<float>());
+      m_cluster_cell_hitsE_Invisible.assign(m_nCluster,std::vector<float>());
+      m_cluster_cell_hitsE_Escaped.assign(m_nCluster,std::vector<float>());  
+      m_cluster_hitsTruthIndex.assign(m_nCluster,std::vector<int>());  
+      m_cluster_hitsTruthE.assign(m_nCluster,std::vector<float>());
+
     }
     //loop over clusters in order of their energies
     //clusters failing E or eta cut are not included in loop
@@ -1085,17 +1102,18 @@ StatusCode MLTreeMaker::execute() {
 	m_cluster_CENTER_LAMBDA.push_back(cluster_CENTER_LAMBDA);
 	m_cluster_ISOLATION.push_back(cluster_ISOLATION);
 	m_cluster_ENERGY_DigiHSTruth.push_back(cluster_ENERGY_DigiHSTruth);
-
       }
       if(m_doClusterCells)
       {
 
 	std::vector<size_t>& cluster_cell_ID=m_cluster_cell_ID[jCluster];	
 	std::vector<float>& cluster_cell_E=m_cluster_cell_E[jCluster];
-	std::vector<float>& cluster_cell_E_EM=m_cluster_cell_E_EM[jCluster];
-	std::vector<float>& cluster_cell_E_nonEM=m_cluster_cell_E_nonEM[jCluster];
-	std::vector<float>& cluster_cell_E_Invisible=m_cluster_cell_E_Invisible[jCluster];
-	std::vector<float>& cluster_cell_E_Escaped=m_cluster_cell_E_Escaped[jCluster];
+	std::vector<float>& cluster_cell_hitsE_EM=m_cluster_cell_hitsE_EM[jCluster];
+	std::vector<float>& cluster_cell_hitsE_nonEM=m_cluster_cell_hitsE_nonEM[jCluster];
+	std::vector<float>& cluster_cell_hitsE_Invisible=m_cluster_cell_hitsE_Invisible[jCluster];
+	std::vector<float>& cluster_cell_hitsE_Escaped=m_cluster_cell_hitsE_Escaped[jCluster];
+	std::vector<int>& cluster_hitsTruthIndex=m_cluster_hitsTruthIndex[jCluster];
+	std::vector<float>& cluster_hitsTruthE=m_cluster_hitsTruthE[jCluster];
 
 	auto nCells_cl=cluster->size();
 	cluster_cell_ID.reserve(nCells_cl);
@@ -1103,18 +1121,23 @@ StatusCode MLTreeMaker::execute() {
       
 	if(m_doCalibHits)
 	{
-	  cluster_cell_ID.reserve(nCells_cl);
-	  cluster_cell_E_EM.reserve(nCells_cl);
-	  cluster_cell_E_nonEM.reserve(nCells_cl);
-	  cluster_cell_E_Invisible.reserve(nCells_cl);
-	  cluster_cell_E_Escaped.reserve(nCells_cl);
+	  cluster_cell_hitsE_EM.reserve(nCells_cl);
+	  cluster_cell_hitsE_nonEM.reserve(nCells_cl);
+	  cluster_cell_hitsE_Invisible.reserve(nCells_cl);
+	  cluster_cell_hitsE_Escaped.reserve(nCells_cl);
+	  //no matching call for cluster_hitsTruthIndex or cluster_hitsTruthE here, this is intentional
 	}
+
+	//keep track of how much each truth particle contributes to cluster's total calibration hits energy
+	std::map<unsigned int, float> truthIndexEnergyMap;
 
 	for(CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin(); it_cell != cluster->cell_end(); it_cell++)
 	{
 	  const CaloCell* cell = (*it_cell);
-	  cluster_cell_ID.push_back(cell->ID().get_identifier32().get_compact());
 	  float cellE = cell->e()*(it_cell.weight())*1e-3;
+	  if(cellE < m_cellE_thres) continue;
+
+	  cluster_cell_ID.push_back(cell->ID().get_identifier32().get_compact());
 	  cluster_cell_E.push_back(cellE);
 	  if(m_doCalibHits)
 	  {
@@ -1124,8 +1147,7 @@ StatusCode MLTreeMaker::execute() {
 	    float energy_Escaped=0.;
 	  
 	    for(auto hit_container : v_calibHitContainer)
-	    {
-	    
+	    {	    
 	      for(auto ch : *hit_container)
 	      {
 		if (ch->cellID()!=cell->ID()) continue;
@@ -1133,16 +1155,36 @@ StatusCode MLTreeMaker::execute() {
 		energy_nonEM+=ch->energyNonEM();
 		energy_Invisible+=ch->energyInvisible();
 		energy_Escaped+=ch->energyEscaped();
-
+		if(m_doTruthParticles)
+		{
+		  unsigned int barcode = ch->particleID();
+		  const auto mapItr=truthBarcodeMap.find(barcode);
+		  if(mapItr!=truthBarcodeMap.end())  truthIndexEnergyMap[mapItr->second]+=ch->energyTotal();
+		}
 	      }
 	    }//end loop on calib hits containers
 
-	    cluster_cell_E_EM.push_back(energy_EM*1e-3);
-	    cluster_cell_E_nonEM.push_back(energy_nonEM*1e-3);
-	    cluster_cell_E_Invisible.push_back(energy_Invisible*1e-3);
-	    cluster_cell_E_Escaped.push_back(energy_Escaped*1e-3);
+	    cluster_cell_hitsE_EM.push_back(energy_EM*1e-3);
+	    cluster_cell_hitsE_nonEM.push_back(energy_nonEM*1e-3);
+	    cluster_cell_hitsE_Invisible.push_back(energy_Invisible*1e-3);
+	    cluster_cell_hitsE_Escaped.push_back(energy_Escaped*1e-3);
 	  }//end m_doCalibHits
 	}//end cell loop
+	if(m_doTruthParticles && m_doCalibHits) 
+	{
+	  //now sort by energy instead of index
+	  std::multimap<float, unsigned int, std::greater<float> > truthRanks;
+	  for(auto mItr : truthIndexEnergyMap) truthRanks.emplace_hint(truthRanks.end(),mItr.second,mItr.first);
+	  //Should we put a maximum and keep only the top 2 or 3 contributors to the cluster?
+	  cluster_hitsTruthIndex.reserve(truthRanks.size());
+	  cluster_hitsTruthE.reserve(truthRanks.size());
+	  for(auto mItr : truthRanks)
+	  {
+	    cluster_hitsTruthIndex.push_back(mItr.second);
+	    cluster_hitsTruthE.push_back(mItr.first*1e-3);
+	  }
+	}//end m_doTruthParticles
+
       }//end m_doClusterCells
       jCluster++;
     }//end cluster loop
