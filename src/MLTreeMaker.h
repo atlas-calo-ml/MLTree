@@ -42,9 +42,9 @@ class MLTreeMaker: public ::AthHistogramAlgorithm {
     virtual StatusCode  execute();
     virtual StatusCode  finalize();
 
-private: 
-  bool m_doEventTree;
-  bool m_doClusterTree;
+private:
+
+  bool m_doClusters;
   bool m_doClusterCells;
   bool m_doCalibHits;
   std::vector<std::string> m_CalibrationHitContainerKeys;
@@ -74,17 +74,15 @@ private:
   ToolHandle<ICaloSurfaceHelper> m_surfaceHelper;
   const TileTBID* m_tileTBID; 
 
-  // Retrieve tree
-  TTree* m_eventTree;
-  TTree* m_clusterTree;
-
   // Cluster and cell selections
   float m_clusterE_min;
   float m_clusterE_max;
   float m_clusterEtaAbs_max;
   float m_cellE_thres;
 
-  //// Add to eventTree
+  //Tree and branch data structures
+  TTree* m_eventTree;
+
 
   // Event info
   int      m_runNumber;
@@ -234,58 +232,44 @@ private:
   std::vector<float> m_trackEta_TileExt2;
   std::vector<float> m_trackPhi_TileExt2;
 
-  // Clusters and cells 
-  long m_clusterCount;
-  int m_nCluster;
-  std::vector<int> m_cluster_nCells;
-  std::vector<float> m_clusterE;
-  std::vector<float> m_clusterPt;
-  std::vector<float> m_clusterEta;
-  std::vector<float> m_clusterPhi;
 
-  std::vector<float> m_cluster_cell_centerCellEta;
-  std::vector<float> m_cluster_cell_centerCellPhi;
-  std::vector<int>   m_cluster_cell_centerCellLayer;
+  //outer index is for jet container
+  //inner index is for jets index w/in that container
   std::vector<std::vector<float> > m_jet_pt;
   std::vector<std::vector<float> > m_jet_eta;
   std::vector<std::vector<float> > m_jet_phi;
   std::vector<std::vector<float> > m_jet_E;
   std::vector<std::vector<int> > m_jet_flavor;
-  //// Add to clusterTree
-    
-  int   m_fCluster_nCells;
-  float m_fClusterTruthE;
-  float m_fClusterTruthPt;
-  float m_fClusterTruthEta;
-  float m_fClusterTruthPhi;
-  int   m_fClusterIndex;
-  float m_fClusterE;
-  float m_fClusterECalib;
-  float m_fClusterPt;
-  float m_fClusterEta;
-  float m_fClusterPhi;
 
-  float m_fCluster_ENG_CALIB_TOT;
-  float m_fCluster_ENG_CALIB_OUT_T;
-  float m_fCluster_ENG_CALIB_DEAD_TOT;
+  // Clusters and cells 
+  int m_nCluster;
+  std::vector<int> m_cluster_nCells;
+  std::vector<float> m_cluster_E;
+  std::vector<float> m_cluster_E_LCCalib;
+  std::vector<float> m_cluster_Pt;
+  std::vector<float> m_cluster_Eta;
+  std::vector<float> m_cluster_Phi;
 
-  float m_fCluster_EM_PROBABILITY;
-  float m_fCluster_HAD_WEIGHT;
-  float m_fCluster_OOC_WEIGHT;
-  float m_fCluster_DM_WEIGHT;
-  float m_fCluster_CENTER_MAG;
-  float m_fCluster_FIRST_ENG_DENS;
-  float m_fCluster_CENTER_LAMBDA;
-  float m_fCluster_ISOLATION;
-  float m_fCluster_ENERGY_DigiHSTruth;
 
-  std::vector<size_t> m_cluster_cell_ID;
-  std::vector<float> m_cluster_cell_E;
-  std::vector<float> m_cluster_cell_E_EM;
-  std::vector<float> m_cluster_cell_E_nonEM;
-  std::vector<float> m_cluster_cell_E_Invisible;
-  std::vector<float> m_cluster_cell_E_Escaped;  
+  std::vector<float> m_cluster_ENG_CALIB_TOT;
+  std::vector<float> m_cluster_ENG_CALIB_OUT_T;
+  std::vector<float> m_cluster_ENG_CALIB_DEAD_TOT;
+  std::vector<float> m_cluster_EM_PROBABILITY;
+  std::vector<float> m_cluster_HAD_WEIGHT;
+  std::vector<float> m_cluster_OOC_WEIGHT;
+  std::vector<float> m_cluster_DM_WEIGHT;
+  std::vector<float> m_cluster_CENTER_MAG;
+  std::vector<float> m_cluster_FIRST_ENG_DENS;
+  std::vector<float> m_cluster_CENTER_LAMBDA;
+  std::vector<float> m_cluster_ISOLATION;
+  std::vector<float> m_cluster_ENERGY_DigiHSTruth;
 
+  std::vector<std::vector<size_t> > m_cluster_cell_ID;
+  std::vector<std::vector<float> > m_cluster_cell_E;
+  std::vector<std::vector<float> > m_cluster_cell_E_EM;
+  std::vector<std::vector<float> > m_cluster_cell_E_nonEM;
+  std::vector<std::vector<float> > m_cluster_cell_E_Invisible;
+  std::vector<std::vector<float> > m_cluster_cell_E_Escaped;  
 }; 
 
 #endif
