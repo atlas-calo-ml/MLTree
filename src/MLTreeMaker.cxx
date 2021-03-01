@@ -53,6 +53,8 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doClusters(true),
   m_doClusterCells(true),
   m_doCalibHits(true),
+  m_doCalibHitsPerCell(true),
+  m_numClusterTruthAssoc(5),
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
   m_doTracking(false),
@@ -64,6 +66,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doEventTruth(false),
   m_doTruthParticles(false),
   m_keepOnlyStableTruthParticles(true),
+  m_keepG4TruthParticles(false),
   m_prefix(""),
   m_eventInfoContainerName("EventInfo"),
   m_truthContainerName("TruthParticles"),
@@ -76,14 +79,15 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_trackParametersIdHelper(new Trk::TrackParametersIdHelper),
   m_surfaceHelper("CaloSurfaceHelper/CaloSurfaceHelper"),
   m_tileTBID(0),
-  m_clusterE_min(90.0),
-  m_clusterE_max(110.0),
-  m_clusterEtaAbs_max(0.7),
+  m_clusterE_min(0.),
+  m_clusterE_max(1e4),
+  m_clusterEtaAbs_max(2.5),
   m_cellE_thres(0.005)  // 5 MeV threshold
 {
   declareProperty("Clusters", m_doClusters);
   declareProperty("ClusterCells", m_doClusterCells);
   declareProperty("ClusterCalibHits", m_doCalibHits);
+  declareProperty("ClusterCalibHitsPerCell", m_doCalibHitsPerCell);
   declareProperty("CalibrationHitContainerNames",m_CalibrationHitContainerKeys);
   declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
@@ -100,6 +104,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("EventTruth", m_doEventTruth);
   declareProperty("TruthParticles", m_doTruthParticles);
   declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
+  declareProperty("G4TruthParticles", m_keepG4TruthParticles);
   declareProperty("Prefix", m_prefix);
   declareProperty("EventContainer", m_eventInfoContainerName);
   declareProperty("TrackContainer", m_trackContainerName);
@@ -192,9 +197,16 @@ StatusCode MLTreeMaker::initialize() {
   if(m_doTruthParticles)
   {
     m_eventTree->Branch("nTruthPart",          &m_nTruthPart, "nTruthPart/I");
-    m_eventTree->Branch("pdgId",               &m_pdgId);
-    m_eventTree->Branch("status",              &m_status);
-    m_eventTree->Branch("barcode",             &m_barcode);
+    m_eventTree->Branch("G4PreCalo_n_EM",         &m_G4PreCalo_n_EM);
+    m_eventTree->Branch("G4PreCalo_E_EM",      &m_G4PreCalo_E_EM);
+    m_eventTree->Branch("G4PreCalo_n_Had",         &m_G4PreCalo_n_Had);
+    m_eventTree->Branch("G4PreCalo_E_Had",      &m_G4PreCalo_E_Had);
+    m_eventTree->Branch("truthVertexX",      &m_truthVertexX);
+    m_eventTree->Branch("truthVertexY",      &m_truthVertexY);
+    m_eventTree->Branch("truthVertexZ",      &m_truthVertexZ);
+    m_eventTree->Branch("truthPartPdgId",               &m_truthPartPdgId);
+    m_eventTree->Branch("truthPartStatus",              &m_truthPartStatus);
+    m_eventTree->Branch("truthPartBarcode",             &m_truthPartBarcode);
     m_eventTree->Branch("truthPartPt",         &m_truthPartPt);
     m_eventTree->Branch("truthPartE",          &m_truthPartE);
     m_eventTree->Branch("truthPartMass",       &m_truthPartMass);
@@ -351,10 +363,13 @@ StatusCode MLTreeMaker::initialize() {
       m_eventTree->Branch("cluster_cell_E",&m_cluster_cell_E);
       if(m_doCalibHits)
       {
-	m_eventTree->Branch("cluster_cell_hitsE_EM",&m_cluster_cell_hitsE_EM);	  
-	m_eventTree->Branch("cluster_cell_hitsE_nonEM",&m_cluster_cell_hitsE_nonEM);	  
-	m_eventTree->Branch("cluster_cell_hitsE_Invisible",&m_cluster_cell_hitsE_Invisible);
-	m_eventTree->Branch("cluster_cell_hitsE_Escaped", &m_cluster_cell_hitsE_Escaped);  
+	if(m_doCalibHitsPerCell)
+	{
+	  m_eventTree->Branch("cluster_cell_hitsE_EM",&m_cluster_cell_hitsE_EM);	  
+	  m_eventTree->Branch("cluster_cell_hitsE_nonEM",&m_cluster_cell_hitsE_nonEM);	  
+	  m_eventTree->Branch("cluster_cell_hitsE_Invisible",&m_cluster_cell_hitsE_Invisible);
+	  m_eventTree->Branch("cluster_cell_hitsE_Escaped", &m_cluster_cell_hitsE_Escaped);  
+	}
 	if(m_doTruthParticles) 
 	{
 	  m_eventTree->Branch("cluster_hitsTruthIndex", &m_cluster_hitsTruthIndex);  
@@ -363,7 +378,7 @@ StatusCode MLTreeMaker::initialize() {
       }
     }
   }
-
+  
 
 
   return StatusCode::SUCCESS;
@@ -400,9 +415,9 @@ StatusCode MLTreeMaker::execute() {
   m_xf1 = m_xf2 = -999;
   //m_scale = m_q = m_pdf1 = m_pdf2 = -999;
 
-  m_pdgId.clear();
-  m_status.clear();
-  m_barcode.clear();
+  m_truthPartPdgId.clear();
+  m_truthPartStatus.clear();
+  m_truthPartBarcode.clear();
   m_truthPartPt.clear();
   m_truthPartE.clear();
   m_truthPartMass.clear();
@@ -637,13 +652,57 @@ StatusCode MLTreeMaker::execute() {
     CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
     
     m_nTruthPart = 0;
+    m_G4PreCalo_n_EM=0;
+    m_G4PreCalo_E_EM=0;
+    m_G4PreCalo_n_Had=0;
+    m_G4PreCalo_E_Had=0;
+    m_truthVertexX=0;
+    m_truthVertexY=0;
+    m_truthVertexZ=0;
+    //
     for(unsigned int iTruth=0; iTruth<truthContainer->size(); iTruth++)
     {
       const auto& truth=truthContainer->at(iTruth);
+      if(truth->hasProdVtx())
+      {
+	auto prodVtx=truth->prodVtx();
+	if(prodVtx->barcode()==-1)
+	{
+	  m_truthVertexX=prodVtx->x();
+	  m_truthVertexY=prodVtx->y();
+	  m_truthVertexZ=prodVtx->z();
+	}
+      }
       if(truth->status()!=1 && m_keepOnlyStableTruthParticles) continue;
-      m_pdgId.push_back(truth->pdgId());
-      m_status.push_back(truth->status());
-      m_barcode.push_back(truth->barcode());
+      if(truth->barcode() > m_G4BarcodeOffset)
+      {
+	//compute event-level observable for early showers
+	//assume G4 particles in list are produced before calorimeter
+	//thus particles w/o decay vertex hit the calorimeter
+	//skip neutrinos, also skip nuclear fragments produced in hadronic showers
+	//these are typically low E and should produce large ionization ~immediately
+	if(!truth->hasDecayVtx() ) 
+	{
+	  //since many of these particles will be low energy hadrons
+	  //use kinetic energy = E-M, since mass energy unlikely to be recovered
+	  //also, w/o this modification, the "energy" can be greater than incident particle E
+	  float truthE=(truth->e()-truth->m())*1e-3;
+	  if( (truth->isHadron()) ) 
+	  {
+	    m_G4PreCalo_E_Had+=truthE;
+	    m_G4PreCalo_n_Had++;
+	  }
+	  else if(!truth->isNeutrino()) 
+	  {
+	    m_G4PreCalo_E_EM+=truthE;
+	    m_G4PreCalo_n_EM++;
+	  }
+	}
+	if(!m_keepG4TruthParticles) continue;
+      }
+      m_truthPartPdgId.push_back(truth->pdgId());
+      m_truthPartStatus.push_back(truth->status());
+      m_truthPartBarcode.push_back(truth->barcode());
       m_truthPartPt.push_back(truth->pt()*1e-3);
       m_truthPartE.push_back(truth->e()*1e-3);
       m_truthPartMass.push_back(truth->m()*1e-3);
@@ -946,10 +1005,10 @@ StatusCode MLTreeMaker::execute() {
 	    v_flavor.push_back(jetFlavor);
 	}
 	else jet_p4=jet->jetP4(xAOD::JetConstitScaleMomentum);
-	v_pt.push_back(jet_p4.Pt());
+	v_pt.push_back(jet_p4.Pt()*1e-3);
 	v_eta.push_back(jet_p4.Eta());
 	v_phi.push_back(jet_p4.Phi());
-	v_E.push_back(jet_p4.E());
+	v_E.push_back(jet_p4.E()*1e-3);
       }
     }
   }
@@ -1030,12 +1089,20 @@ StatusCode MLTreeMaker::execute() {
       m_cluster_cell_ID.assign(m_nCluster,std::vector<size_t>());
       m_cluster_cell_E.assign(m_nCluster,std::vector<float>());
       m_cluster_cell_hitsE_EM.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_hitsE_nonEM.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_hitsE_Invisible.assign(m_nCluster,std::vector<float>());
-      m_cluster_cell_hitsE_Escaped.assign(m_nCluster,std::vector<float>());  
-      m_cluster_hitsTruthIndex.assign(m_nCluster,std::vector<int>());  
-      m_cluster_hitsTruthE.assign(m_nCluster,std::vector<float>());
-
+      if(m_doCalibHits)
+      {
+	if(m_doCalibHitsPerCell)
+	{
+	  m_cluster_cell_hitsE_nonEM.assign(m_nCluster,std::vector<float>());
+	  m_cluster_cell_hitsE_Invisible.assign(m_nCluster,std::vector<float>());
+	  m_cluster_cell_hitsE_Escaped.assign(m_nCluster,std::vector<float>());  
+	}
+	if(m_doTruthParticles)
+	{
+	  m_cluster_hitsTruthIndex.assign(m_nCluster,std::vector<int>());  
+	  m_cluster_hitsTruthE.assign(m_nCluster,std::vector<float>());
+	}
+      }
     }
     //loop over clusters in order of their energies
     //clusters failing E or eta cut are not included in loop
@@ -1119,13 +1186,12 @@ StatusCode MLTreeMaker::execute() {
 	cluster_cell_ID.reserve(nCells_cl);
 	cluster_cell_E.reserve(nCells_cl);
       
-	if(m_doCalibHits)
+	if(m_doCalibHits && m_doCalibHitsPerCell)
 	{
 	  cluster_cell_hitsE_EM.reserve(nCells_cl);
 	  cluster_cell_hitsE_nonEM.reserve(nCells_cl);
 	  cluster_cell_hitsE_Invisible.reserve(nCells_cl);
 	  cluster_cell_hitsE_Escaped.reserve(nCells_cl);
-	  //no matching call for cluster_hitsTruthIndex or cluster_hitsTruthE here, this is intentional
 	}
 
 	//keep track of how much each truth particle contributes to cluster's total calibration hits energy
@@ -1163,11 +1229,13 @@ StatusCode MLTreeMaker::execute() {
 		}
 	      }
 	    }//end loop on calib hits containers
-
-	    cluster_cell_hitsE_EM.push_back(energy_EM*1e-3);
-	    cluster_cell_hitsE_nonEM.push_back(energy_nonEM*1e-3);
-	    cluster_cell_hitsE_Invisible.push_back(energy_Invisible*1e-3);
-	    cluster_cell_hitsE_Escaped.push_back(energy_Escaped*1e-3);
+	    if(m_doCalibHitsPerCell)
+	    {
+	      cluster_cell_hitsE_EM.push_back(energy_EM*1e-3);
+	      cluster_cell_hitsE_nonEM.push_back(energy_nonEM*1e-3);
+	      cluster_cell_hitsE_Invisible.push_back(energy_Invisible*1e-3);
+	      cluster_cell_hitsE_Escaped.push_back(energy_Escaped*1e-3);
+	    }
 	  }//end m_doCalibHits
 	}//end cell loop
 	if(m_doTruthParticles && m_doCalibHits) 
@@ -1178,10 +1246,11 @@ StatusCode MLTreeMaker::execute() {
 	  //Should we put a maximum and keep only the top 2 or 3 contributors to the cluster?
 	  cluster_hitsTruthIndex.reserve(truthRanks.size());
 	  cluster_hitsTruthE.reserve(truthRanks.size());
-	  for(auto mItr : truthRanks)
+	  unsigned int maxAssoc=(m_numClusterTruthAssoc<0) ? truthRanks.size() : m_numClusterTruthAssoc;
+	  for(auto mItr=truthRanks.begin(); (mItr!=truthRanks.end() && cluster_hitsTruthIndex.size() < maxAssoc); mItr++)
 	  {
-	    cluster_hitsTruthIndex.push_back(mItr.second);
-	    cluster_hitsTruthE.push_back(mItr.first*1e-3);
+	    cluster_hitsTruthIndex.push_back(mItr->second);
+	    cluster_hitsTruthE.push_back(mItr->first*1e-3);
 	  }
 	}//end m_doTruthParticles
 

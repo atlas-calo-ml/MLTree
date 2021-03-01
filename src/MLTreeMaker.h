@@ -47,6 +47,9 @@ private:
   bool m_doClusters;
   bool m_doClusterCells;
   bool m_doCalibHits;
+  bool m_doCalibHitsPerCell;
+  int m_numClusterTruthAssoc;
+
   std::vector<std::string> m_CalibrationHitContainerKeys;
   bool m_doClusterMoments;
   bool m_doUncalibratedClusters;
@@ -60,6 +63,7 @@ private:
   bool m_doEventTruth;
   bool m_doTruthParticles;
   bool m_keepOnlyStableTruthParticles;
+  bool m_keepG4TruthParticles;
   std::string m_prefix;
   std::string m_eventInfoContainerName;
   std::string m_truthContainerName;
@@ -129,9 +133,16 @@ private:
 
   // Truth particles
   int m_nTruthPart;
-  std::vector<int>   m_pdgId;
-  std::vector<int>   m_status;
-  std::vector<int>   m_barcode;
+  int m_G4PreCalo_n_EM;
+  float m_G4PreCalo_E_EM;
+  int m_G4PreCalo_n_Had;
+  float m_G4PreCalo_E_Had;
+  float m_truthVertexX;
+  float m_truthVertexY;
+  float m_truthVertexZ;
+  std::vector<int>   m_truthPartPdgId;
+  std::vector<int>   m_truthPartStatus;
+  std::vector<int>   m_truthPartBarcode;
   std::vector<float> m_truthPartPt;
   std::vector<float> m_truthPartE;
   std::vector<float> m_truthPartMass;
@@ -272,6 +283,13 @@ private:
   std::vector<std::vector<float> > m_cluster_cell_hitsE_Escaped; 
   std::vector<std::vector<int> > m_cluster_hitsTruthIndex; 
   std::vector<std::vector<float> > m_cluster_hitsTruthE; 
+
+  static constexpr int m_G4BarcodeOffset=200000;
+
+  //Idealized barrel-endcap geometry parameters for flagging complicated early showers
+  //Cylinder defined by these parameters is "inside" the calorimeter 
+  static constexpr float m_CaloBarrelRadius=1450.;
+  static constexpr float m_CaloBarrelEndCapTransitionZ=3000.;
 };
 
 #endif
