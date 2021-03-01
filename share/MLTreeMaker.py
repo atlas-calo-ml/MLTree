@@ -94,26 +94,27 @@ if rerunTruthJets:
 
 #add MLTreeMaker directly to top sequence to ensure its run *after* topoclustering
 from MLTree.MLTreeConf import MLTreeMaker
+
 topSequence += MLTreeMaker(name = "MLTreeMaker",
                            TrackContainer = "InDetTrackParticles",
                            CaloClusterContainer = "CaloCalTopoClusters",
                            Prefix = "CALO",
                            ClusterEmin = 0.0,
                            ClusterEmax = 2000.0,
-                           ClusterEtaAbsmax = 0.7,
+                           ClusterEtaAbsmax = 3.0,
                            EventCleaning = False,
                            Tracking = True,
-                           Pileup = True,
-                           EventTree = True,
-                           ClusterTree = True,
+                           Pileup = False,
+                           Clusters = True,
                            ClusterCells = True,
                            ClusterCalibHits = True,
-                           ClusterImage = True,
+                           ClusterCalibHitsPerCell = False,
                            ClusterMoments = True,
                            UncalibratedClusters = True,
                            TruthParticles = True,
                            EventTruth = False,
-                           OnlyStableTruthParticles = True,
+                           OnlyStableTruthParticles = False,
+                           G4TruthParticles = False,
                            Jets = True,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
                            OutputLevel = INFO)
