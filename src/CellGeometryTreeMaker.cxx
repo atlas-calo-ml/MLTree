@@ -1,14 +1,17 @@
 #include "CellGeometryTreeMaker.h"
 #include <CaloInterface/ICalorimeterNoiseTool.h>
 #include <CaloEvent/CaloCellContainer.h>
+#include <CaloDetDescr/CaloDetDescrManager.h>
 #include <cmath>
 
 
 CellGeometryTreeMaker::CellGeometryTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   AthHistogramAlgorithm( name, pSvcLocator ),
-  m_noiseTool("CaloNoiseTool")
+  m_noiseTool("CaloNoiseTool"),
+  m_doNeighbours(true)
 {
   declareProperty("CaloCellContainer", m_cellContainerKey="AllCalo");
+  declareProperty("DoNeighbours",m_doNeighbours);
 }
 
 CellGeometryTreeMaker::~CellGeometryTreeMaker() {}
@@ -29,8 +32,19 @@ StatusCode CellGeometryTreeMaker::initialize()
   m_cellGeometryTree->Branch("cell_geo_dphi",      &m_b_cell_geo_dphi);
   m_cellGeometryTree->Branch("cell_geo_volume",    &m_b_cell_geo_volume);
   m_cellGeometryTree->Branch("cell_geo_sigma",     &m_b_cell_geo_sigma);
-
-
+  if(m_doNeighbours) 
+  {
+    m_neighbourNames={"prevInPhi","nextInPhi","prevInEta","nextInEta",
+		      "prevInSamp","nextInSamp","prevSubDet","nextSubDet","prevSuperCalo","nextSuperCalo"};
+    m_neighbourTypes={LArNeighbours::prevInPhi,LArNeighbours::nextInPhi,LArNeighbours::prevInEta,LArNeighbours::nextInEta,
+		      LArNeighbours::prevInSamp, LArNeighbours::nextInSamp, LArNeighbours::prevSubDet, LArNeighbours::nextSubDet, LArNeighbours::prevSuperCalo, LArNeighbours::nextSuperCalo};
+    m_b_cell_geo_neighbourhood.reserve(m_neighbourNames.size());
+    for(auto nname : m_neighbourNames)
+    {
+      m_b_cell_geo_neighbourhood.push_back(std::vector<int>());
+      m_cellGeometryTree->Branch(std::string("cell_geo_"+nname).c_str(),&(m_b_cell_geo_neighbourhood.back()));
+    }
+  }
   ATH_CHECK(m_noiseTool.retrieve());
   ATH_MSG_INFO("Noise tool retrieved");
 
@@ -45,6 +59,8 @@ StatusCode CellGeometryTreeMaker::execute()
   auto nCells=CellContainer->size();
 
   if(m_cellGeometryTree->GetEntries() > 0) return StatusCode::SUCCESS;
+  auto calo_dd_man  = CaloDetDescrManager::instance(); 
+  auto calo_id   = calo_dd_man->getCaloCell_ID();
 
   m_b_cell_geo_ID.clear();
   m_b_cell_geo_sampling.clear();
@@ -66,10 +82,20 @@ StatusCode CellGeometryTreeMaker::execute()
   m_b_cell_geo_sigma.reserve(nCells);
   m_b_cell_geo_volume.reserve(nCells);
 
-  for(const auto cellItr : *CellContainer)
+  for(std::vector<int>& nn : m_b_cell_geo_neighbourhood) nn.assign(nCells,-1);
+  std::vector<std::vector<IdentifierHash> > hashNeighbourhood;
+  hashNeighbourhood.reserve(nCells);
+  
+  //the neighbour information
+  //std::unordered_map<IdentifierHash,unsigned int> cell_map;
+  std::unordered_map<unsigned int,unsigned int> cellHashMap;
+  cellHashMap.reserve(nCells);
+  
+  for(unsigned int iCell=0; iCell < nCells; iCell++)
   {
-    auto theDDE=cellItr->caloDDE();
-    m_b_cell_geo_ID.push_back(cellItr->ID().get_identifier32().get_compact());
+    auto pCell=CellContainer->at(iCell);
+    auto theDDE=pCell->caloDDE();
+    m_b_cell_geo_ID.push_back(pCell->ID().get_identifier32().get_compact());
     m_b_cell_geo_sampling.push_back(theDDE->getSampling());
     m_b_cell_geo_eta.push_back(theDDE->eta());
     m_b_cell_geo_phi.push_back(theDDE->phi());
@@ -80,6 +106,25 @@ StatusCode CellGeometryTreeMaker::execute()
     m_b_cell_geo_dphi.push_back(theDDE->dphi());
     m_b_cell_geo_volume.push_back(theDDE->volume());
     m_b_cell_geo_sigma.push_back(m_noiseTool->getNoise(theDDE,ICalorimeterNoiseTool::TOTALNOISE));
+
+    if(m_doNeighbours) cellHashMap[theDDE->calo_hash().value()]=iCell;
+
+  }
+  //one more loop over the cells to map hashes to indexes in the output tree vectors
+  if(m_doNeighbours)
+  {
+    std::vector<IdentifierHash> v_NN;
+    v_NN.reserve(22);
+    for(unsigned int jCell=0; jCell<nCells; jCell++)
+    {
+      unsigned int cellHash=CellContainer->at(jCell)->caloDDE()->calo_hash().value();
+      for(unsigned int nType=0; nType<m_b_cell_geo_neighbourhood.size(); nType++)
+      {
+	calo_id->get_neighbours(cellHash,m_neighbourTypes[nType],v_NN);
+	if(v_NN.size()==1) m_b_cell_geo_neighbourhood[nType][jCell]=cellHashMap[v_NN[0].value()];
+	v_NN.clear();
+      }
+    }
   }
   m_cellGeometryTree->Fill();
   return StatusCode::SUCCESS;

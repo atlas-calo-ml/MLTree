@@ -30,6 +30,7 @@ atlas_depends_on_subdirs(	PRIVATE
 				Calorimeter/CaloTrackingGeometry
 				Tracking/TrkDetDescr/TrkSurfaces
 				DetectorDescription/GeoPrimitives
+				DetectorDescription/Identifier
 				Tracking/TrkEvent/TrkCaloExtension
 				Calorimeter/CaloDetDescr
 				Tracking/TrkEvent/TrkParametersIdentificationHelpers

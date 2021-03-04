@@ -20,6 +20,7 @@
 #include "TrkCaloExtension/CaloExtensionCollection.h"
 #include "TrkParametersIdentificationHelpers/TrackParametersIdHelper.h"
 #include "CaloDetDescr/CaloDepthTool.h"
+#include "Identifier/IdentifierHash.h"
 
 // Calo and cell information
 #include "TileEvent/TileContainer.h"
