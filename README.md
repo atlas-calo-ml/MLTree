@@ -37,7 +37,7 @@ cd ..
 
 Clone this git repository and create a package filter so athena knows to compile it
 ```
-git clone https://github.com/angerami/MLTree.git athena/MLTree
+git clone https://github.com/atlas-calo-ml/MLTree.git athena/MLTree
 echo "+ MLTree" > package_filters.txt
 echo "- .*" >> package_filters.txt
 ```
