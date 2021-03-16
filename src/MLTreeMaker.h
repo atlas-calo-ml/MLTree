@@ -15,19 +15,22 @@
 #include "GaudiKernel/ToolHandle.h"
 #include "GaudiKernel/ServiceHandle.h"
 #include "CaloIdentifier/CaloCell_ID.h"
-#include "RecoToolInterfaces/IParticleCaloExtensionTool.h"
+#include "RecoToolInterfaces/IParticleCaloCellAssociationTool.h"
 #include "xAODCaloEvent/CaloClusterContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
 
-class TileTBID;
-class ICaloSurfaceHelper;
+//class TileTBID;
+//class ICaloSurfaceHelper;
 
-namespace Trk {
-  class IExtrapolator;
-  class Surface;
-  class TrackParametersIdHelper;
+// namespace Trk {
+//   class IExtrapolator;
+//   class Surface;
+//   class TrackParametersIdHelper;
+// }
+
+namespace Rec{
+  class IParticleCaloCellAssociationTool;
 }
-
 namespace InDet {
     class IInDetTrackSelectionTool;
 }
@@ -71,12 +74,13 @@ private:
   std::string m_trackContainerName;
   std::string m_caloClusterContainerName;
   std::vector<std::string> m_jetContainerNames;
-  ToolHandle<Trk::IExtrapolator> m_extrapolator;
-  ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
+  //ToolHandle<Trk::IExtrapolator> m_extrapolator;
+  ToolHandle <Rec::IParticleCaloCellAssociationTool> m_caloCellAssociationTool;
+  //ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
   ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
-  Trk::TrackParametersIdHelper* m_trackParametersIdHelper;
-  ToolHandle<ICaloSurfaceHelper> m_surfaceHelper;
-  const TileTBID* m_tileTBID; 
+  //Trk::TrackParametersIdHelper* m_trackParametersIdHelper;
+  //ToolHandle<ICaloSurfaceHelper> m_surfaceHelper;
+  //const TileTBID* m_tileTBID; 
 
   // Cluster and cell selections
   float m_clusterE_min;
@@ -158,20 +162,6 @@ private:
   std::vector<float> m_trackPhi;
 
   // Track quality variables
-  uint8_t m_numberOfPixelHits;
-  uint8_t m_numberOfSCTHits;
-  uint8_t m_numberOfPixelDeadSensors;
-  uint8_t m_numberOfSCTDeadSensors;
-  uint8_t m_numberOfPixelSharedHits;
-  uint8_t m_numberOfSCTSharedHits;
-  uint8_t m_numberOfPixelHoles;
-  uint8_t m_numberOfSCTHoles;
-  uint8_t m_numberOfInnermostPixelLayerHits;
-  uint8_t m_numberOfNextToInnermostPixelLayerHits;
-  uint8_t m_expectInnermostPixelLayerHit;
-  uint8_t m_expectNextToInnermostPixelLayerHit;
-  uint8_t m_numberOfTRTHits;
-  uint8_t m_numberOfTRTOutliers;
 
   std::vector<int> m_trackNumberOfPixelHits;
   std::vector<int> m_trackNumberOfSCTHits;
@@ -192,56 +182,9 @@ private:
   std::vector<float> m_trackD0;
   std::vector<float> m_trackZ0;
 
-  // Track extrapolation
-  // Presampler
-  std::vector<float> m_trackEta_PreSamplerB;
-  std::vector<float> m_trackPhi_PreSamplerB;
-  std::vector<float> m_trackEta_PreSamplerE;
-  std::vector<float> m_trackPhi_PreSamplerE;
-  // LAr EM Barrel layers
-  std::vector<float> m_trackEta_EMB1; 
-  std::vector<float> m_trackPhi_EMB1; 
-  std::vector<float> m_trackEta_EMB2; 
-  std::vector<float> m_trackPhi_EMB2; 
-  std::vector<float> m_trackEta_EMB3; 
-  std::vector<float> m_trackPhi_EMB3; 
-  // LAr EM Endcap layers
-  std::vector<float> m_trackEta_EME1; 
-  std::vector<float> m_trackPhi_EME1; 
-  std::vector<float> m_trackEta_EME2; 
-  std::vector<float> m_trackPhi_EME2; 
-  std::vector<float> m_trackEta_EME3; 
-  std::vector<float> m_trackPhi_EME3; 
-  // Hadronic Endcap layers
-  std::vector<float> m_trackEta_HEC0; 
-  std::vector<float> m_trackPhi_HEC0; 
-  std::vector<float> m_trackEta_HEC1; 
-  std::vector<float> m_trackPhi_HEC1; 
-  std::vector<float> m_trackEta_HEC2; 
-  std::vector<float> m_trackPhi_HEC2; 
-  std::vector<float> m_trackEta_HEC3; 
-  std::vector<float> m_trackPhi_HEC3; 
-  // Tile Barrel layers
-  std::vector<float> m_trackEta_TileBar0; 
-  std::vector<float> m_trackPhi_TileBar0; 
-  std::vector<float> m_trackEta_TileBar1; 
-  std::vector<float> m_trackPhi_TileBar1; 
-  std::vector<float> m_trackEta_TileBar2; 
-  std::vector<float> m_trackPhi_TileBar2; 
-  // Tile Gap layers
-  std::vector<float> m_trackEta_TileGap1; 
-  std::vector<float> m_trackPhi_TileGap1; 
-  std::vector<float> m_trackEta_TileGap2; 
-  std::vector<float> m_trackPhi_TileGap2; 
-  std::vector<float> m_trackEta_TileGap3; 
-  std::vector<float> m_trackPhi_TileGap3; 
-  // Tile Extended Barrel layers
-  std::vector<float> m_trackEta_TileExt0;
-  std::vector<float> m_trackPhi_TileExt0;
-  std::vector<float> m_trackEta_TileExt1;
-  std::vector<float> m_trackPhi_TileExt1;
-  std::vector<float> m_trackEta_TileExt2;
-  std::vector<float> m_trackPhi_TileExt2;
+  std::vector<std::vector<size_t> > m_trackAssocCellID;
+  std::vector<std::vector<float> > m_trackAssocCellPathLength;
+  std::vector<std::vector<float> > m_trackAssocCellELoss;
 
 
   //outer index is for jet container
@@ -285,11 +228,6 @@ private:
   std::vector<std::vector<float> > m_cluster_hitsTruthE; 
 
   static constexpr int m_G4BarcodeOffset=200000;
-
-  //Idealized barrel-endcap geometry parameters for flagging complicated early showers
-  //Cylinder defined by these parameters is "inside" the calorimeter 
-  static constexpr float m_CaloBarrelRadius=1450.;
-  static constexpr float m_CaloBarrelEndCapTransitionZ=3000.;
 };
 
 #endif
