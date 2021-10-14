@@ -775,15 +775,17 @@ StatusCode MLTreeMaker::execute() {
       //std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(*track);
       //if(extension)
 
-      const Trk::CaloExtension* extension = 0;
-      if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
+      //const Trk::CaloExtension* extension = 0;
+      //if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
+      std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(Gaudi::Hive::currentContext(),*track);
+      if (extension)
       {
 	// Extract the CurvilinearParameters per each layer-track intersection
-	const std::vector<const Trk::CurvilinearParameters*>& clParametersVector = extension->caloLayerIntersections();
+	const std::vector<Trk::CurvilinearParameters>& clParametersVector = extension->caloLayerIntersections();
 
 	for (auto clParameter : clParametersVector) {
 
-	  unsigned int parametersIdentifier = clParameter->cIdentifier();
+	  unsigned int parametersIdentifier = clParameter.cIdentifier();
 	  CaloCell_ID::CaloSample intLayer;
 
 	  if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
@@ -794,10 +796,10 @@ StatusCode MLTreeMaker::execute() {
 	  }
 
 	  if (parametersMap[intLayer] == NULL) {
-	    parametersMap[intLayer] = clParameter->clone();
-	  } else if (m_trackParametersIdHelper->isEntryToVolume(clParameter->cIdentifier())) {
+	    parametersMap[intLayer] = &clParameter;
+	  } else if (m_trackParametersIdHelper->isEntryToVolume(clParameter.cIdentifier())) {
 	    delete parametersMap[intLayer];
-	    parametersMap[intLayer] = clParameter->clone();
+	    parametersMap[intLayer] = &clParameter;
 	  }
 	}
       }
