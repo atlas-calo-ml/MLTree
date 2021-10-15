@@ -767,45 +767,34 @@ StatusCode MLTreeMaker::execute() {
       m_trackD0.push_back(track->definingParameters()[0]);
       m_trackZ0.push_back(track->definingParameters()[1]);
 
-      // A map to store the track parameters associated with the different layers of the calorimeter system
-      std::map<CaloCell_ID::CaloSample, const Trk::TrackParameters*> parametersMap;
-
-      // Get the CaloExtension object
-      //For R22 replace with
-      //std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(*track);
-      //if(extension)
-
-      //const Trk::CaloExtension* extension = 0;
-      //if (m_theTrackExtrapolatorTool->caloExtension(*track, extension)) 
+      // A map to store the track parameters (eta,phi) associated with the different layers of the calorimeter system      
+      std::map<CaloCell_ID::CaloSample,std::pair<float,float> > parametersMap;      
+      
       std::unique_ptr<Trk::CaloExtension> extension=m_theTrackExtrapolatorTool->caloExtension(Gaudi::Hive::currentContext(),*track);
       if (extension)
       {
-	// Extract the CurvilinearParameters per each layer-track intersection
-	const std::vector<Trk::CurvilinearParameters>& clParametersVector = extension->caloLayerIntersections();
 
-	for (auto clParameter : clParametersVector) {
+      	// Extract the CurvilinearParameters per each layer-track intersection
+	      const std::vector<Trk::CurvilinearParameters>& clParametersVector = extension->caloLayerIntersections();
 
-	  unsigned int parametersIdentifier = clParameter.cIdentifier();
-	  CaloCell_ID::CaloSample intLayer;
+      	for (auto clParameter : clParametersVector) {
 
-	  if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
-	    std::cout << "Invalid Track Identifier"<< std::endl;
-	    intLayer = CaloCell_ID::CaloSample::Unknown;
-	  } else {
-	    intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
-	  }
+      	  unsigned int parametersIdentifier = clParameter.cIdentifier();
+	        CaloCell_ID::CaloSample intLayer;
 
-	  if (parametersMap[intLayer] == NULL) {
-	    parametersMap[intLayer] = &clParameter;
-	  } else if (m_trackParametersIdHelper->isEntryToVolume(clParameter.cIdentifier())) {
-	    delete parametersMap[intLayer];
-	    parametersMap[intLayer] = &clParameter;
-	  }
-	}
+      	  if (!m_trackParametersIdHelper->isValid(parametersIdentifier)) {
+      	    std::cout << "Invalid Track Identifier"<< std::endl;
+      	    intLayer = CaloCell_ID::CaloSample::Unknown;
+      	  } else {
+	        intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
+      	  }
+	      
+	        parametersMap[intLayer] = std::make_pair<float,float>(clParameter.momentum().eta(),clParameter.momentum().phi());
+        }        
       }
       else {
-	ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
-	continue;
+  	    ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
+	    continue;
       }
 
       //  ---------Calo Sample layer Variables---------
@@ -868,55 +857,98 @@ StatusCode MLTreeMaker::execute() {
       float trackEta_TileExt2_tmp = -999999999;
       float trackPhi_TileExt2_tmp = -999999999;
 
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerB]) trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::PreSamplerE]) trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE]->momentum().phi();
+      //first is eta, second is phi
+      if ( parametersMap.find(CaloCell_ID::CaloSample::PreSamplerB) != parametersMap.end() ){
+        trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].first;
+        trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::PreSamplerE) != parametersMap.end() ){
+        trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].first;
+        trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].second;
+      }
 
-      if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB1]) trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB2]) trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EMB3]) trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3]->momentum().phi();
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end() ){
+        trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
+        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EMB2) != parametersMap.end() ){
+        trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].first;
+        trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EMB3) != parametersMap.end() ){
+        trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].first;
+        trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].second;
+      }
 
-      if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME1]) trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME2]) trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::EME3]) trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3]->momentum().phi();
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EME1) != parametersMap.end() ){
+        trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].first;
+        trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EME2) != parametersMap.end() ){
+        trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].first;
+        trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::EME3) != parametersMap.end() ){
+        trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].first;
+        trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].second;
+      }
+      
+      if ( parametersMap.find(CaloCell_ID::CaloSample::HEC0) != parametersMap.end() ){
+        trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].first;
+        trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::HEC1) != parametersMap.end() ){
+        trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].first;
+        trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::HEC2) != parametersMap.end() ){
+        trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].first;
+        trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::HEC3) != parametersMap.end() ){
+        trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].first;
+        trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].second;
+      }
 
-      if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC0]) trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC1]) trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC2]) trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::HEC3]) trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar0]) trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar1]) trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileBar2]) trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap1]) trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap2]) trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileGap3]) trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3]->momentum().phi();
-
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackEta_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt0]) trackPhi_TileExt0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt1]) trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1]->momentum().phi();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().eta();
-      if (parametersMap[CaloCell_ID::CaloSample::TileExt2]) trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2]->momentum().phi();
-
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileBar0) != parametersMap.end() ){
+        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].first;
+        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileBar1) != parametersMap.end() ){
+        trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].first;
+        trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileBar2) != parametersMap.end() ){
+        trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].first;
+        trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].second;
+      }
+      
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileGap1) != parametersMap.end() ){
+        trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].first;
+        trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileGap2) != parametersMap.end() ){
+        trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].first;
+        trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileGap3) != parametersMap.end() ){
+        trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].first;
+        trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].second;
+      }
+      
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileExt0) != parametersMap.end() ){
+        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].first;
+        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileExt1) != parametersMap.end() ){
+        trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].first;
+        trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].second;
+      }
+      if ( parametersMap.find(CaloCell_ID::CaloSample::TileExt2) != parametersMap.end() ){
+        trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].first;
+        trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].second;
+      }            
+      
       m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
       m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
       m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
