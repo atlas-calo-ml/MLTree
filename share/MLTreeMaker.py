@@ -12,21 +12,12 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 
 # Input files for testing
 
-## MC15a e vs p+- at 100 GeV (50k events for each dataset)
-#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422008.ParticleGun_single_ele_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642056._000019.pool.root.1"]
-#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/user/j/jolsson/work/datasets/mc15_13TeV.422015.ParticleGun_single_pion_Pt100.recon.ESD.e4459_s2726_r7143/ESD.06642133._000031.pool.root.1"]
-
 # MC16 pi- (testing dataset)
-#svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428002.ParticleGun_single_piminus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269624._000146.pool.root.1"]
-#svcMgr.EventSelector.InputCollections = ["/afs/cern.ch/work/a/angerami/private/JetML/mc16_13TeV.428000.ParticleGun_single_pi0_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269610._001596.pool.root.1"]
-#svcMgr.EventSelector.InputCollections = ["/eos/user/a/angerami/mc16_13TeV.361021.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ1W.recon.ESD.e3569_s3170_r10788_tid15388779_00/ESD.15388779._001630.pool.root.1"]
-svcMgr.EventSelector.InputCollections = ["/eos/user/a/angerami/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._000944.pool.root.1"]
-#svcMgr.EventSelector.InputCollections = ["/eos/user/a/angerami/mc16_13TeV/ESD.15388997._000028.pool.root.1"]
-#svcMgr.EventSelector.InputCollections = ["/eos/user/m/mswiatlo/esd/mc16_13TeV.428001.ParticleGun_single_piplus_logE0p2to2000.recon.ESD.e7279_s3411_r11281/ESD.17269616._000058.pool.root.1"]
+from AthenaCommon.AthenaCommonFlags import athenaCommonFlags
+#athenaCommonFlags.FilesInput=["/eos/user/a/angerami/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._000944.pool.root.1"]
+athenaCommonFlags.FilesInput=["/data/hodgkinson/dataFiles/mc16_13TeV/ESDFiles/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._001600.pool.root.1"]
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
-
-
 
 from RecExConfig.ObjKeyStore import ObjKeyStore, objKeyStore
 oks = ObjKeyStore()
@@ -54,15 +45,15 @@ for c in containers:
     if c[1]=='AllCalo_DigiHSTruth' : digitizationFlags.doDigiTruth=True
     if c[1]=='AntiKt4TruthJets' : rerunTruthJets=False
 
-
-
-
-#Re-run topoclusters
 #LC will overwrite cell weights.
 #Reconstruction will make a "snapshot" container (CaloTopoClusters) with original cell weights.
 #Individual clusters cross linked through sisterCluster method
 #Cross linking is not presistified in ESD, so clustering must be re-run
 
+#setup calorimeter conditions
+include( "LArConditionsCommon/LArConditionsCommon_MC_jobOptions.py" )
+include( "LArConditionsCommon/LArIdMap_MC_jobOptions.py" )
+from LArConditionsCommon import LArAlignable
 
 #calib hit moments
 from CaloRec.CaloTopoClusterFlags import jobproperties
@@ -82,18 +73,17 @@ print(TopoCalibMoments)
 
 if rerunTruthJets:
     include( "McParticleAlgs/TruthParticleBuilder_jobOptions.py" )
-    from JetRec.JetRecFlags import jetFlags
-    #this line should not be needed, but current jet algorithm implementation runs all of the pseudojet builders
-    #even if they are not needed by the jet finders (truth only)
-    #building origin-corrected topoclusters tries to modify existing const container
-    jetFlags.useTracks=False
-    from JetRec.JetRecStandardToolManager import jtm
-    jtm.addJetFinder("AntiKt4TruthJets",    "AntiKt", 0.4,    "truth", ptmin= 5000)
-    from JetRec.JetAlgorithm import addJetRecoToAlgSequence
-    addJetRecoToAlgSequence()
+    include("MLTree/jetConfig.py")
 
 #add MLTreeMaker directly to top sequence to ensure its run *after* topoclustering
 from MLTree.MLTreeConf import MLTreeMaker
+
+#Setup track extrapolation tool
+from TrkExTools.AtlasExtrapolator import AtlasExtrapolator
+from TrackToCalo.TrackToCaloConf import Trk__ParticleCaloExtensionTool
+pcExtensionTool = Trk__ParticleCaloExtensionTool(Extrapolator = AtlasExtrapolator())
+from AthenaCommon.AppMgr import ToolSvc
+ToolSvc += pcExtensionTool
 
 topSequence += MLTreeMaker(name = "MLTreeMaker",
                            TrackContainer = "InDetTrackParticles",
@@ -117,30 +107,26 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            G4TruthParticles = False,
                            Jets = True,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
-                           OutputLevel = INFO)
+                           OutputLevel = INFO,
+                           TheTrackExtrapolatorTool=pcExtensionTool)
 topSequence.MLTreeMaker.TrackSelectionTool.CutLevel = "TightPrimary"
 topSequence.MLTreeMaker.RootStreamName = "OutputStream"
 
 if topSequence.MLTreeMaker.ClusterCalibHits:
     topSequence.MLTreeMaker.CalibrationHitContainerNames = CalibrationHitContainerNames
 
+#Disable thinning of nonexistent shallow copy pflow containers
+from ParticleBuilderOptions.AODFlags import AODFlags
+AODFlags.ThinNegativeEnergyNeutralPFOs.set_Value_and_Lock(False)
 
 #if cluster cells requested, write out calo cell geometry tree too
 if topSequence.MLTreeMaker.ClusterCells:
-    #add the calo noise tool
-    from AthenaCommon.AppMgr import ToolSvc
-    if not hasattr(ToolSvc, "CaloNoiseToolDefault"):
-        from CaloTools.CaloNoiseFlags import jobproperties
-        jobproperties.CaloNoiseFlags.FixedLuminosity.set_Value_and_Lock(13.793)#nominal high mu run 2 settings
-        from CaloTools.CaloNoiseToolDefault import CaloNoiseToolDefault
-        theCaloNoiseTool = CaloNoiseToolDefault()
-        ToolSvc += theCaloNoiseTool
-    ToolSvc.CaloNoiseToolDefault.OutputLevel=VERBOSE
-
+    #Setup conditions algorithm to access noise
+    from CaloTools.CaloNoiseCondAlg import CaloNoiseCondAlg
+    CaloNoiseCondAlg(noisetype="electronicNoise")
     from MLTree.MLTreeConf import CellGeometryTreeMaker
     topSequence += CellGeometryTreeMaker(name = "CellGeometryTreeMaker")
     topSequence.CellGeometryTreeMaker.RootStreamName = "OutputStream"
-
 
 # Setup stream auditor
 from AthenaCommon.AppMgr import ServiceMgr as svcMgr
