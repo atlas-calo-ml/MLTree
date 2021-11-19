@@ -1,0 +1,10 @@
+{ 
+  "inDSs": [
+    "mc16_13TeV.900246.PG_singlepi0_logE0p2to2000.recon.ESD.e8312_e7400_s3170_r12383",
+    "mc16_13TeV.900247.PG_singlepion_logE0p2to2000.recon.ESD.e8312_e7400_s3170_r12383"
+  ],
+  "outDSs": [
+    "900246.PG_singlepi0_logE0p2to2000.recon.ESD.e8312_e7400_s3170_r12383",
+    "900247.PG_singlepion_logE0p2to2000.recon.ESD.e8312_e7400_s3170_r12383"
+  ]
+}
