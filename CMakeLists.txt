@@ -18,6 +18,7 @@ set(	_athLINKLIBS	AthenaBaseComps
 			xAODTruth
 			xAODEventShape
 			xAODJet
+      xAODPFlow     
 			CaloEvent
       CaloConditions
 			CaloSimEvent
