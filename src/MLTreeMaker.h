@@ -19,6 +19,12 @@
 #include "xAODCaloEvent/CaloClusterContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
 #include "xAODPFlow/FlowElementContainer.h"
+#include "xAODTruth/TruthEventContainer.h"
+#include "xAODTracking/VertexContainer.h"
+#include "xAODTracking/TrackParticleContainer.h"
+#include "xAODEventInfo/EventInfo.h"
+#include "xAODEventShape/EventShape.h"
+#include "xAODTruth/TruthEventContainer.h"
 #include "StoreGate/ReadHandleKey.h"
 
 class TileTBID;
@@ -70,11 +76,34 @@ private:
   bool m_keepG4TruthParticles;
   std::string m_prefix;
   std::string m_eventInfoContainerName;
-  std::string m_truthContainerName;
-  std::string m_vxContainerName;
-  std::string m_trackContainerName;
-  std::string m_caloClusterContainerName;
-  std::vector<std::string> m_jetContainerNames;
+
+  /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "JetETMissChargedFlowElements", "ReadHandleKey for the charged FlowElement container"};
+
+  /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
+  SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
+
+  /** ReadHandleKey for Primary Vertices */
+  SG::ReadHandleKey<xAOD::VertexContainer> m_vxReadHandleKey{this, "VxContainer", "PrimaryVertices", "ReadHandleKey for Primary Vertices"};
+
+  /** ReadHandleKey for ID tracks */
+  SG::ReadHandleKey<xAOD::TrackParticleContainer> m_trackParticleReadHandleKey{this, "TrackContainer", "InDetTrackParticles", "ReadHandleKey for ID Tracks"};
+
+  /** ReadHandleKey for CaloCluster */
+  SG::ReadHandleKey<xAOD::CaloClusterContainer> m_caloClusterReadHandleKey{this, "CaloClusterContainer", "CaloCalTopoClusters", "ReadHandleKey for CaloClusters"};
+
+  /** ReadHandleKey for EventInfo */
+  SG::ReadHandleKey<xAOD::EventInfo> m_eventInfoReadHandleKey{this, "EventContainer", "EventInfo", "ReadHandleKey for EventInfo"};
+
+  /** ReadHandleKeys for EventShapes */
+  SG::ReadHandleKey<xAOD::EventShape> m_lcTopoEventShapeReadHandleKey{this, "LCTopoEventShape", "Kt4LCTopoEventShape", "ReadHandleKey for LCTopoEventShape"};
+  SG::ReadHandleKey<xAOD::EventShape> m_emTopoEventShapeReadHandleKey{this, "EMTopoEventShape", "Kt4EMTopoEventShape", "ReadHandleKey for EMTopoEventShape"};
+
+  /** ReadHandleKet for TruthEvents */
+  SG::ReadHandleKey<xAOD::TruthEventContainer> m_truthEventReadHandleKey{this, "TruthEventContainer", "TruthEvents", "ReadHandleKey for TruthEvents"};
+
+  std::vector<std::string>
+      m_jetContainerNames;
   ToolHandle<Trk::IExtrapolator> m_extrapolator;
   ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
   ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
@@ -294,9 +323,6 @@ private:
   //Cylinder defined by these parameters is "inside" the calorimeter
   static constexpr float m_CaloBarrelRadius = 1450.;
   static constexpr float m_CaloBarrelEndCapTransitionZ = 3000.;
-
-  /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
-  SG::ReadHandleKey<xAOD::FlowElementContainer> m_FEContainerHandleKey{this, "FlowElementContainerName", "JetETMissChargedFlowElements", "ReadHandleKey for the FE container"};
 };
 
 #endif

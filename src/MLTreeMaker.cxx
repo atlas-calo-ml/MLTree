@@ -4,8 +4,6 @@
 #include "TrkTrack/Track.h"
 #include "TrkParameters/TrackParameters.h"
 #include "TrkExInterfaces/IExtrapolator.h"
-#include "xAODTracking/TrackParticleContainer.h"
-#include "xAODTracking/VertexContainer.h"
 #include "xAODTracking/VertexAuxContainer.h"
 
 //Jets
@@ -29,18 +27,12 @@
 #include "CaloTrackingGeometry/ICaloSurfaceHelper.h"
 #include "TrkSurfaces/DiscSurface.h"
 #include "GeoPrimitives/GeoPrimitives.h"
-#include "CaloEvent/CaloClusterContainer.h"
-#include "CaloEvent/CaloCluster.h"
 #include "CaloUtils/CaloClusterSignalState.h"
 #include "CaloEvent/CaloClusterCellLinkContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
 #include "CaloSimEvent/CaloCalibrationHitContainer.h"
 // Other xAOD incudes
-#include "xAODEventInfo/EventInfo.h"
-#include "xAODTruth/TruthParticleContainer.h"
-#include "xAODTruth/TruthParticle.h"
 #include "xAODTruth/TruthEventContainer.h"
-#include "xAODEventShape/EventShape.h"
 
 #include <string>
 #include <vector>
@@ -68,11 +60,6 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_keepOnlyStableTruthParticles(true),
                                                                               m_keepG4TruthParticles(false),
                                                                               m_prefix(""),
-                                                                              m_eventInfoContainerName("EventInfo"),
-                                                                              m_truthContainerName("TruthParticles"),
-                                                                              m_vxContainerName("PrimaryVertices"),
-                                                                              m_trackContainerName("InDetTrackParticles"),
-                                                                              m_caloClusterContainerName("CaloCalTopoClusters"),
                                                                               m_extrapolator("Trk::Extrapolator"),
                                                                               m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool"),
                                                                               m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),
@@ -106,9 +93,6 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
   declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
   declareProperty("G4TruthParticles", m_keepG4TruthParticles);
   declareProperty("Prefix", m_prefix);
-  declareProperty("EventContainer", m_eventInfoContainerName);
-  declareProperty("TrackContainer", m_trackContainerName);
-  declareProperty("CaloClusterContainer", m_caloClusterContainerName);
   declareProperty("JetContainers", m_jetContainerNames);
   declareProperty("Extrapolator", m_extrapolator);
   declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
@@ -126,10 +110,6 @@ StatusCode MLTreeMaker::initialize()
     ATH_MSG_WARNING("No decoration prefix name provided");
   }
 
-  // const xAOD::EventInfo* eventInfo(nullptr);
-  // CHECK( evtStore()->retrieve(eventInfo, m_eventInfoContainerName) );
-  // m_isMC = ( eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) );
-
   ATH_CHECK(m_extrapolator.retrieve());
   ATH_CHECK(m_theTrackExtrapolatorTool.retrieve());
   ATH_CHECK(m_surfaceHelper.retrieve());
@@ -138,7 +118,15 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(detStore()->retrieve(m_tileTBID));
 
   //Initialize the ReadHandle keys
-  ATH_CHECK(m_FEContainerHandleKey.initialize());
+  ATH_CHECK(m_chargedFlowElementReadHandleKey.initialize());
+  ATH_CHECK(m_truthParticleReadHandleKey.initialize());
+  ATH_CHECK(m_vxReadHandleKey.initialize());
+  ATH_CHECK(m_trackParticleReadHandleKey.initialize());
+  ATH_CHECK(m_caloClusterReadHandleKey.initialize());
+  ATH_CHECK(m_eventInfoReadHandleKey.initialize());
+  ATH_CHECK(m_lcTopoEventShapeReadHandleKey.initialize());
+  ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
+  ATH_CHECK(m_truthEventReadHandleKey.initialize());
 
   // Setup the event level TTree and its branches
   CHECK(book(TTree("EventTree", "EventTree")));
@@ -504,54 +492,59 @@ StatusCode MLTreeMaker::execute()
   m_trackPhi_TileExt2.clear();
 
   // General event information
-  const xAOD::EventInfo *eventInfo(nullptr);
-  CHECK(evtStore()->retrieve(eventInfo, m_eventInfoContainerName));
+  SG::ReadHandle<xAOD::EventInfo> eventInfoReadHandle(m_eventInfoReadHandleKey);
+  if (!eventInfoReadHandle.isValid())
+  {
+    ATH_MSG_WARNING("Invalid ReadHandle to EventInfo with key " << eventInfoReadHandle.key());
+    return StatusCode::SUCCESS;
+  }
 
-  m_runNumber = eventInfo->runNumber();
-  m_eventNumber = eventInfo->eventNumber();
-  m_lumiBlock = eventInfo->lumiBlock();
-  m_coreFlags = eventInfo->eventFlags(xAOD::EventInfo::Core);
-  // if (m_isMC ) {
-  m_mcEventNumber = eventInfo->mcEventNumber();
-  m_mcChannelNumber = eventInfo->mcChannelNumber();
-  m_mcEventWeight = eventInfo->mcEventWeight();
-  // } else {
-  //   m_bcid            = eventInfo->bcid();
-  // }
+  m_runNumber = eventInfoReadHandle->runNumber();
+  m_eventNumber = eventInfoReadHandle->eventNumber();
+  m_lumiBlock = eventInfoReadHandle->lumiBlock();
+  m_coreFlags = eventInfoReadHandle->eventFlags(xAOD::EventInfo::Core);
+  m_mcEventNumber = eventInfoReadHandle->mcEventNumber();
+  m_mcChannelNumber = eventInfoReadHandle->mcChannelNumber();
+  m_mcEventWeight = eventInfoReadHandle->mcEventWeight();
 
   if (m_doEventCleaning)
   {
 
-    if (eventInfo->errorState(xAOD::EventInfo::LAr) == xAOD::EventInfo::Error)
+    if (eventInfoReadHandle->errorState(xAOD::EventInfo::LAr) == xAOD::EventInfo::Error)
       m_LArError = true;
     else
       m_LArError = false;
-    m_LArFlags = eventInfo->eventFlags(xAOD::EventInfo::LAr);
+    m_LArFlags = eventInfoReadHandle->eventFlags(xAOD::EventInfo::LAr);
 
-    if (eventInfo->errorState(xAOD::EventInfo::Tile) == xAOD::EventInfo::Error)
+    if (eventInfoReadHandle->errorState(xAOD::EventInfo::Tile) == xAOD::EventInfo::Error)
       m_TileError = true;
     else
       m_TileError = false;
-    m_TileFlags = eventInfo->eventFlags(xAOD::EventInfo::Tile);
+    m_TileFlags = eventInfoReadHandle->eventFlags(xAOD::EventInfo::Tile);
 
-    if (eventInfo->errorState(xAOD::EventInfo::SCT) == xAOD::EventInfo::Error)
+    if (eventInfoReadHandle->errorState(xAOD::EventInfo::SCT) == xAOD::EventInfo::Error)
       m_SCTError = true;
     else
       m_SCTError = false;
-    m_SCTFlags = eventInfo->eventFlags(xAOD::EventInfo::SCT);
+    m_SCTFlags = eventInfoReadHandle->eventFlags(xAOD::EventInfo::SCT);
 
-    m_timeStamp = eventInfo->timeStamp();
-    m_timeStampNSOffset = eventInfo->timeStampNSOffset();
+    m_timeStamp = eventInfoReadHandle->timeStamp();
+    m_timeStampNSOffset = eventInfoReadHandle->timeStampNSOffset();
   }
 
   if (m_doPileup)
   {
 
-    const xAOD::VertexContainer *vertices = 0;
-    CHECK(evtStore()->retrieve(vertices, m_vxContainerName));
+    SG::ReadHandle<xAOD::VertexContainer> vxReadHandle(m_vxReadHandleKey);
+    if (!vxReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to VertexContainer with key " << vxReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
     m_npv = 0;
     unsigned int Ntracks = 2;
-    for (const auto &vertex : *vertices)
+    for (auto vertex : *vxReadHandle)
     {
       if (vertex->vertexType() == xAOD::VxType::NoVtx)
         continue;
@@ -559,8 +552,8 @@ StatusCode MLTreeMaker::execute()
         continue;
       m_npv++;
     }
-    m_actualMu = eventInfo->actualInteractionsPerCrossing();
-    m_averageMu = eventInfo->averageInteractionsPerCrossing();
+    m_actualMu = eventInfoReadHandle->actualInteractionsPerCrossing();
+    m_averageMu = eventInfoReadHandle->averageInteractionsPerCrossing();
 
     // if (m_isMC ) {
     static SG::AuxElement::ConstAccessor<float> weight_pileup("PileupWeight");
@@ -568,56 +561,50 @@ StatusCode MLTreeMaker::execute()
     static SG::AuxElement::ConstAccessor<unsigned int> rand_run_nr("RandomRunNumber");
     static SG::AuxElement::ConstAccessor<unsigned int> rand_lumiblock_nr("RandomLumiBlockNumber");
 
-    if (weight_pileup.isAvailable(*eventInfo))
+    if (weight_pileup.isAvailable(*eventInfoReadHandle))
     {
-      m_weight_pileup = weight_pileup(*eventInfo);
+      m_weight_pileup = weight_pileup(*eventInfoReadHandle);
     }
     else
     {
       m_weight_pileup = 1.0;
     }
-    if (correct_mu.isAvailable(*eventInfo))
+    if (correct_mu.isAvailable(*eventInfoReadHandle))
     {
-      m_correct_mu = correct_mu(*eventInfo);
+      m_correct_mu = correct_mu(*eventInfoReadHandle);
     }
     else
     {
       m_correct_mu = -1.0;
     }
-    if (rand_run_nr.isAvailable(*eventInfo))
+    if (rand_run_nr.isAvailable(*eventInfoReadHandle))
     {
-      m_rand_run_nr = rand_run_nr(*eventInfo);
+      m_rand_run_nr = rand_run_nr(*eventInfoReadHandle);
     }
     else
     {
       m_rand_run_nr = 900000;
     }
-    if (rand_lumiblock_nr.isAvailable(*eventInfo))
+    if (rand_lumiblock_nr.isAvailable(*eventInfoReadHandle))
     {
-      m_rand_lumiblock_nr = rand_lumiblock_nr(*eventInfo);
+      m_rand_lumiblock_nr = rand_lumiblock_nr(*eventInfoReadHandle);
     }
     else
     {
       m_rand_lumiblock_nr = 0;
     }
-
-    // } else {
-    //   static SG::AuxElement::ConstAccessor< float > prsc_DataWeight ("prescale_DataWeight");
-    //
-    //   if (prsc_DataWeight.isAvailable( *eventInfo ) )	 {
-    //     m_prescale_DataWeight = prsc_DataWeight( *eventInfo );
-    //   }
-    //   else {
-    //     m_prescale_DataWeight = 1.0;
-    //   }
-    // }
   }
 
   if (m_doShapeLC)
   {
-    const xAOD::EventShape *evtShape(nullptr);
-    CHECK(evtStore()->retrieve(evtShape, "Kt4LCTopoEventShape"));
-    if (!evtShape->getDensity(xAOD::EventShape::Density, m_rhoLC))
+    SG::ReadHandle<xAOD::EventShape> lcTopoEventShapeReadHandle(m_lcTopoEventShapeReadHandleKey);
+    if (!lcTopoEventShapeReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to EventShape with key " << lcTopoEventShapeReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
+    if (!lcTopoEventShapeReadHandle->getDensity(xAOD::EventShape::Density, m_rhoLC))
     {
       Info("FillEvent()", "Could not retrieve xAOD::EventShape::Density from xAOD::EventShape");
       m_rhoLC = -999;
@@ -626,9 +613,14 @@ StatusCode MLTreeMaker::execute()
 
   if (m_doShapeEM)
   {
-    const xAOD::EventShape *evtShape(nullptr);
-    CHECK(evtStore()->retrieve(evtShape, "Kt4EMTopoEventShape"));
-    if (!evtShape->getDensity(xAOD::EventShape::Density, m_rhoEM))
+    SG::ReadHandle<xAOD::EventShape> emTopoEventShapeReadHandle(m_emTopoEventShapeReadHandleKey);
+    if (!emTopoEventShapeReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to EventShape with key " << emTopoEventShapeReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
+    if (!emTopoEventShapeReadHandle->getDensity(xAOD::EventShape::Density, m_rhoEM))
     {
       Info("FillEvent()", "Could not retrieve xAOD::EventShape::Density from xAOD::EventShape");
       m_rhoEM = -999;
@@ -636,12 +628,15 @@ StatusCode MLTreeMaker::execute()
   }
   if (m_doEventTruth /*&& m_isMC*/)
   {
-
-    const xAOD::TruthEventContainer *truthEventContainer = 0;
-    CHECK(evtStore()->retrieve(truthEventContainer, "TruthEvents"));
-    if (truthEventContainer)
+    SG::ReadHandle<xAOD::TruthEventContainer> truthEventReadHandle(m_truthEventReadHandleKey);
+    if (!truthEventReadHandle.isValid())
     {
-      const xAOD::TruthEvent *truthEventContainervent = truthEventContainer->at(0);
+      ATH_MSG_WARNING("Invalid ReadHandle to TruthEventContainer with key " << truthEventReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+    else
+    {
+      const xAOD::TruthEvent *truthEventContainervent = truthEventReadHandle->at(0);
 
       truthEventContainervent->pdfInfoParameter(m_pdgId1, xAOD::TruthEvent::PDGID1);
       truthEventContainervent->pdfInfoParameter(m_pdgId2, xAOD::TruthEvent::PDGID2);
@@ -649,26 +644,8 @@ StatusCode MLTreeMaker::execute()
       truthEventContainervent->pdfInfoParameter(m_pdfId2, xAOD::TruthEvent::PDFID2);
       truthEventContainervent->pdfInfoParameter(m_x1, xAOD::TruthEvent::X1);
       truthEventContainervent->pdfInfoParameter(m_x2, xAOD::TruthEvent::X2);
-      // truthEventContainervent->pdfInfoParameter(m_scale,    xAOD::TruthEvent::SCALE);
-      // truthEventContainervent->pdfInfoParameter(m_q,        xAOD::TruthEvent::Q);
-      // truthEventContainervent->pdfInfoParameter(m_pdf1,     xAOD::TruthEvent::PDF1);
-      // truthEventContainervent->pdfInfoParameter(m_pdf2,     xAOD::TruthEvent::PDF2);
       truthEventContainervent->pdfInfoParameter(m_xf1, xAOD::TruthEvent::XF1);
       truthEventContainervent->pdfInfoParameter(m_xf2, xAOD::TruthEvent::XF2);
-
-      // // crashes because of q?`
-      //   const xAOD::TruthEvent::PdfInfo info = truthEventContainervent->pdfInfo();
-      //   if (info.valid() ) {
-      //     m_pdgId1 = info.pdgId1;
-      //     m_pdgId2 = info.pdgId2;
-      //     m_pdfId1 = info.pdfId1;
-      //     m_pdfId2 = info.pdfId2;
-      //     m_x1     = info.x1;
-      //     m_x2     = info.x2;
-      //     //m_q      = info.Q;
-      //     m_xf1    = info.xf1;
-      //     m_xf2    = info.xf2;
-      //   }
     }
   }
   std::vector<const CaloCalibrationHitContainer *> v_calibHitContainer;
@@ -690,8 +667,13 @@ StatusCode MLTreeMaker::execute()
   std::map<int, unsigned int> truthBarcodeMap;
   if (m_doTruthParticles)
   {
-    const xAOD::TruthParticleContainer *truthContainer = 0;
-    CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
+
+    SG::ReadHandle<xAOD::TruthParticleContainer> truthParticleReadHandle(m_truthParticleReadHandleKey);
+    if (!truthParticleReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to TruthParticles with key " << truthParticleReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
 
     m_nTruthPart = 0;
     m_G4PreCalo_n_EM = 0;
@@ -702,9 +684,9 @@ StatusCode MLTreeMaker::execute()
     m_truthVertexY = 0;
     m_truthVertexZ = 0;
     //
-    for (unsigned int iTruth = 0; iTruth < truthContainer->size(); iTruth++)
+    for (auto truth : *truthParticleReadHandle)
     {
-      const auto &truth = truthContainer->at(iTruth);
+
       if (truth->hasProdVtx())
       {
         auto prodVtx = truth->prodVtx();
@@ -762,10 +744,10 @@ StatusCode MLTreeMaker::execute()
 
     //We need to get the charged FlowElements such that we can find for any xAOD::TrackParticle
     //used as input to particle flow (eflowRec) how much energy was subtracted from matched xAOD::CaloCluster
-    SG::ReadHandle<xAOD::FlowElementContainer> FEContainerReadHandle(m_FEContainerHandleKey);
-    if (!FEContainerReadHandle.isValid())
+    SG::ReadHandle<xAOD::FlowElementContainer> chargedFlowElementReadHandle(m_chargedFlowElementReadHandleKey);
+    if (!chargedFlowElementReadHandle.isValid())
     {
-      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::FlowElementContainer with key: " << FEContainerReadHandle.key());
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::FlowElementContainer with key: " << chargedFlowElementReadHandle.key());
       return StatusCode::SUCCESS;
     }
 
@@ -776,7 +758,7 @@ StatusCode MLTreeMaker::execute()
     auto accumulateSubtractedEnergy = [](int accumulator, std::pair<const xAOD::TrackParticle *, float> map)
     { return accumulator + map.second; };
 
-    for (auto thisFE : *FEContainerReadHandle)
+    for (auto thisFE : *chargedFlowElementReadHandle)
     {
       //Get the list of matched CaloCluster, along with the energy subtracted from each CaloCluster
       std::vector<std::pair<const xAOD::IParticle *, float>> clusterEnergies = thisFE->chargedObjectsAndWeights();
@@ -788,11 +770,15 @@ StatusCode MLTreeMaker::execute()
     }
 
     // Tracks
-    const xAOD::TrackParticleContainer *trackContainer = 0;
-    CHECK(evtStore()->retrieve(trackContainer, m_trackContainerName));
+    SG::ReadHandle<xAOD::TrackParticleContainer> trackParticleReadHandle(m_trackParticleReadHandleKey);
+    if (!trackParticleReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::TrackParticleContainer with key: " << trackParticleReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
 
     m_nTrack = 0;
-    for (const auto &track : *trackContainer)
+    for (auto track : *trackParticleReadHandle)
     {
 
       if (!m_trkSelectionTool->accept(track))
@@ -807,7 +793,7 @@ StatusCode MLTreeMaker::execute()
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end())
         m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);
       else
-        m_trackSubtractedCaloEnergy.push_back(std::NAN);
+        m_trackSubtractedCaloEnergy.push_back(-999.);
 
       // Load track quality variables
       track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
@@ -1156,14 +1142,21 @@ StatusCode MLTreeMaker::execute()
   if (m_doClusters)
   {
 
-    const xAOD::CaloClusterContainer *clusterContainer = 0;
-    CHECK(evtStore()->retrieve(clusterContainer, m_caloClusterContainerName));
+    SG::ReadHandle<xAOD::CaloClusterContainer> caloClusterReadHandle(m_caloClusterReadHandleKey);
+
+    if (!caloClusterReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::CaloClusterContainer with key: " << caloClusterReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
     //first sort the clusters by EM scale energy
     //fill a (multi)map with key = energy and value = index of cluster in list
     std::multimap<float, unsigned int, std::greater<float>> clusterRanks;
-    for (unsigned int iCluster = 0; iCluster < clusterContainer->size(); iCluster++)
+    unsigned int iCluster = 0;
+    for (auto calibratedCluster : *caloClusterReadHandle)
     {
-      auto calibratedCluster = (*clusterContainer)[iCluster];
+      iCluster++;
       auto cluster = calibratedCluster;
       if (m_doUncalibratedClusters)
       {
@@ -1250,7 +1243,7 @@ StatusCode MLTreeMaker::execute()
     unsigned int jCluster = 0;
     for (auto mpair : clusterRanks)
     {
-      auto calibratedCluster = (*clusterContainer)[mpair.second];
+      auto calibratedCluster = (*caloClusterReadHandle)[mpair.second];
       auto cluster = calibratedCluster;
       if (m_doUncalibratedClusters)
         cluster = calibratedCluster->getSisterCluster();
