@@ -8,7 +8,6 @@
 
 //Jets
 #include "xAODJet/JetTypes.h"
-#include "xAODJet/JetContainer.h"
 
 // Track selection
 #include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
@@ -30,7 +29,6 @@
 #include "CaloUtils/CaloClusterSignalState.h"
 #include "CaloEvent/CaloClusterCellLinkContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
-#include "CaloSimEvent/CaloCalibrationHitContainer.h"
 // Other xAOD incudes
 #include "xAODTruth/TruthEventContainer.h"
 
@@ -93,7 +91,7 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
   declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
   declareProperty("G4TruthParticles", m_keepG4TruthParticles);
   declareProperty("Prefix", m_prefix);
-  declareProperty("JetContainers", m_jetContainerNames);
+  declareProperty("JetContainers", m_jetReadHandleKeyArray);
   declareProperty("Extrapolator", m_extrapolator);
   declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
   declareProperty("TrackSelectionTool", m_trkSelectionTool);
@@ -127,6 +125,8 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(m_lcTopoEventShapeReadHandleKey.initialize());
   ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
   ATH_CHECK(m_truthEventReadHandleKey.initialize());
+  ATH_CHECK(m_jetReadHandleKeyArray.initialize());
+  ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
 
   // Setup the event level TTree and its branches
   CHECK(book(TTree("EventTree", "EventTree")));
@@ -294,14 +294,17 @@ StatusCode MLTreeMaker::initialize()
 
   if (m_doJets)
   {
-    m_jet_pt.assign(m_jetContainerNames.size(), std::vector<float>());
-    m_jet_eta.assign(m_jetContainerNames.size(), std::vector<float>());
-    m_jet_phi.assign(m_jetContainerNames.size(), std::vector<float>());
-    m_jet_E.assign(m_jetContainerNames.size(), std::vector<float>());
-    m_jet_flavor.assign(m_jetContainerNames.size(), std::vector<int>());
-    for (unsigned int iColl = 0; iColl < m_jetContainerNames.size(); iColl++)
+    m_jet_pt.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
+    m_jet_eta.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
+    m_jet_phi.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
+    m_jet_E.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
+    m_jet_flavor.assign(m_jetReadHandleKeyArray.size(), std::vector<int>());
+
+    unsigned int iColl = 0;
+    for (auto jetKey : m_jetReadHandleKeyArray)
     {
-      std::string jet_name(m_jetContainerNames.at(iColl));
+      iColl++;
+      std::string jet_name = jetKey.key();
       std::stringstream ss;
       ss << jet_name << "Pt";
       m_eventTree->Branch(ss.str().c_str(), &(m_jet_pt[iColl]));
@@ -648,14 +651,18 @@ StatusCode MLTreeMaker::execute()
       truthEventContainervent->pdfInfoParameter(m_xf2, xAOD::TruthEvent::XF2);
     }
   }
-  std::vector<const CaloCalibrationHitContainer *> v_calibHitContainer;
+  std::vector<SG::ReadHandle<CaloCalibrationHitContainer>> v_calibHitContainer;
   if (m_doClusterCells && m_doCalibHits)
   {
-    const DataHandle<CaloCalibrationHitContainer> calibHitContainer;
-    for (auto cname : m_CalibrationHitContainerKeys)
+    for (auto calibHitKey : m_CalibrationHitContainerKeys)
     {
-      CHECK(evtStore()->retrieve(calibHitContainer, cname));
-      v_calibHitContainer.push_back(calibHitContainer);
+      SG::ReadHandle<CaloCalibrationHitContainer> caloCalibHitReadHandle(calibHitKey);
+      if (!caloCalibHitReadHandle.isValid())
+      {
+        ATH_MSG_WARNING("Invalid ReadHandle to CalibrationHitContainer with key " << caloCalibHitReadHandle.key());
+        return StatusCode::SUCCESS;
+      }
+      v_calibHitContainer.push_back(caloCalibHitReadHandle);
     }
   }
   // Truth particles
@@ -1092,12 +1099,18 @@ StatusCode MLTreeMaker::execute()
   }
   if (m_doJets)
   {
-    for (unsigned int iColl = 0; iColl < m_jetContainerNames.size(); iColl++)
+    unsigned int iColl = 0;
+    for (auto jetKey : m_jetReadHandleKeyArray)
     {
-      std::string jetCollName(m_jetContainerNames.at(iColl));
+      std::string jetCollName = jetKey.key();
       bool isTruthJetColl = (jetCollName.find("Truth") != std::string::npos);
-      const xAOD::JetContainer *jetColl = nullptr;
-      CHECK(evtStore()->retrieve(jetColl, jetCollName));
+      SG::ReadHandle<xAOD::JetContainer> jetReadHandle(jetKey);
+      if (!jetReadHandle.isValid())
+      {
+        ATH_MSG_WARNING("Invalid ReadHandle for xAOD::JetContainer with key: " << jetReadHandle.key());
+        return StatusCode::SUCCESS;
+      }
+
       std::vector<float> &v_pt = m_jet_pt.at(iColl);
       std::vector<float> &v_eta = m_jet_eta.at(iColl);
       std::vector<float> &v_phi = m_jet_phi.at(iColl);
@@ -1107,17 +1120,17 @@ StatusCode MLTreeMaker::execute()
       v_eta.clear();
       v_phi.clear();
       v_E.clear();
-      v_pt.reserve(jetColl->size());
-      v_eta.reserve(jetColl->size());
-      v_phi.reserve(jetColl->size());
-      v_E.reserve(jetColl->size());
+      v_pt.reserve(jetReadHandle->size());
+      v_eta.reserve(jetReadHandle->size());
+      v_phi.reserve(jetReadHandle->size());
+      v_E.reserve(jetReadHandle->size());
 
       if (isTruthJetColl)
       {
         v_flavor.clear();
-        v_flavor.reserve(jetColl->size());
+        v_flavor.reserve(jetReadHandle->size());
       }
-      for (auto jet : *jetColl)
+      for (auto jet : *jetReadHandle)
       {
         xAOD::JetFourMom_t jet_p4;
         if (isTruthJetColl)

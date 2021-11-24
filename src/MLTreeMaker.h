@@ -24,8 +24,11 @@
 #include "xAODTracking/TrackParticleContainer.h"
 #include "xAODEventInfo/EventInfo.h"
 #include "xAODEventShape/EventShape.h"
+#include "xAODJet/JetContainer.h"
 #include "xAODTruth/TruthEventContainer.h"
+#include "CaloSimEvent/CaloCalibrationHitContainer.h"
 #include "StoreGate/ReadHandleKey.h"
+#include "StoreGate/ReadHandleKeyArray.h"
 
 class TileTBID;
 class ICaloSurfaceHelper;
@@ -60,7 +63,6 @@ private:
   bool m_doCalibHitsPerCell;
   int m_numClusterTruthAssoc;
 
-  std::vector<std::string> m_CalibrationHitContainerKeys;
   bool m_doClusterMoments;
   bool m_doUncalibratedClusters;
   // bool m_isMC;
@@ -99,11 +101,15 @@ private:
   SG::ReadHandleKey<xAOD::EventShape> m_lcTopoEventShapeReadHandleKey{this, "LCTopoEventShape", "Kt4LCTopoEventShape", "ReadHandleKey for LCTopoEventShape"};
   SG::ReadHandleKey<xAOD::EventShape> m_emTopoEventShapeReadHandleKey{this, "EMTopoEventShape", "Kt4EMTopoEventShape", "ReadHandleKey for EMTopoEventShape"};
 
-  /** ReadHandleKet for TruthEvents */
+  /** ReadHandleKey for TruthEvents */
   SG::ReadHandleKey<xAOD::TruthEventContainer> m_truthEventReadHandleKey{this, "TruthEventContainer", "TruthEvents", "ReadHandleKey for TruthEvents"};
 
-  std::vector<std::string>
-      m_jetContainerNames;
+  /** ReadHandleKeyArray for JetContainers */
+  SG::ReadHandleKeyArray<xAOD::JetContainer> m_jetReadHandleKeyArray;
+
+  /** ReadHandleKeyArray for CalibrationHitContainers */
+  SG::ReadHandleKeyArray<CaloCalibrationHitContainer> m_CalibrationHitContainerKeys;
+
   ToolHandle<Trk::IExtrapolator> m_extrapolator;
   ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
   ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
