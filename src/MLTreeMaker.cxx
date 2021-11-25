@@ -294,16 +294,17 @@ StatusCode MLTreeMaker::initialize()
 
   if (m_doJets)
   {
-    m_jet_pt.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
-    m_jet_eta.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
-    m_jet_phi.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
-    m_jet_E.assign(m_jetReadHandleKeyArray.size(), std::vector<float>());
-    m_jet_flavor.assign(m_jetReadHandleKeyArray.size(), std::vector<int>());
+    unsigned int nJetColl = m_jetReadHandleKeyArray.size();
+
+    m_jet_pt.assign(nJetColl, std::vector<float>());
+    m_jet_eta.assign(nJetColl, std::vector<float>());
+    m_jet_phi.assign(nJetColl, std::vector<float>());
+    m_jet_E.assign(nJetColl, std::vector<float>());
+    m_jet_flavor.assign(nJetColl, std::vector<int>());
 
     unsigned int iColl = 0;
     for (auto jetKey : m_jetReadHandleKeyArray)
     {
-      iColl++;
       std::string jet_name = jetKey.key();
       std::stringstream ss;
       ss << jet_name << "Pt";
@@ -327,6 +328,7 @@ StatusCode MLTreeMaker::initialize()
         ss << jet_name << "Flavor";
         m_eventTree->Branch(ss.str().c_str(), &(m_jet_flavor[iColl]));
       }
+      iColl++;
     }
   }
   if (m_doClusters)
@@ -425,6 +427,7 @@ StatusCode MLTreeMaker::execute()
   m_trackMass.clear();
   m_trackEta.clear();
   m_trackPhi.clear();
+  m_trackSubtractedCaloEnergy.clear();
 
   m_trackNumberOfPixelHits.clear();
   m_trackNumberOfSCTHits.clear();
@@ -651,7 +654,8 @@ StatusCode MLTreeMaker::execute()
       truthEventContainervent->pdfInfoParameter(m_xf2, xAOD::TruthEvent::XF2);
     }
   }
-  std::vector<SG::ReadHandle<CaloCalibrationHitContainer>> v_calibHitContainer;
+
+  std::vector<const CaloCalibrationHitContainer *> v_calibHitContainer;
   if (m_doClusterCells && m_doCalibHits)
   {
     for (auto calibHitKey : m_CalibrationHitContainerKeys)
@@ -662,7 +666,7 @@ StatusCode MLTreeMaker::execute()
         ATH_MSG_WARNING("Invalid ReadHandle to CalibrationHitContainer with key " << caloCalibHitReadHandle.key());
         return StatusCode::SUCCESS;
       }
-      v_calibHitContainer.push_back(caloCalibHitReadHandle);
+      v_calibHitContainer.push_back(caloCalibHitReadHandle.cptr());
     }
   }
   // Truth particles
@@ -769,6 +773,8 @@ StatusCode MLTreeMaker::execute()
     {
       //Get the list of matched CaloCluster, along with the energy subtracted from each CaloCluster
       std::vector<std::pair<const xAOD::IParticle *, float>> clusterEnergies = thisFE->chargedObjectsAndWeights();
+      for (auto test : clusterEnergies)
+        std::cout << " Subtracted Energy is " << test.second << std::endl;
       //get the track that this FlowElement represents
       const xAOD::TrackParticle *thisTrack = dynamic_cast<const xAOD::TrackParticle *>(thisFE->chargedObject(0));
       //Put the sum of the subtractd energy into the map between tracks and that sum.
@@ -1149,6 +1155,7 @@ StatusCode MLTreeMaker::execute()
         v_phi.push_back(jet_p4.Phi());
         v_E.push_back(jet_p4.E() * 1e-3);
       }
+      iColl++;
     }
   }
   // Calo clusters
@@ -1189,7 +1196,7 @@ StatusCode MLTreeMaker::execute()
           std::abs(clusterEta) > m_clusterEtaAbs_max)
         continue;
 
-      clusterRanks.emplace_hint(clusterRanks.end(), clusterE, iCluster);
+      clusterRanks.emplace_hint(clusterRanks.end(), clusterE, iCluster - 1);
     }
     m_nCluster = clusterRanks.size();
     //
@@ -1256,8 +1263,9 @@ StatusCode MLTreeMaker::execute()
     unsigned int jCluster = 0;
     for (auto mpair : clusterRanks)
     {
-      auto calibratedCluster = (*caloClusterReadHandle)[mpair.second];
+      auto calibratedCluster = caloClusterReadHandle->at(mpair.second);
       auto cluster = calibratedCluster;
+
       if (m_doUncalibratedClusters)
         cluster = calibratedCluster->getSisterCluster();
 
