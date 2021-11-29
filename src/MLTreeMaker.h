@@ -50,6 +50,8 @@ private:
   bool m_doCalibHitsPerCell;
   int m_numClusterTruthAssoc;
 
+  bool m_doTruthParticlesPerCell;
+
   std::vector<std::string> m_CalibrationHitContainerKeys;
   bool m_doClusterMoments;
   bool m_doUncalibratedClusters;

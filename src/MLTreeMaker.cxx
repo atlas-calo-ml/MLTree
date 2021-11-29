@@ -56,6 +56,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doCalibHits(true),
   m_doCalibHitsPerCell(true),
   m_numClusterTruthAssoc(5),
+  m_doTruthParticlesPerCell(true),
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
   m_doTracking(false),
@@ -89,6 +90,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   declareProperty("ClusterCells", m_doClusterCells);
   declareProperty("ClusterCalibHits", m_doCalibHits);
   declareProperty("ClusterCalibHitsPerCell", m_doCalibHitsPerCell);
+  declareProperty("TruthParticlesPerCell", m_doTruthParticlesPerCell);
   declareProperty("CalibrationHitContainerNames",m_CalibrationHitContainerKeys);
   declareProperty("ClusterMoments", m_doClusterMoments);
   declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
