@@ -379,6 +379,12 @@ StatusCode MLTreeMaker::initialize() {
 	  m_eventTree->Branch("cluster_hitsTruthE", &m_cluster_hitsTruthE);  
 	}
       }
+      if(m_doTruthParticlesPerCell)
+	{
+	  ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: start branches");
+	  m_eventTree->Branch("cluster_cell_hitsTruthIndex",&m_cluster_cell_hitsTruthIndex);
+	  m_eventTree->Branch("cluster_cell_hitsTruthE",&m_cluster_cell_hitsTruthE);
+	}
     }
   }
   
@@ -1106,6 +1112,12 @@ StatusCode MLTreeMaker::execute() {
 	  m_cluster_hitsTruthE.assign(m_nCluster,std::vector<float>());
 	}
       }
+      if(m_doTruthParticlesPerCell)
+	{
+	  ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: Define branch vector size=" << m_nCluster <<"clusters");
+	  m_cluster_cell_hitsTruthIndex.assign(m_nCluster,std::vector<int>()); 
+	  m_cluster_cell_hitsTruthE.assign(m_nCluster,std::vector<float>());
+	}
     }
     //loop over clusters in order of their energies
     //clusters failing E or eta cut are not included in loop
@@ -1184,6 +1196,8 @@ StatusCode MLTreeMaker::execute() {
 	std::vector<float>& cluster_cell_hitsE_Escaped=m_cluster_cell_hitsE_Escaped[jCluster];
 	std::vector<int>& cluster_hitsTruthIndex=m_cluster_hitsTruthIndex[jCluster];
 	std::vector<float>& cluster_hitsTruthE=m_cluster_hitsTruthE[jCluster];
+	std::vector<int>& cluster_cell_hitsTruthIndex=m_cluster_cell_hitsTruthIndex[jCluster];
+	std::vector<float>& cluster_cell_hitsTruthE=m_cluster_cell_hitsTruthE[jCluster];
 
 	auto nCells_cl=cluster->size();
 	cluster_cell_ID.reserve(nCells_cl);
@@ -1197,6 +1211,11 @@ StatusCode MLTreeMaker::execute() {
 	  cluster_cell_hitsE_Escaped.reserve(nCells_cl);
 	}
 
+	if(m_doTruthParticlesPerCell)
+	{
+	  cluster_cell_hitsTruthIndex.reserve(nCells_cl);
+	  cluster_cell_hitsTruthE.reserve(nCells_cl);
+	}
 	//keep track of how much each truth particle contributes to cluster's total calibration hits energy
 	std::map<unsigned int, float> truthIndexEnergyMap;
 

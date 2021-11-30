@@ -286,6 +286,10 @@ private:
   std::vector<std::vector<int> > m_cluster_hitsTruthIndex; 
   std::vector<std::vector<float> > m_cluster_hitsTruthE; 
 
+  
+  std::vector<std::vector<int> > m_cluster_cell_hitsTruthIndex; 
+  std::vector<std::vector<float> > m_cluster_cell_hitsTruthE; 
+
   static constexpr int m_G4BarcodeOffset=200000;
 
   //Idealized barrel-endcap geometry parameters for flagging complicated early showers

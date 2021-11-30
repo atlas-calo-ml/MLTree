@@ -7,7 +7,7 @@
 
 # Number of events
 #theApp.EvtMax = -1 # all events in dataset
-theApp.EvtMax = 1000 # testing
+theApp.EvtMax = 100 # testing
 import AthenaPoolCnvSvc.ReadAthenaPool
 
 # Input files for testing
@@ -111,6 +111,7 @@ topSequence += MLTreeMaker(name = "MLTreeMaker",
                            ClusterCells = True,
                            ClusterCalibHits = True,
                            ClusterCalibHitsPerCell = True, #*Dilia Per Cell information
+                           TruthParticlesPerCell = True, #*Dilia Per Cell truth information
                            ClusterMoments = True,
                            UncalibratedClusters = True,
                            TruthParticles = True,
