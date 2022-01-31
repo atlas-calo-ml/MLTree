@@ -288,7 +288,7 @@ private:
 
   
   std::vector<std::vector<int> > m_cluster_cell_hitsTruthIndex; 
-  std::vector<std::vector<float> > m_cluster_cell_hitsTruthE; 
+  std::vector<std::vector<float> > m_cluster_cell_leadhitsTruthE; 
 
   static constexpr int m_G4BarcodeOffset=200000;
 

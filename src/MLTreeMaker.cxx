@@ -56,7 +56,7 @@ MLTreeMaker::MLTreeMaker( const std::string& name, ISvcLocator* pSvcLocator ) :
   m_doCalibHits(true),
   m_doCalibHitsPerCell(true),
   m_numClusterTruthAssoc(5),
-  m_doTruthParticlesPerCell(true),
+  m_doTruthParticlesPerCell(false),
   m_doClusterMoments(true),
   m_doUncalibratedClusters(true),
   m_doTracking(false),
@@ -383,7 +383,7 @@ StatusCode MLTreeMaker::initialize() {
 	{
 	  ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: start branches");
 	  m_eventTree->Branch("cluster_cell_hitsTruthIndex",&m_cluster_cell_hitsTruthIndex);
-	  m_eventTree->Branch("cluster_cell_hitsTruthE",&m_cluster_cell_hitsTruthE);
+	  m_eventTree->Branch("cluster_cell_leadhitsTruthE",&m_cluster_cell_leadhitsTruthE);
 	}
     }
   }
@@ -655,7 +655,7 @@ StatusCode MLTreeMaker::execute() {
   //note this index is not necessarily the same as the index in the truthContainer
   //e.g. you filter some of the particles
   std::map<int,unsigned int> truthBarcodeMap;
-  if(m_doTruthParticles)
+  if(m_doTruthParticles || m_doTruthParticlesPerCell )
   {
     const xAOD::TruthParticleContainer* truthContainer = 0;
     CHECK(evtStore()->retrieve(truthContainer, m_truthContainerName));
@@ -709,18 +709,31 @@ StatusCode MLTreeMaker::execute() {
 	}
 	if(!m_keepG4TruthParticles) continue;
       }
-      m_truthPartPdgId.push_back(truth->pdgId());
-      m_truthPartStatus.push_back(truth->status());
-      m_truthPartBarcode.push_back(truth->barcode());
-      m_truthPartPt.push_back(truth->pt()*1e-3);
-      m_truthPartE.push_back(truth->e()*1e-3);
-      m_truthPartMass.push_back(truth->m()*1e-3);
-      m_truthPartEta.push_back(truth->eta());
-      m_truthPartPhi.push_back(truth->phi());
-      if(m_doCalibHits) truthBarcodeMap.emplace_hint(truthBarcodeMap.end(),truth->barcode(),m_nTruthPart);
+      if(m_doTruthParticles)
+	{
+	  m_truthPartPdgId.push_back(truth->pdgId());
+	  m_truthPartStatus.push_back(truth->status());
+	  m_truthPartBarcode.push_back(truth->barcode());
+	  m_truthPartPt.push_back(truth->pt()*1e-3);
+	  m_truthPartE.push_back(truth->e()*1e-3);
+	  m_truthPartMass.push_back(truth->m()*1e-3);
+	  m_truthPartEta.push_back(truth->eta());
+	  m_truthPartPhi.push_back(truth->phi());
+	}
+      if(m_doCalibHits || m_doTruthParticlesPerCell) truthBarcodeMap.emplace_hint(truthBarcodeMap.end(),truth->barcode(),m_nTruthPart);
+      if(m_doCalibHits || m_doTruthParticlesPerCell) //Dilia printing
+	{
+	  ATH_MSG_INFO ("*Dilia: Truth particle "<<m_nTruthPart<< " has barcode "<< truth->barcode());
+	  for( std::map<int,unsigned int>::const_iterator it =  truthBarcodeMap.begin() ; it != truthBarcodeMap.end(); ++it )
+	    {
+	      ATH_MSG_INFO ("*Dilia: truthBarcodeMap");
+	      ATH_MSG_INFO (it->first << " " << it->second);
+	    }
+	}
       m_nTruthPart++;
 
-    }
+    }// end truth particles loop
+    ATH_MSG_INFO ("*Dilia: Truth loop end:: Total truth particles "<<m_nTruthPart<<", truth container size: " <<truthContainer->size());
   }
   if (m_doTracking) 
   {
@@ -1114,9 +1127,9 @@ StatusCode MLTreeMaker::execute() {
       }
       if(m_doTruthParticlesPerCell)
 	{
-	  ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: Define branch vector size=" << m_nCluster <<"clusters");
+	  ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: Define branches with vector size= " << m_nCluster <<" clusters");
 	  m_cluster_cell_hitsTruthIndex.assign(m_nCluster,std::vector<int>()); 
-	  m_cluster_cell_hitsTruthE.assign(m_nCluster,std::vector<float>());
+	  m_cluster_cell_leadhitsTruthE.assign(m_nCluster,std::vector<float>());
 	}
     }
     //loop over clusters in order of their energies
@@ -1197,7 +1210,7 @@ StatusCode MLTreeMaker::execute() {
 	std::vector<int>& cluster_hitsTruthIndex=m_cluster_hitsTruthIndex[jCluster];
 	std::vector<float>& cluster_hitsTruthE=m_cluster_hitsTruthE[jCluster];
 	std::vector<int>& cluster_cell_hitsTruthIndex=m_cluster_cell_hitsTruthIndex[jCluster];
-	std::vector<float>& cluster_cell_hitsTruthE=m_cluster_cell_hitsTruthE[jCluster];
+	std::vector<float>& cluster_cell_leadhitsTruthE=m_cluster_cell_leadhitsTruthE[jCluster];
 
 	auto nCells_cl=cluster->size();
 	cluster_cell_ID.reserve(nCells_cl);
@@ -1213,12 +1226,16 @@ StatusCode MLTreeMaker::execute() {
 
 	if(m_doTruthParticlesPerCell)
 	{
+	  ////ATH_MSG_INFO ("*Dilia: m_doTruthParticlesPerCell: cluster "<<jCluster <<" have "<< nCells_cl <<" cells"); // Comment this when running on more than ~O(10) events (lots of printouts per cluster per event)
 	  cluster_cell_hitsTruthIndex.reserve(nCells_cl);
-	  cluster_cell_hitsTruthE.reserve(nCells_cl);
+	  cluster_cell_leadhitsTruthE.reserve(nCells_cl);
 	}
 	//keep track of how much each truth particle contributes to cluster's total calibration hits energy
 	std::map<unsigned int, float> truthIndexEnergyMap;
-
+	//keep track of how much each truth particle contributes to cell energy
+	std::map<unsigned int, std::vector<float> > truthIndexEnergyMapPerCell;
+	
+	unsigned int jCell = 0; // *Dilia Counter of cells
 	for(CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin(); it_cell != cluster->cell_end(); it_cell++)
 	{
 	  const CaloCell* cell = (*it_cell);
@@ -1243,11 +1260,35 @@ StatusCode MLTreeMaker::execute() {
 		energy_nonEM+=ch->energyNonEM();
 		energy_Invisible+=ch->energyInvisible();
 		energy_Escaped+=ch->energyEscaped();
-		if(m_doTruthParticles)
+		if(m_doTruthParticles || m_doTruthParticlesPerCell)
 		{
 		  unsigned int barcode = ch->particleID();
 		  const auto mapItr=truthBarcodeMap.find(barcode);
 		  if(mapItr!=truthBarcodeMap.end())  truthIndexEnergyMap[mapItr->second]+=ch->energyTotal();
+
+		  if(mapItr!=truthBarcodeMap.end())  truthIndexEnergyMapPerCell[mapItr->second].push_back(ch->energyTotal());
+
+		  
+		  if(mapItr->second<1) cluster_cell_leadhitsTruthE.push_back(ch->energyTotal()*1e-3);
+		  //////// PRINTING
+		  if(jCluster==0 && jCell<5)// Comment this when running on more than ~O(1) events (lots of printouts per cell )
+		    {
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: cell "<<jCell << " on cluster "<<jCluster ); 
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: * barcode: "<< barcode ); 
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: * Cell ID: "<< cell->ID().get_identifier32().get_compact() ); 
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: * cellE: "<< cellE ); 
+
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: * Index in truth container: (truthBarcodeMap) mapItr->second: "<< mapItr->second ); 
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: * Truth particle energy deposited: ch->energyTotal(): "<< ch->energyTotal()*1e-3);
+		      if(jCluster==0 && jCell<5 && mapItr->second<1)
+			{
+			  ATH_MSG_INFO ("*Dilia: Cell loop:: Leading truth particles energy "<< ch->energyTotal()*1e-3 ); 
+			}
+		      const auto Element=truthIndexEnergyMap.find(mapItr->second);
+		      const auto VectElement=truthIndexEnergyMapPerCell.find(mapItr->second);
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: *  Total truth particle energy deposited in cluster until here: truthIndexEnergyMap[IndexTruthPart]: "<< Element ->second *1e-3); 
+		      ATH_MSG_INFO ("*Dilia: Cell loop:: *  Truth particle energy deposited in the cell "<< jCell<<" of this cluster until here: truthIndexEnergyMapPerCell[IndexTruthPart]: "<<  VectElement->second.at(jCell) *1e-3); 
+		    }///end printing
 		}
 	      }
 	    }//end loop on calib hits containers
@@ -1259,8 +1300,9 @@ StatusCode MLTreeMaker::execute() {
 	      cluster_cell_hitsE_Escaped.push_back(energy_Escaped*1e-3);
 	    }
 	  }//end m_doCalibHits
+	  jCell++; // *Dilia Counter of cells
 	}//end cell loop
-	if(m_doTruthParticles && m_doCalibHits) 
+	if((m_doTruthParticles && m_doCalibHits) || m_doTruthParticlesPerCell) 
 	{
 	  //now sort by energy instead of index
 	  std::multimap<float, unsigned int, std::greater<float> > truthRanks;
@@ -1274,6 +1316,11 @@ StatusCode MLTreeMaker::execute() {
 	    cluster_hitsTruthIndex.push_back(mItr->second);
 	    cluster_hitsTruthE.push_back(mItr->first*1e-3);
 	  }
+	  if( m_doTruthParticlesPerCell)
+	    {
+	      /////////// Take the fist maxAssoc truth particles in truthRanks and per truth index loop over the cells, and save a vector of cells 
+
+	    }//end m_doTruthParticlesPerCell
 	}//end m_doTruthParticles
 
       }//end m_doClusterCells

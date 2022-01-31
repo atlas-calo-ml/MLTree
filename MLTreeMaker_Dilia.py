@@ -7,7 +7,7 @@
 
 # Number of events
 #theApp.EvtMax = -1 # all events in dataset
-theApp.EvtMax = 100 # testing
+theApp.EvtMax = 10 # testing
 import AthenaPoolCnvSvc.ReadAthenaPool
 
 # Input files for testing
@@ -48,7 +48,7 @@ rerunTruthJets=True
 from PyUtils import AthFile
 af = AthFile.fopen(svcMgr.EventSelector.InputCollections[0])
 containers=af.fileinfos['eventdata_items']
-for c in containers:
+for c in containers: 
     if c[0]=='CaloCalibrationHitContainer' : 
         if 'Dead' in c[1] : DMCalibrationHitContainerNames += [c[1]]
         else: CalibrationHitContainerNames += [c[1]]
@@ -79,7 +79,7 @@ TopoCalibMoments.MomentsNames += ["ENG_CALIB_TOT","ENG_CALIB_OUT_T","ENG_CALIB_D
 #read container names directly from ESD to prevent name mis-matches resulting in this failure mode
 TopoCalibMoments.DMCalibrationHitContainerNames = DMCalibrationHitContainerNames
 TopoCalibMoments.CalibrationHitContainerNames = CalibrationHitContainerNames
-print("*Dilia: ")
+print("*Dilia: Reading MLTreeMaker.py ")
 print(TopoCalibMoments)
 
 if rerunTruthJets:
