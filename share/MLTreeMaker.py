@@ -6,7 +6,7 @@
 # @date     October 2016
 
 # Number of events
-theApp.EvtMax = -1 # all events in dataset
+theApp.EvtMax = 10 # all events in dataset
 #theApp.EvtMax = 2000 # testing
 import AthenaPoolCnvSvc.ReadAthenaPool
 
@@ -15,7 +15,8 @@ import AthenaPoolCnvSvc.ReadAthenaPool
 # MC16 pi- (testing dataset)
 from AthenaCommon.AthenaCommonFlags import athenaCommonFlags
 #athenaCommonFlags.FilesInput=["/eos/user/a/angerami/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._000944.pool.root.1"]
-athenaCommonFlags.FilesInput=["/data/hodgkinson/dataFiles/mc16_13TeV/ESDFiles/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._001600.pool.root.1"]
+#athenaCommonFlags.FilesInput=["/data/hodgkinson/dataFiles/mc16_13TeV/ESDFiles/mc16_13TeV.426328.ParticleGun_single_piplus_logE5to2000.recon.ESD.e5661_s3170_r9857/ESD.11980046._001600.pool.root.1"]
+athenaCommonFlags.FilesInput=["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000172.pool.root.1"]
 from AthenaCommon.GlobalFlags import jobproperties
 jobproperties.Global.DetDescrVersion="ATLAS-R2-2016-01-00-01" # For MC16
 
@@ -139,6 +140,5 @@ svcMgr.THistSvc.Output += ["OutputStream DATAFILE='mltree.pool.root' OPT='RECREA
 # Setup up geometry needed for track extrapolation
 include("RecExCond/AllDet_detDescr.py")
 from AthenaCommon.CfgGetter import getService
-getService("AtlasTrackingGeometrySvc")
 
 # Configure object key store to recognize calo cells
