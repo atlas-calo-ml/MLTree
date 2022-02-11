@@ -23,7 +23,7 @@
 #include "TileEvent/TileContainer.h"
 #include "TileIdentifier/TileTBID.h"
 #include "CaloEvent/CaloCellContainer.h"
-#include "CaloTrackingGeometry/ICaloSurfaceHelper.h"
+//#include "CaloTrackingGeometry/ICaloSurfaceHelper.h"
 #include "TrkSurfaces/DiscSurface.h"
 #include "GeoPrimitives/GeoPrimitives.h"
 #include "CaloUtils/CaloClusterSignalState.h"
@@ -58,11 +58,9 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_keepOnlyStableTruthParticles(true),
                                                                               m_keepG4TruthParticles(false),
                                                                               m_prefix(""),
-                                                                              m_extrapolator("Trk::Extrapolator"),
                                                                               m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool"),
                                                                               m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),
                                                                               m_trackParametersIdHelper(new Trk::TrackParametersIdHelper),
-                                                                              m_surfaceHelper("CaloSurfaceHelper/CaloSurfaceHelper"),
                                                                               m_tileTBID(0),
                                                                               m_clusterE_min(0.),
                                                                               m_clusterE_max(1e4),
@@ -92,7 +90,6 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
   declareProperty("G4TruthParticles", m_keepG4TruthParticles);
   declareProperty("Prefix", m_prefix);
   declareProperty("JetContainers", m_jetReadHandleKeyArray);
-  declareProperty("Extrapolator", m_extrapolator);
   declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
   declareProperty("TrackSelectionTool", m_trkSelectionTool);
 }
@@ -108,9 +105,7 @@ StatusCode MLTreeMaker::initialize()
     ATH_MSG_WARNING("No decoration prefix name provided");
   }
 
-  ATH_CHECK(m_extrapolator.retrieve());
   ATH_CHECK(m_theTrackExtrapolatorTool.retrieve());
-  ATH_CHECK(m_surfaceHelper.retrieve());
   ATH_CHECK(m_trkSelectionTool.retrieve());
   // Get the test beam identifier for the MBTS
   ATH_CHECK(detStore()->retrieve(m_tileTBID));
