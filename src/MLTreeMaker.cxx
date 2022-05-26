@@ -761,20 +761,18 @@ StatusCode MLTreeMaker::execute()
     std::map<const xAOD::TrackParticle *, float> mapTrackSubtractedEnergy;
 
     //Define a function for summing up matched calocluster energies
-    auto accumulateSubtractedEnergy = [](int accumulator, std::pair<const xAOD::TrackParticle *, float> map)
+    auto accumulateSubtractedEnergy = [](int accumulator, std::pair<const xAOD::IParticle *, float> map)
     { return accumulator + map.second; };
 
     for (auto thisFE : *chargedFlowElementReadHandle)
     {
       //Get the list of matched CaloCluster, along with the energy subtracted from each CaloCluster
-      std::vector<std::pair<const xAOD::IParticle *, float>> clusterEnergies = thisFE->chargedObjectsAndWeights();
-      for (auto test : clusterEnergies)
-        std::cout << " Subtracted Energy is " << test.second << std::endl;
+      std::vector<std::pair<const xAOD::IParticle *, float>> clusterEnergies = thisFE->otherObjectsAndWeights();
       //get the track that this FlowElement represents
       const xAOD::TrackParticle *thisTrack = dynamic_cast<const xAOD::TrackParticle *>(thisFE->chargedObject(0));
       //Put the sum of the subtractd energy into the map between tracks and that sum.
       //Note that zero, the third argument, is the initial value of the sum
-      mapTrackSubtractedEnergy[thisTrack] = std::accumulate(mapTrackSubtractedEnergy.begin(), mapTrackSubtractedEnergy.end(), 0, accumulateSubtractedEnergy);
+      mapTrackSubtractedEnergy[thisTrack] = std::accumulate(clusterEnergies.begin(), clusterEnergies.end(), 0, accumulateSubtractedEnergy);
     }
 
     // Tracks
