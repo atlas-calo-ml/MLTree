@@ -4,14 +4,17 @@ if __name__=="__main__":
 
     from AthenaConfiguration.AllConfigFlags import ConfigFlags as cfgFlags
 
-    cfgFlags.Exec.SkipEvents=9
-    cfgFlags.Exec.MaxEvents=1
+    #cfgFlags.Exec.SkipEvents=9
+    cfgFlags.Exec.MaxEvents=100
     cfgFlags.Input.isMC=True
     cfgFlags.Input.Files= ["/data/hodgkinson/dataFiles/mc20_13TeV/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000043.pool.root.1"]
     cfgFlags.lock()
 
     from AthenaConfiguration.MainServicesConfig import MainServicesCfg
     cfg = MainServicesCfg(cfgFlags)
+
+    histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='mltree.root', OPT='RECREATE'"])
+    cfg.addService(histSvc)
 
     from AthenaPoolCnvSvc.PoolReadConfig import PoolReadCfg
     cfg.merge(PoolReadCfg(cfgFlags))
@@ -22,7 +25,6 @@ if __name__=="__main__":
      
     from TrkConfig.AtlasExtrapolatorConfig import AtlasExtrapolatorCfg
     Trk__ParticleCaloExtensionToolFactory=CompFactory.Trk.ParticleCaloExtensionTool
-#    cfg.popToolsAndMerge(AtlasExtrapolatorCfg(cfgFlags))
     pcExtensionTool = Trk__ParticleCaloExtensionToolFactory(Extrapolator = cfg.popToolsAndMerge(AtlasExtrapolatorCfg(cfgFlags)))
     
     from AthenaCommon.Constants import INFO
@@ -51,5 +53,7 @@ if __name__=="__main__":
                            TheTrackExtrapolatorTool=pcExtensionTool)
 
     cfg.addEventAlgo(MLTreeMaker)
+    cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
+    cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"
 
     cfg.run()

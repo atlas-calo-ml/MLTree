@@ -58,7 +58,7 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_keepOnlyStableTruthParticles(true),
                                                                               m_keepG4TruthParticles(false),
                                                                               m_prefix(""),
-                                                                              m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool"),
+                                                                              m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool",this),
                                                                               m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),
                                                                               m_trackParametersIdHelper(new Trk::TrackParametersIdHelper),
                                                                               m_tileTBID(0),
@@ -796,8 +796,10 @@ StatusCode MLTreeMaker::execute()
       m_trackEta.push_back(track->eta());
       m_trackPhi.push_back(track->phi());
 
-      if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end())
+      if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
         m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);
+	ATH_MSG_INFO("MARK: Subtracted energy is " << mapTrackSubtractedEnergy[track]);
+      }
       else
         m_trackSubtractedCaloEnergy.push_back(-999.);
 
@@ -861,7 +863,7 @@ StatusCode MLTreeMaker::execute()
           {
             intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
           }
-
+	  ATH_MSG_INFO("MARK: For int layer " << intLayer << " set eta to " << clParameter.momentum().eta());
           parametersMap[intLayer] = std::make_pair<float, float>(clParameter.momentum().eta(), clParameter.momentum().phi());
         }
       }
@@ -945,6 +947,7 @@ StatusCode MLTreeMaker::execute()
 
       if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
       {
+	ATH_MSG_INFO("MARK: Got EMB1");
         trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
         trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;
       }
