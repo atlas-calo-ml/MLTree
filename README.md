@@ -43,8 +43,10 @@ lsetup panda
 cmt find_packages && cmt compile</pre>
 </details>
 
-Using release 21
-
+<details>
+<summary>Using release 21</summary>
+<br>
+<pre>
 Follow instructions for sparse checkout; this is a clunky way to get the athena/Projects directory structure.
 ```
 mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
@@ -74,6 +76,8 @@ asetup 21.3,latest,Athena
 cmake -DATLAS_PACKAGE_FILTER_FILE=../package_filters.txt ../athena/Projects/WorkDir
 make
 ```
+</pre>
+</details>
 
 ## Test run
 
