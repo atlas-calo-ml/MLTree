@@ -7,6 +7,30 @@ For questions please contact: joakim.olsson[at]cern.ch
 ## Setup
 
 <details>
+<summary> Using release 22</summary>
+<br>
+<pre>mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
+setupATLAS
+lsetup git
+git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
+cd athena
+git clone https://github.com/atlas-calo-ml/MLTree.git athena/MLTree
+cd athena/MLTree
+git checkout upstream/Release22
+cd ../../
+echo "+ MLTree" > package_filters.txt
+echo "- .*" >> package_filters.txt
+mkdir build; cd build
+asetup Athena,22.0.69
+cmake -DATLAS_PACKAGE_FILTER_FILE=../package_filters.txt ../athena/Projects/WorkDir
+make
+source ../build/x86*/setup.sh
+mkdir ../run;cd ../run
+#adjust input file name in below file prior to running
+python ../athena/MLTree/run/runCA.py
+</pre>
+</details>
+
 <summary>Using release 20</summary>
 <br>
 <pre>mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis

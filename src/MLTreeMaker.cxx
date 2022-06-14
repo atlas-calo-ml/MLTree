@@ -23,7 +23,6 @@
 #include "TileEvent/TileContainer.h"
 #include "TileIdentifier/TileTBID.h"
 #include "CaloEvent/CaloCellContainer.h"
-//#include "CaloTrackingGeometry/ICaloSurfaceHelper.h"
 #include "TrkSurfaces/DiscSurface.h"
 #include "GeoPrimitives/GeoPrimitives.h"
 #include "CaloUtils/CaloClusterSignalState.h"
@@ -132,14 +131,11 @@ StatusCode MLTreeMaker::initialize()
   m_eventTree->Branch("eventNumber", &m_eventNumber, "eventNumber/LI");
   m_eventTree->Branch("lumiBlock", &m_lumiBlock, "lumiBlock/I");
   m_eventTree->Branch("coreFlags", &m_coreFlags, "coreFlags/i");
-  // if (m_isMC ) {
+  
   m_eventTree->Branch("mcEventNumber", &m_mcEventNumber, "mcEventNumber/I");
   m_eventTree->Branch("mcChannelNumber", &m_mcChannelNumber, "mcChannelNumber/I");
   m_eventTree->Branch("mcEventWeight", &m_mcEventWeight, "mcEventWeight/F");
-  // } else {
-  //   m_eventTree->Branch("bcid",                &m_bcid,           "bcid/I");
-  //   m_eventTree->Branch("prescale_DataWeight", &m_prescale_DataWeight,  "prescale_DataWeight/F");
-  // }
+  
   if (m_doEventCleaning)
   {
     m_eventTree->Branch("timeStamp", &m_timeStamp, "timeStamp/i");
@@ -157,17 +153,17 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("actualInteractionsPerCrossing", &m_actualMu, "actualInteractionsPerCrossing/F");
     m_eventTree->Branch("averageInteractionsPerCrossing", &m_averageMu, "averageInteractionsPerCrossing/F");
     m_eventTree->Branch("weight_pileup", &m_weight_pileup, "weight_pileup/F");
-    // if (m_isMC){
+   
     m_eventTree->Branch("correct_mu", &m_correct_mu, "correct_mu/F");
     m_eventTree->Branch("rand_run_nr", &m_rand_run_nr, "rand_run_nr/I");
     m_eventTree->Branch("rand_lumiblock_nr", &m_rand_lumiblock_nr, "rand_lumiblock_nr/I");
-    // }
+   
   }
   if (m_doShapeEM)
     m_eventTree->Branch("rhoEM", &m_rhoEM, "rhoEM/D");
   if (m_doShapeLC)
     m_eventTree->Branch("rhoLC", &m_rhoLC, "rhoLC/D");
-  if (m_doEventTruth /*&& m_isMC */)
+  if (m_doEventTruth )
   {
     m_eventTree->Branch("pdgId1", &m_pdgId1, "pdgId1/I");
     m_eventTree->Branch("pdgId2", &m_pdgId2, "pdgId2/I");
@@ -175,10 +171,7 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("pdfId2", &m_pdfId2, "pdfId2/I");
     m_eventTree->Branch("x1", &m_x1, "x1/F");
     m_eventTree->Branch("x2", &m_x2, "x2/F");
-    // m_eventTree->Branch("scale",               &m_scale,         "scale/F");
-    // m_eventTree->Branch("q",                   &m_q,             "q/F");
-    // m_eventTree->Branch("pdf1",                &m_pdf1,          "pdf1/F");
-    // m_eventTree->Branch("pdf2",                &m_pdf2,          "pdf2/F");
+   
     m_eventTree->Branch("xf1", &m_xf1, "xf1/F");
     m_eventTree->Branch("xf2", &m_xf2, "xf2/F");
   }
@@ -406,7 +399,6 @@ StatusCode MLTreeMaker::execute()
   m_pdgId1 = m_pdgId2 = m_pdfId1 = m_pdfId2 = -999;
   m_x1 = m_x2 = -999;
   m_xf1 = m_xf2 = -999;
-  //m_scale = m_q = m_pdf1 = m_pdf2 = -999;
 
   m_truthPartPdgId.clear();
   m_truthPartStatus.clear();
@@ -555,8 +547,7 @@ StatusCode MLTreeMaker::execute()
     }
     m_actualMu = eventInfoReadHandle->actualInteractionsPerCrossing();
     m_averageMu = eventInfoReadHandle->averageInteractionsPerCrossing();
-
-    // if (m_isMC ) {
+    
     static SG::AuxElement::ConstAccessor<float> weight_pileup("PileupWeight");
     static SG::AuxElement::ConstAccessor<float> correct_mu("corrected_averageInteractionsPerCrossing");
     static SG::AuxElement::ConstAccessor<unsigned int> rand_run_nr("RandomRunNumber");
@@ -627,7 +618,7 @@ StatusCode MLTreeMaker::execute()
       m_rhoEM = -999;
     }
   }
-  if (m_doEventTruth /*&& m_isMC*/)
+  if (m_doEventTruth)
   {
     SG::ReadHandle<xAOD::TruthEventContainer> truthEventReadHandle(m_truthEventReadHandleKey);
     if (!truthEventReadHandle.isValid())
@@ -797,8 +788,7 @@ StatusCode MLTreeMaker::execute()
       m_trackPhi.push_back(track->phi());
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
-        m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);
-	ATH_MSG_INFO("MARK: Subtracted energy is " << mapTrackSubtractedEnergy[track]);
+        m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);	
       }
       else
         m_trackSubtractedCaloEnergy.push_back(-999.);
@@ -862,8 +852,7 @@ StatusCode MLTreeMaker::execute()
           else
           {
             intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
-          }
-	  ATH_MSG_INFO("MARK: For int layer " << intLayer << " set eta to " << clParameter.momentum().eta());
+          }	  
           parametersMap[intLayer] = std::make_pair<float, float>(clParameter.momentum().eta(), clParameter.momentum().phi());
         }
       }
@@ -947,7 +936,6 @@ StatusCode MLTreeMaker::execute()
 
       if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
       {
-	ATH_MSG_INFO("MARK: Got EMB1");
         trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
         trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;
       }
