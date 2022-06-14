@@ -31,6 +31,7 @@ python ../athena/MLTree/run/runCA.py
 </pre>
 </details>
 
+<details>
 <summary>Using release 20</summary>
 <br>
 <pre>mkdir MLTreeAthenaAnalysis; cd MLTreeAthenaAnalysis
