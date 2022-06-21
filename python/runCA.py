@@ -1,19 +1,28 @@
 from AthenaConfiguration.ComponentFactory import CompFactory
 
+def __MLTree():
+  from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
+  return createMLTreeConfigFlags()
+
 if __name__=="__main__":
 
     from AthenaConfiguration.AllConfigFlags import ConfigFlags as cfgFlags
+        
+    from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
+    cfgFlags.addFlagsCategory("MLTree",__MLTree)
+    #cfgFlags.MLTree.NtupleName="mark"    
 
     cfgFlags.Exec.SkipEvents=8
     cfgFlags.Exec.MaxEvents=1
     cfgFlags.Input.isMC=True
-    cfgFlags.Input.Files= ["/data/hodgkinson/dataFiles/mc20_13TeV/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000043.pool.root.1"]
+    #cfgFlags.Input.Files= ["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000043.pool.root.1"]    
+    cfgFlags.fillFromArgs()
     cfgFlags.lock()
 
     from AthenaConfiguration.MainServicesConfig import MainServicesCfg
     cfg = MainServicesCfg(cfgFlags)
 
-    histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='mltree.root', OPT='RECREATE'"])
+    histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='"+ cfgFlags.MLTree.NtupleName+"', OPT='RECREATE'"])
     cfg.addService(histSvc)
 
     from AthenaPoolCnvSvc.PoolReadConfig import PoolReadCfg

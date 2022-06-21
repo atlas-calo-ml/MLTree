@@ -853,7 +853,7 @@ StatusCode MLTreeMaker::execute()
           {
             intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
           }	  
-          parametersMap[intLayer] = std::make_pair<float, float>(clParameter.momentum().eta(), clParameter.momentum().phi());
+          parametersMap[intLayer] = std::make_pair<float, float>(clParameter.position().eta(), clParameter.position().phi());
         }
       }
       else
@@ -935,9 +935,9 @@ StatusCode MLTreeMaker::execute()
       }
 
       if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
-      {
+      {        
         trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
-        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;
+        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;        
       }
       if (parametersMap.find(CaloCell_ID::CaloSample::EMB2) != parametersMap.end())
       {
