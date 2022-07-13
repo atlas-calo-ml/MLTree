@@ -85,20 +85,3 @@ make
 ```
 </pre>
 </details>
-
-## Test run
-
-This requires that input test files exist, which is specified in [MLTreeMaker.py](share/MLTreeMaker.py)
-
-```
-mkdir run; cd run
-athena MLTree/MLTreeMaker.py
-```
-
-## Running on the grid
-
-A script for launching grid jobs with different input files is available [here](python/launch_jobs.py): 
-
-```
-python python/launch_job.py --user <user> 
-```
