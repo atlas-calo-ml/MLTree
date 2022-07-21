@@ -284,6 +284,12 @@ StatusCode MLTreeMaker::initialize()
   {
     unsigned int nJetColl = m_jetReadHandleKeyArray.size();
 
+    m_jet_pt.clear();
+    m_jet_eta.clear();
+    m_jet_phi.clear();
+    m_jet_E.clear();
+    m_jet_flavor.clear();
+
     m_jet_pt.assign(nJetColl, std::vector<float>());
     m_jet_eta.assign(nJetColl, std::vector<float>());
     m_jet_phi.assign(nJetColl, std::vector<float>());
@@ -485,13 +491,15 @@ StatusCode MLTreeMaker::execute()
   m_trackPhi_TileExt2.clear();
 
   // General event information
+  
   SG::ReadHandle<xAOD::EventInfo> eventInfoReadHandle(m_eventInfoReadHandleKey);
+  
   if (!eventInfoReadHandle.isValid())
   {
     ATH_MSG_WARNING("Invalid ReadHandle to EventInfo with key " << eventInfoReadHandle.key());
     return StatusCode::SUCCESS;
   }
-
+  
   m_runNumber = eventInfoReadHandle->runNumber();
   m_eventNumber = eventInfoReadHandle->eventNumber();
   m_lumiBlock = eventInfoReadHandle->lumiBlock();
@@ -524,7 +532,7 @@ StatusCode MLTreeMaker::execute()
     m_timeStamp = eventInfoReadHandle->timeStamp();
     m_timeStampNSOffset = eventInfoReadHandle->timeStampNSOffset();
   }
-
+  
   if (m_doPileup)
   {
 
@@ -602,7 +610,7 @@ StatusCode MLTreeMaker::execute()
       m_rhoLC = -999;
     }
   }
-
+  
   if (m_doShapeEM)
   {
     SG::ReadHandle<xAOD::EventShape> emTopoEventShapeReadHandle(m_emTopoEventShapeReadHandleKey);
@@ -1224,6 +1232,10 @@ StatusCode MLTreeMaker::execute()
 
     if (m_doClusterCells)
     {
+      m_cluster_cell_ID.clear();
+      m_cluster_cell_E.clear();
+      m_cluster_cell_hitsE_EM.clear();
+
       m_cluster_cell_ID.assign(m_nCluster, std::vector<size_t>());
       m_cluster_cell_E.assign(m_nCluster, std::vector<float>());
       m_cluster_cell_hitsE_EM.assign(m_nCluster, std::vector<float>());
@@ -1231,12 +1243,19 @@ StatusCode MLTreeMaker::execute()
       {
         if (m_doCalibHitsPerCell)
         {
+          m_cluster_cell_hitsE_nonEM.clear();
+          m_cluster_cell_hitsE_Invisible.clear();
+          m_cluster_cell_hitsE_Escaped.clear();
+
           m_cluster_cell_hitsE_nonEM.assign(m_nCluster, std::vector<float>());
           m_cluster_cell_hitsE_Invisible.assign(m_nCluster, std::vector<float>());
           m_cluster_cell_hitsE_Escaped.assign(m_nCluster, std::vector<float>());
         }
         if (m_doTruthParticles)
         {
+          m_cluster_hitsTruthIndex.clear();
+          m_cluster_hitsTruthE.clear();
+
           m_cluster_hitsTruthIndex.assign(m_nCluster, std::vector<int>());
           m_cluster_hitsTruthE.assign(m_nCluster, std::vector<float>());
         }

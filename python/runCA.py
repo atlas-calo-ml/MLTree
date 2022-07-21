@@ -12,15 +12,20 @@ if __name__=="__main__":
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
     #cfgFlags.MLTree.NtupleName="mark"    
 
-    cfgFlags.Exec.SkipEvents=8
-    cfgFlags.Exec.MaxEvents=1
+    cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
+    #cfgFlags.Concurrency.NumThreads=4
+    #cfgFlags.Concurrency.NumProcs=1
     #cfgFlags.Input.Files= ["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000043.pool.root.1"]    
+    #cfgFlags.Input.Files=["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3170_r13300/ESD.28115683._000210.pool.root.1"]
     cfgFlags.fillFromArgs()
     cfgFlags.lock()
 
     from AthenaConfiguration.MainServicesConfig import MainServicesCfg
     cfg = MainServicesCfg(cfgFlags)
+
+    StoreGateSvc=CompFactory.StoreGateSvc
+    cfg.addService(StoreGateSvc("DetectorStore"))
 
     histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='"+ cfgFlags.MLTree.NtupleName+"', OPT='RECREATE'"])
     cfg.addService(histSvc)
@@ -36,6 +41,7 @@ if __name__=="__main__":
     Trk__ParticleCaloExtensionToolFactory=CompFactory.Trk.ParticleCaloExtensionTool
     pcExtensionTool = Trk__ParticleCaloExtensionToolFactory(Extrapolator = cfg.popToolsAndMerge(AtlasExtrapolatorCfg(cfgFlags)))
     
+    from InDetConfig.InDetTrackSelectionToolConfig import PFTrackSelectionToolCfg
     from AthenaCommon.Constants import INFO
     MLTreeMaker = CompFactory.MLTreeMaker(TrackContainer = "InDetTrackParticles",
                            CaloClusterContainer = "CaloCalTopoClusters",
@@ -59,7 +65,8 @@ if __name__=="__main__":
                            Jets = True,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
                            OutputLevel = INFO,
-                           TheTrackExtrapolatorTool=pcExtensionTool)
+                           TheTrackExtrapolatorTool=pcExtensionTool,
+                           TrackSelectionTool=cfg.popToolsAndMerge(PFTrackSelectionToolCfg(cfgFlags)))
 
     cfg.addEventAlgo(MLTreeMaker)
     cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
