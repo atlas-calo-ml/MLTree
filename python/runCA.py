@@ -1,5 +1,8 @@
 from AthenaConfiguration.ComponentFactory import CompFactory
 
+#You can run this code from the command line (after Athena setup) with a command:
+#python runCA.py --filesInput=<inputFileName> MLTree.NtupleName=<outputNtupleFileName>"
+
 def __MLTree():
   from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
   return createMLTreeConfigFlags()
@@ -10,14 +13,13 @@ if __name__=="__main__":
         
     from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
-    #cfgFlags.MLTree.NtupleName="mark"    
+      
 
     cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
+    #Do not set either of these - I do not understand why, but MLTreeMaker will not work with either adjusted from defaults.
     #cfgFlags.Concurrency.NumThreads=4
-    #cfgFlags.Concurrency.NumProcs=1
-    #cfgFlags.Input.Files= ["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3781_r13300/ESD.27658295._000043.pool.root.1"]    
-    #cfgFlags.Input.Files=["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3170_r13300/ESD.28115683._000210.pool.root.1"]
+    #cfgFlags.Concurrency.NumProcs=1    
     cfgFlags.fillFromArgs()
     cfgFlags.lock()
 
@@ -36,11 +38,27 @@ if __name__=="__main__":
     #Configure topocluster algorithmsm, and associated conditions
     from CaloRec.CaloTopoClusterConfig import CaloTopoClusterCfg
     cfg.merge(CaloTopoClusterCfg(cfgFlags))
+
+    #Given we rebuild topoclusters above, we must also rerun pflow
+    #because when the topoclusters update then the links from FlowElement
+    #to topocluster can become invalid. Rerunning pflow using
+    #the rebuilt topoclusters solves this.
+    #Note that the below config does not rebuild all Global PFlow links
+    #which are not used in MLTreeMaker, so are not relevant in this context.
+    from eflowRec.PFRun3Config import PFFullCfg
+    cfg.merge(PFFullCfg(cfgFlags))
+     
+    from eflowRec.PFRun3Remaps import ListRemaps
+ 
+    list_remaps=ListRemaps()
+    for mapping in list_remaps:
+      cfg.merge(mapping)    
      
     from TrkConfig.AtlasExtrapolatorConfig import AtlasExtrapolatorCfg
     Trk__ParticleCaloExtensionToolFactory=CompFactory.Trk.ParticleCaloExtensionTool
     pcExtensionTool = Trk__ParticleCaloExtensionToolFactory(Extrapolator = cfg.popToolsAndMerge(AtlasExtrapolatorCfg(cfgFlags)))
     
+    #This provides the same selection cuts as used in MLTreeMaker, so we can use the pflow selector tool
     from InDetConfig.InDetTrackSelectionToolConfig import PFTrackSelectionToolCfg
     from AthenaCommon.Constants import INFO
     MLTreeMaker = CompFactory.MLTreeMaker(TrackContainer = "InDetTrackParticles",
@@ -62,7 +80,7 @@ if __name__=="__main__":
                            EventTruth = False,
                            OnlyStableTruthParticles = False,
                            G4TruthParticles = False,
-                           Jets = True,
+                           Jets = False,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
                            OutputLevel = INFO,
                            TheTrackExtrapolatorTool=pcExtensionTool,
@@ -70,6 +88,6 @@ if __name__=="__main__":
 
     cfg.addEventAlgo(MLTreeMaker)
     cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
-    cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"
+    cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"    
 
     cfg.run()
