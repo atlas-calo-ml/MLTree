@@ -15,7 +15,7 @@ lsetup git
 git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
 cd athena
 git clone  git@github.com:atlas-calo-ml/MLTree.git MLTree
-cd athena/MLTree
+cd MLTree
 git checkout origin/Release22
 cd ../../
 echo "+ MLTree" > package_filters.txt
