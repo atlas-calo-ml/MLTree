@@ -10,8 +10,6 @@ def __MLTree():
 if __name__=="__main__":
 
     from AthenaConfiguration.AllConfigFlags import ConfigFlags as cfgFlags
-        
-    from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
       
 
