@@ -15,6 +15,7 @@ if __name__=="__main__":
 
     cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
+    cfgFlags.Input.Files=["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3170_r13300/ESD.28115683._000210.pool.root.1"]
     #Do not set either of these - I do not understand why, but MLTreeMaker will not work with either adjusted from defaults.
     #cfgFlags.Concurrency.NumThreads=4
     #cfgFlags.Concurrency.NumProcs=1    
@@ -51,10 +52,9 @@ if __name__=="__main__":
     list_remaps=ListRemaps()
     for mapping in list_remaps:
       cfg.merge(mapping)    
-     
-    from TrkConfig.AtlasExtrapolatorConfig import AtlasExtrapolatorCfg
-    Trk__ParticleCaloExtensionToolFactory=CompFactory.Trk.ParticleCaloExtensionTool
-    pcExtensionTool = Trk__ParticleCaloExtensionToolFactory(Extrapolator = cfg.popToolsAndMerge(AtlasExtrapolatorCfg(cfgFlags)))
+         
+    from TrackToCalo.TrackToCaloConfig import ParticleCaloExtensionToolCfg
+    pcExtensionTool = cfg.popToolsAndMerge(ParticleCaloExtensionToolCfg(cfgFlags))
     
     #This provides the same selection cuts as used in MLTreeMaker, so we can use the pflow selector tool
     from InDetConfig.InDetTrackSelectionToolConfig import PFTrackSelectionToolCfg

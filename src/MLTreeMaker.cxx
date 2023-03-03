@@ -58,13 +58,13 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_keepG4TruthParticles(false),
                                                                               m_prefix(""),
                                                                               m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool",this),
-                                                                              m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),
-                                                                              m_trackParametersIdHelper(new Trk::TrackParametersIdHelper),
+                                                                              m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),                                                                              
                                                                               m_tileTBID(0),
                                                                               m_clusterE_min(0.),
                                                                               m_clusterE_max(1e4),
                                                                               m_clusterEtaAbs_max(2.5),
-                                                                              m_cellE_thres(0.005) // 5 MeV threshold
+                                                                              m_cellE_thres(0.005), // 5 MeV threshold
+                                                                              m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>())
 {
   declareProperty("Clusters", m_doClusters);
   declareProperty("ClusterCells", m_doClusterCells);
@@ -837,7 +837,7 @@ StatusCode MLTreeMaker::execute()
       m_trackZ0.push_back(track->definingParameters()[1]);
 
       // A map to store the track parameters (eta,phi) associated with the different layers of the calorimeter system
-      std::map<CaloCell_ID::CaloSample, std::pair<float, float>> parametersMap;
+      std::map<CaloCell_ID::CaloSample, std::pair<double, double>> parametersMap;
 
       std::unique_ptr<Trk::CaloExtension> extension = m_theTrackExtrapolatorTool->caloExtension(Gaudi::Hive::currentContext(), *track);
       if (extension)
@@ -860,8 +860,11 @@ StatusCode MLTreeMaker::execute()
           else
           {
             intLayer = m_trackParametersIdHelper->caloSample(parametersIdentifier);
-          }	  
-          parametersMap[intLayer] = std::make_pair<float, float>(clParameter.position().eta(), clParameter.position().phi());
+          }
+         
+          if (m_trackParametersIdHelper->isEntryToVolume(clParameter.cIdentifier())){
+            parametersMap[intLayer] = std::make_pair<double, double>(clParameter.position().eta(), clParameter.position().phi());
+          }
         }
       }
       else
@@ -869,7 +872,7 @@ StatusCode MLTreeMaker::execute()
         ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
         continue;
       }
-
+      
       //  ---------Calo Sample layer Variables---------
       //  PreSamplerB=0, EMB1, EMB2, EMB3, // LAr barrel
       //  PreSamplerE, EME1, EME2, EME3,   // LAr EM endcap

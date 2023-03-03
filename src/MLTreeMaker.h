@@ -110,9 +110,10 @@ private:
   /** ReadHandleKeyArray for CalibrationHitContainers */
   SG::ReadHandleKeyArray<CaloCalibrationHitContainer> m_CalibrationHitContainerKeys;
 
+
+  std::unique_ptr<Trk::TrackParametersIdHelper> m_trackParametersIdHelper;
   ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
   ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
-  Trk::TrackParametersIdHelper *m_trackParametersIdHelper;
   const TileTBID *m_tileTBID;
 
   // Cluster and cell selections
