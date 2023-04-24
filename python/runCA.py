@@ -15,9 +15,9 @@ if __name__=="__main__":
 
     cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
-    cfgFlags.Input.Files=["/data/hodgkinson/dataFiles/mc20_13TeV/ESDFiles/mc20_13TeV.426327.ParticleGun_single_piminus_logE5to2000.recon.ESD.e5661_s3170_r13300/ESD.28115683._000210.pool.root.1"]
+    cfgFlags.Input.Files=["/home/markhodgkinson.linux/ESD.28115683._000440.pool.root.1"]
     #Do not set either of these - I do not understand why, but MLTreeMaker will not work with either adjusted from defaults.
-    #cfgFlags.Concurrency.NumThreads=4
+    cfgFlags.Concurrency.NumThreads=1
     #cfgFlags.Concurrency.NumProcs=1    
     cfgFlags.fillFromArgs()
     cfgFlags.lock()
@@ -53,12 +53,17 @@ if __name__=="__main__":
     for mapping in list_remaps:
       cfg.merge(mapping)    
          
+    #decorate the topoclusters with calib hit calculations
+    from CaloCalibHitRec.CaloCalibHitDecoratorCfg import CaloCalibHitDecoratorCfg 
+    cfg.merge(CaloCalibHitDecoratorCfg(cfgFlags))
+    cfg.getEventAlgo("CaloCalibClusterDecoratorAlgorithm").CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName
+
     from TrackToCalo.TrackToCaloConfig import ParticleCaloExtensionToolCfg
     pcExtensionTool = cfg.popToolsAndMerge(ParticleCaloExtensionToolCfg(cfgFlags))
     
     #This provides the same selection cuts as used in MLTreeMaker, so we can use the pflow selector tool
     from InDetConfig.InDetTrackSelectionToolConfig import PFTrackSelectionToolCfg
-    from AthenaCommon.Constants import INFO
+    from AthenaCommon.Constants import INFO, DEBUG
     MLTreeMaker = CompFactory.MLTreeMaker(TrackContainer = "InDetTrackParticles",
                            CaloClusterContainer = "CaloCalTopoClusters",
                            Prefix = "CALO",
@@ -84,8 +89,13 @@ if __name__=="__main__":
                            TheTrackExtrapolatorTool=pcExtensionTool,
                            TrackSelectionTool=cfg.popToolsAndMerge(PFTrackSelectionToolCfg(cfgFlags)))
 
-    cfg.addEventAlgo(MLTreeMaker)
+    #Has to be added in this convoluted way so that we can read EventInfo from the input file
+    from AthenaConfiguration.ComponentAccumulator import ComponentAccumulator
+    MLTreeAC = ComponentAccumulator()
+    MLTreeAC.addEventAlgo(MLTreeMaker)
+    cfg.merge(MLTreeAC)
     cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
     cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"    
+
 
     cfg.run()

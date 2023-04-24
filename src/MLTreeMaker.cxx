@@ -1,5 +1,6 @@
 #include "MLTreeMaker.h"
 
+
 // Tracks
 #include "TrkTrack/Track.h"
 #include "TrkParameters/TrackParameters.h"
@@ -30,6 +31,7 @@
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
 // Other xAOD incudes
 #include "xAODTruth/TruthEventContainer.h"
+#include "AthContainers/AuxElement.h"
 
 #include <string>
 #include <vector>
@@ -116,11 +118,12 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(m_trackParticleReadHandleKey.initialize());
   ATH_CHECK(m_caloClusterReadHandleKey.initialize());
   ATH_CHECK(m_eventInfoReadHandleKey.initialize());
-  ATH_CHECK(m_lcTopoEventShapeReadHandleKey.initialize());
-  ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
+  if (!m_lcTopoEventShapeReadHandleKey.empty()) ATH_CHECK(m_lcTopoEventShapeReadHandleKey.initialize());
+  if (!m_emTopoEventShapeReadHandleKey.empty()) ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
   ATH_CHECK(m_truthEventReadHandleKey.initialize());
   ATH_CHECK(m_jetReadHandleKeyArray.initialize());
   ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
+  ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
 
   // Setup the event level TTree and its branches
   CHECK(book(TTree("EventTree", "EventTree")));
@@ -368,6 +371,8 @@ StatusCode MLTreeMaker::initialize()
         {
           m_eventTree->Branch("cluster_hitsTruthIndex", &m_cluster_hitsTruthIndex);
           m_eventTree->Branch("cluster_hitsTruthE", &m_cluster_hitsTruthE);
+          m_eventTree->Branch("cluster_visibleHitsTruthIndex", &m_cluster_visibleHitsTruthIndex);
+          m_eventTree->Branch("cluster_visibleHitsTruthE", &m_cluster_visibleHitsTruthE);
         }
       }
     }
@@ -1261,6 +1266,14 @@ StatusCode MLTreeMaker::execute()
 
           m_cluster_hitsTruthIndex.assign(m_nCluster, std::vector<int>());
           m_cluster_hitsTruthE.assign(m_nCluster, std::vector<float>());
+
+          m_cluster_visibleHitsTruthIndex.clear();
+          m_cluster_visibleHitsTruthE.clear();
+
+          m_cluster_visibleHitsTruthIndex.assign(m_nCluster, std::vector<int>());
+          m_cluster_visibleHitsTruthE.assign(m_nCluster, std::vector<float>());
+
+
         }
       }
     }
@@ -1358,6 +1371,8 @@ StatusCode MLTreeMaker::execute()
         std::vector<float> &cluster_cell_hitsE_Escaped = m_cluster_cell_hitsE_Escaped[jCluster];
         std::vector<int> &cluster_hitsTruthIndex = m_cluster_hitsTruthIndex[jCluster];
         std::vector<float> &cluster_hitsTruthE = m_cluster_hitsTruthE[jCluster];
+        std::vector<int> &cluster_visibleHitsTruthIndex = m_cluster_visibleHitsTruthIndex[jCluster];
+        std::vector<float> &cluster_visibleHitsTruthE = m_cluster_visibleHitsTruthE[jCluster];
 
         auto nCells_cl = cluster->size();
         cluster_cell_ID.reserve(nCells_cl);
@@ -1433,6 +1448,24 @@ StatusCode MLTreeMaker::execute()
             cluster_hitsTruthIndex.push_back(mItr->second);
             cluster_hitsTruthE.push_back(mItr->first * 1e-3);
           }
+
+          //now get visible energy contributions via calo cluster decorations
+          //these are calculated via https://acode-browser1.usatlas.bnl.gov/lxr/source/athena/Calorimeter/CaloCalibHitRec/src/CaloCalibClusterDecoratorAlgorithm.cxx
+          //with N set to 3 and only visible calibration hit energy used.
+          const SG::AuxElement::Accessor<std::vector<std::pair<unsigned int, double> > > clusterTruthDecorationsAccessor("calclus_NLeadingTruthParticleBarcodeEnergyPairs");
+          std::vector<std::pair<unsigned int, double > > clusterTruthDecorations = clusterTruthDecorationsAccessor(*cluster);
+
+          for (auto &thePair : clusterTruthDecorations)
+          {
+            unsigned int barcode = thePair.first;
+            const auto mapItr = truthBarcodeMap.find(barcode);
+            if (mapItr != truthBarcodeMap.end())
+            {
+              cluster_visibleHitsTruthIndex.push_back(mapItr->second);
+              cluster_visibleHitsTruthE.push_back(thePair.second * 1e-3);
+            }
+          }
+
         } //end m_doTruthParticles
 
       } //end m_doClusterCells

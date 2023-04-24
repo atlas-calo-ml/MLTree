@@ -94,12 +94,15 @@ private:
   /** ReadHandleKey for CaloCluster */
   SG::ReadHandleKey<xAOD::CaloClusterContainer> m_caloClusterReadHandleKey{this, "CaloClusterContainer", "CaloCalTopoClusters", "ReadHandleKey for CaloClusters"};
 
+  /** ReadDecorHandleKey for the CaloCluster calibration hit decorations */
+  SG::ReadDecorHandleKey<xAOD::CaloClusterContainer> m_caloClusterCalibHitsDecorHandleKey{this, "CaloClusterCalibHitsDecor", "CaloCalTopoClusters.calclus_NLeadingTruthParticleBarcodeEnergyPairs", "ReadDecorHandleKey for the CaloCluster calibration hit decorations"};
+
   /** ReadHandleKey for EventInfo */
   SG::ReadHandleKey<xAOD::EventInfo> m_eventInfoReadHandleKey{this, "EventContainer", "EventInfo", "ReadHandleKey for EventInfo"};
 
   /** ReadHandleKeys for EventShapes */
-  SG::ReadHandleKey<xAOD::EventShape> m_lcTopoEventShapeReadHandleKey{this, "LCTopoEventShape", "Kt4LCTopoEventShape", "ReadHandleKey for LCTopoEventShape"};
-  SG::ReadHandleKey<xAOD::EventShape> m_emTopoEventShapeReadHandleKey{this, "EMTopoEventShape", "Kt4EMTopoEventShape", "ReadHandleKey for EMTopoEventShape"};
+  SG::ReadHandleKey<xAOD::EventShape> m_lcTopoEventShapeReadHandleKey{this, "LCTopoEventShape", "", "ReadHandleKey for LCTopoEventShape"};
+  SG::ReadHandleKey<xAOD::EventShape> m_emTopoEventShapeReadHandleKey{this, "EMTopoEventShape", "", "ReadHandleKey for EMTopoEventShape"};
 
   /** ReadHandleKey for TruthEvents */
   SG::ReadHandleKey<xAOD::TruthEventContainer> m_truthEventReadHandleKey{this, "TruthEventContainer", "TruthEvents", "ReadHandleKey for TruthEvents"};
@@ -317,6 +320,8 @@ private:
   std::vector<std::vector<float>> m_cluster_cell_hitsE_Escaped;
   std::vector<std::vector<int>> m_cluster_hitsTruthIndex;
   std::vector<std::vector<float>> m_cluster_hitsTruthE;
+  std::vector<std::vector<int>> m_cluster_visibleHitsTruthIndex;
+  std::vector<std::vector<float>> m_cluster_visibleHitsTruthE;
 
   static constexpr int m_G4BarcodeOffset = 200000;
 
