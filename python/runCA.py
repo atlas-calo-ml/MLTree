@@ -90,6 +90,7 @@ if __name__=="__main__":
                            TrackSelectionTool=cfg.popToolsAndMerge(PFTrackSelectionToolCfg(cfgFlags)))
 
     #Has to be added in this convoluted way so that we can read EventInfo from the input file
+    #More details in https://its.cern.ch/jira/browse/ATLASRECTS-7602
     from AthenaConfiguration.ComponentAccumulator import ComponentAccumulator
     MLTreeAC = ComponentAccumulator()
     MLTreeAC.addEventAlgo(MLTreeMaker)
