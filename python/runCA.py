@@ -89,12 +89,9 @@ if __name__=="__main__":
                            TheTrackExtrapolatorTool=pcExtensionTool,
                            TrackSelectionTool=cfg.popToolsAndMerge(PFTrackSelectionToolCfg(cfgFlags)))
 
-    #Has to be added in this convoluted way so that we can read EventInfo from the input file
-    #More details in https://its.cern.ch/jira/browse/ATLASRECTS-7602
-    from AthenaConfiguration.ComponentAccumulator import ComponentAccumulator
-    MLTreeAC = ComponentAccumulator()
-    MLTreeAC.addEventAlgo(MLTreeMaker)
-    cfg.merge(MLTreeAC)
+    #Need to specify sequence name, otherwise the tool will not be added to the correct sequence and some 
+    #containers such as EventInfo will not be available
+    cfg.addEventAlgo(MLTreeMaker,sequenceName="AthAlgSeq")
     cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
     cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"    
 
