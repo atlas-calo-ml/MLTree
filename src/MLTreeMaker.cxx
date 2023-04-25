@@ -208,7 +208,8 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackP", &m_trackP);
     m_eventTree->Branch("trackMass", &m_trackMass);
     m_eventTree->Branch("trackEta", &m_trackEta);
-    m_eventTree->Branch("trackPhi", &m_trackPhi);
+    m_eventTree->Branch("trackPhi", &m_trackPhi);  
+    m_eventTree->Branch("trackTruthParticleIndex", &m_trackTruthParticleIndex);
     m_eventTree->Branch("trackSubtractedCaloEnergy", &m_trackSubtractedCaloEnergy);
 
     // Track quality variables
@@ -425,6 +426,7 @@ StatusCode MLTreeMaker::execute()
   m_trackMass.clear();
   m_trackEta.clear();
   m_trackPhi.clear();
+  m_trackTruthParticleIndex.clear();
   m_trackSubtractedCaloEnergy.clear();
 
   m_trackNumberOfPixelHits.clear();
@@ -799,6 +801,22 @@ StatusCode MLTreeMaker::execute()
       m_trackMass.push_back(track->m() * 1e-3);
       m_trackEta.push_back(track->eta());
       m_trackPhi.push_back(track->phi());
+
+      //get truth particle link for track
+      const xAOD::TruthParticle *linkedTruthParticle = nullptr;
+      if (track->isAvailable<ElementLink<xAOD::TruthParticleContainer>>("truthParticleLink"))
+      {
+        ElementLink<xAOD::TruthParticleContainer> truthLink = track->auxdata<ElementLink<xAOD::TruthParticleContainer>>("truthParticleLink");
+        if (truthLink.isValid())
+          linkedTruthParticle = *truthLink;
+      }
+
+      //get truth particle barcode for track
+      if (linkedTruthParticle){
+        int barcode = linkedTruthParticle->barcode();
+        unsigned int truthParticleIndex = truthBarcodeMap[barcode];
+        m_trackTruthParticleIndex.push_back(truthParticleIndex);
+      }
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
         m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);	

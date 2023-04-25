@@ -192,6 +192,8 @@ private:
   std::vector<float> m_trackMass;
   std::vector<float> m_trackEta;
   std::vector<float> m_trackPhi;
+  //index of matched truth particle in m_truthPart* vectors
+  std::vector<unsigned int> m_trackTruthParticleIndex;
   //If this track was used in particle flow, then this is the
   //amount of energy removed from matched CaloCluster
   std::vector<float> m_trackSubtractedCaloEnergy;
