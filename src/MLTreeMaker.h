@@ -194,6 +194,9 @@ private:
   std::vector<float> m_trackPhi;
   //index of matched truth particle in m_truthPart* vectors
   std::vector<unsigned int> m_trackTruthParticleIndex;
+  //sum of visible calibration hit energy of this tracks
+  //truth particle found in all topoclusters
+  std::vector<float> m_trackCalHitCaloEnergy;
   //If this track was used in particle flow, then this is the
   //amount of energy removed from matched CaloCluster
   std::vector<float> m_trackSubtractedCaloEnergy;

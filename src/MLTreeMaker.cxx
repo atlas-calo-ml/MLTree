@@ -210,6 +210,7 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackEta", &m_trackEta);
     m_eventTree->Branch("trackPhi", &m_trackPhi);  
     m_eventTree->Branch("trackTruthParticleIndex", &m_trackTruthParticleIndex);
+    m_eventTree->Branch("trackCalHitCaloEnergy", &m_trackCalHitCaloEnergy);
     m_eventTree->Branch("trackSubtractedCaloEnergy", &m_trackSubtractedCaloEnergy);
 
     // Track quality variables
@@ -427,6 +428,7 @@ StatusCode MLTreeMaker::execute()
   m_trackEta.clear();
   m_trackPhi.clear();
   m_trackTruthParticleIndex.clear();
+  m_trackCalHitCaloEnergy.clear();
   m_trackSubtractedCaloEnergy.clear();
 
   m_trackNumberOfPixelHits.clear();
@@ -751,6 +753,12 @@ StatusCode MLTreeMaker::execute()
       m_nTruthPart++;
     }
   }
+
+  //Create a map between the truth particle matched to each track
+  //(using its barcode) and the sum of the visible calibration hit 
+  //energy for that truth particle found in topoclusters
+  std::map<int, float> truthCalHitCaloEnergyMap;
+
   if (m_doTracking)
   {
 
@@ -787,7 +795,7 @@ StatusCode MLTreeMaker::execute()
     {
       ATH_MSG_WARNING("Invalid ReadHandle for xAOD::TrackParticleContainer with key: " << trackParticleReadHandle.key());
       return StatusCode::SUCCESS;
-    }
+    }    
 
     m_nTrack = 0;
     for (auto track : *trackParticleReadHandle)
@@ -801,6 +809,8 @@ StatusCode MLTreeMaker::execute()
       m_trackMass.push_back(track->m() * 1e-3);
       m_trackEta.push_back(track->eta());
       m_trackPhi.push_back(track->phi());
+      //initialise the value of the calibration hit sum - this is filled in later on in the cluster loop      
+      m_trackCalHitCaloEnergy.push_back(0.0);
 
       //get truth particle link for track
       const xAOD::TruthParticle *linkedTruthParticle = nullptr;
@@ -816,6 +826,7 @@ StatusCode MLTreeMaker::execute()
         int barcode = linkedTruthParticle->barcode();
         unsigned int truthParticleIndex = truthBarcodeMap[barcode];
         m_trackTruthParticleIndex.push_back(truthParticleIndex);
+        truthCalHitCaloEnergyMap[barcode] = m_trackCalHitCaloEnergy[m_nTrack];
       }
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
@@ -1480,9 +1491,11 @@ StatusCode MLTreeMaker::execute()
             if (mapItr != truthBarcodeMap.end())
             {
               cluster_visibleHitsTruthIndex.push_back(mapItr->second);
-              cluster_visibleHitsTruthE.push_back(thePair.second * 1e-3);
-            }
-          }
+              float calibrationHitEnergy = thePair.second * 1e-3;
+              cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTracking) truthCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
+            }//if have valid truth particle entry in map
+          }//end loop on clusterTruthDecorations
 
         } //end m_doTruthParticles
 
