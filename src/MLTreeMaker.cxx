@@ -1415,9 +1415,6 @@ StatusCode MLTreeMaker::execute()
           cluster_cell_hitsE_Escaped.reserve(nCells_cl);
         }
 
-        //keep track of how much each truth particle contributes to cluster's total calibration hits energy
-        std::map<unsigned int, float> truthIndexEnergyMap;
-
         for (CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin(); it_cell != cluster->cell_end(); it_cell++)
         {
           const CaloCell *cell = (*it_cell);
@@ -1444,13 +1441,6 @@ StatusCode MLTreeMaker::execute()
                 energy_nonEM += ch->energyNonEM();
                 energy_Invisible += ch->energyInvisible();
                 energy_Escaped += ch->energyEscaped();
-                if (m_doTruthParticles)
-                {
-                  unsigned int barcode = ch->particleID();
-                  const auto mapItr = truthBarcodeMap.find(barcode);
-                  if (mapItr != truthBarcodeMap.end())
-                    truthIndexEnergyMap[mapItr->second] += ch->energyTotal();
-                }
               }
             } //end loop on calib hits containers
             if (m_doCalibHitsPerCell)
@@ -1464,23 +1454,11 @@ StatusCode MLTreeMaker::execute()
         }   //end cell loop
         if (m_doTruthParticles && m_doCalibHits)
         {
-          //now sort by energy instead of index
-          std::multimap<float, unsigned int, std::greater<float>> truthRanks;
-          for (auto mItr : truthIndexEnergyMap)
-            truthRanks.emplace_hint(truthRanks.end(), mItr.second, mItr.first);
-          //Should we put a maximum and keep only the top 2 or 3 contributors to the cluster?
-          cluster_hitsTruthIndex.reserve(truthRanks.size());
-          cluster_hitsTruthE.reserve(truthRanks.size());
-          unsigned int maxAssoc = (m_numClusterTruthAssoc < 0) ? truthRanks.size() : m_numClusterTruthAssoc;
-          for (auto mItr = truthRanks.begin(); (mItr != truthRanks.end() && cluster_hitsTruthIndex.size() < maxAssoc); mItr++)
-          {
-            cluster_hitsTruthIndex.push_back(mItr->second);
-            cluster_hitsTruthE.push_back(mItr->first * 1e-3);
-          }
 
           //now get visible energy contributions via calo cluster decorations
           //these are calculated via https://acode-browser1.usatlas.bnl.gov/lxr/source/athena/Calorimeter/CaloCalibHitRec/src/CaloCalibClusterDecoratorAlgorithm.cxx
-          //with N set to 3 and only visible calibration hit energy used.
+          //We have run one calculation using the full calibration hit energy and one accounting only for visible calibration hit energy          
+
           const SG::AuxElement::Accessor<std::vector<std::pair<unsigned int, double> > > clusterTruthDecorationsAccessor("calclus_NLeadingTruthParticleBarcodeEnergyPairs_Visible");
           std::vector<std::pair<unsigned int, double > > clusterTruthDecorations = clusterTruthDecorationsAccessor(*cluster);
 
@@ -1496,6 +1474,21 @@ StatusCode MLTreeMaker::execute()
               if (m_doTracking) truthCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations
+
+          const SG::AuxElement::Accessor<std::vector<std::pair<unsigned int, double> > > clusterTruthDecorationsAccessor_Full("calclus_NLeadingTruthParticleBarcodeEnergyPairs_Full");
+          std::vector<std::pair<unsigned int, double > > clusterTruthDecorations_Full = clusterTruthDecorationsAccessor_Full(*cluster);
+
+          for (auto &thePair : clusterTruthDecorations_Full)
+          {
+            unsigned int barcode = thePair.first;
+            const auto mapItr = truthBarcodeMap.find(barcode);
+            if (mapItr != truthBarcodeMap.end())
+            {
+              cluster_hitsTruthIndex.push_back(mapItr->second);
+              float calibrationHitEnergy = thePair.second * 1e-3;
+              cluster_hitsTruthE.push_back(calibrationHitEnergy);
+            }//if have valid truth particle entry in map
+          }//end loop on clusterTruthDecorations_Full
 
         } //end m_doTruthParticles
 
