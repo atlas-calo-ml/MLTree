@@ -1481,7 +1481,7 @@ StatusCode MLTreeMaker::execute()
           //now get visible energy contributions via calo cluster decorations
           //these are calculated via https://acode-browser1.usatlas.bnl.gov/lxr/source/athena/Calorimeter/CaloCalibHitRec/src/CaloCalibClusterDecoratorAlgorithm.cxx
           //with N set to 3 and only visible calibration hit energy used.
-          const SG::AuxElement::Accessor<std::vector<std::pair<unsigned int, double> > > clusterTruthDecorationsAccessor("calclus_NLeadingTruthParticleBarcodeEnergyPairs");
+          const SG::AuxElement::Accessor<std::vector<std::pair<unsigned int, double> > > clusterTruthDecorationsAccessor("calclus_NLeadingTruthParticleBarcodeEnergyPairs_Visible");
           std::vector<std::pair<unsigned int, double > > clusterTruthDecorations = clusterTruthDecorationsAccessor(*cluster);
 
           for (auto &thePair : clusterTruthDecorations)

@@ -54,10 +54,17 @@ if __name__=="__main__":
       cfg.merge(mapping)    
          
     #decorate the topoclusters with calib hit calculations
-    from CaloCalibHitRec.CaloCalibHitDecoratorCfg import CaloCalibHitDecoratorCfg 
-    cfg.merge(CaloCalibHitDecoratorCfg(cfgFlags))
-    cfg.getEventAlgo("CaloCalibClusterDecoratorAlgorithm").CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName
+    from CaloCalibHitRec.CaloCalibHitDecoratorCfg import CaloCalibHitDecoratorCfg, CaloCalibHitDecoratorFullEnergyCfg 
+    #The decoration algorithms add the leading numTruthParticles energy deposits, in that topocluster, to each topocluster
+    numTruthParticles = 10
+    cfg.merge(CaloCalibHitDecoratorCfg(cfgFlags,name="CaloCalibClusterDecoratorAlgorithm_Visible", 
+                                       CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName+"_Visible",
+                                       NumTruthParticles = numTruthParticles))
 
+    cfg.merge(CaloCalibHitDecoratorFullEnergyCfg(cfgFlags,name="CaloCalibClusterDecoratorAlgorithm_Full",
+                                                 CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName+"_Full",
+                                                 NumTruthParticles = numTruthParticles))    
+    
     from TrackToCalo.TrackToCaloConfig import ParticleCaloExtensionToolCfg
     pcExtensionTool = cfg.popToolsAndMerge(ParticleCaloExtensionToolCfg(cfgFlags))
     
