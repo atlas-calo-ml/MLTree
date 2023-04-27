@@ -11,12 +11,10 @@ if __name__=="__main__":
 
     from AthenaConfiguration.AllConfigFlags import ConfigFlags as cfgFlags
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
-      
 
     cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
-    cfgFlags.Input.Files=["/home/markhodgkinson.linux/ESD.28115683._000440.pool.root.1"]
-    #Do not set either of these - I do not understand why, but MLTreeMaker will not work with either adjusted from defaults.
+    cfgFlags.Input.Files=["/home/markhodgkinson.linux/ESD.28115683._000440.pool.root.1"]    
     cfgFlags.Concurrency.NumThreads=1
     #cfgFlags.Concurrency.NumProcs=1    
     cfgFlags.fillFromArgs()
@@ -65,13 +63,9 @@ if __name__=="__main__":
                                                  CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName+"_Full",
                                                  NumTruthParticles = numTruthParticles))    
     
-    from TrackToCalo.TrackToCaloConfig import ParticleCaloExtensionToolCfg
-    pcExtensionTool = cfg.popToolsAndMerge(ParticleCaloExtensionToolCfg(cfgFlags))
-    
-    #This provides the same selection cuts as used in MLTreeMaker, so we can use the pflow selector tool
-    from InDetConfig.InDetTrackSelectionToolConfig import PFTrackSelectionToolCfg
-    from AthenaCommon.Constants import INFO, DEBUG
-    MLTreeMaker = CompFactory.MLTreeMaker(TrackContainer = "InDetTrackParticles",
+    from MLTree.MLTreeMakerCfg import MLTreeMakerCfg
+    cfg.merge(MLTreeMakerCfg(cfgFlags,
+                          TrackContainer = "InDetTrackParticles",
                            CaloClusterContainer = "CaloCalTopoClusters",
                            Prefix = "CALO",
                            ClusterEmin = 0.0,
@@ -92,15 +86,6 @@ if __name__=="__main__":
                            G4TruthParticles = False,
                            Jets = False,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
-                           OutputLevel = INFO,
-                           TheTrackExtrapolatorTool=pcExtensionTool,
-                           TrackSelectionTool=cfg.popToolsAndMerge(PFTrackSelectionToolCfg(cfgFlags)))
-
-    #Need to specify sequence name, otherwise the tool will not be added to the correct sequence and some 
-    #containers such as EventInfo will not be available
-    cfg.addEventAlgo(MLTreeMaker,sequenceName="AthAlgSeq")
-    cfg.getEventAlgo("MLTreeMaker").RootStreamName = "OutputStream"
-    cfg.getEventAlgo("MLTreeMaker").TrackSelectionTool.CutLevel = "TightPrimary"    
-
+                           RootStreamName = "OutputStream"))                         
 
     cfg.run()
