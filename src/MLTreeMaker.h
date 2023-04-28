@@ -196,7 +196,9 @@ private:
   std::vector<unsigned int> m_trackTruthParticleIndex;
   //sum of visible calibration hit energy of this tracks
   //truth particle found in all topoclusters
-  std::vector<float> m_trackCalHitCaloEnergy;
+  std::vector<float> m_trackVisibleCalHitCaloEnergy;
+  //same for full calibration hit energy
+  std::vector<float> m_trackFullCalHitCaloEnergy;
   //If this track was used in particle flow, then this is the
   //amount of energy removed from matched CaloCluster
   std::vector<float> m_trackSubtractedCaloEnergy;
@@ -323,8 +325,8 @@ private:
   std::vector<std::vector<float>> m_cluster_cell_hitsE_nonEM;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_Invisible;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_Escaped;
-  std::vector<std::vector<int>> m_cluster_hitsTruthIndex;
-  std::vector<std::vector<float>> m_cluster_hitsTruthE;
+  std::vector<std::vector<int>> m_cluster_fullHitsTruthIndex;
+  std::vector<std::vector<float>> m_cluster_fullHitsTruthE;
   std::vector<std::vector<int>> m_cluster_visibleHitsTruthIndex;
   std::vector<std::vector<float>> m_cluster_visibleHitsTruthE;
 

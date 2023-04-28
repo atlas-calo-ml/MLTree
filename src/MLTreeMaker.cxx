@@ -210,7 +210,8 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackEta", &m_trackEta);
     m_eventTree->Branch("trackPhi", &m_trackPhi);  
     m_eventTree->Branch("trackTruthParticleIndex", &m_trackTruthParticleIndex);
-    m_eventTree->Branch("trackCalHitCaloEnergy", &m_trackCalHitCaloEnergy);
+    m_eventTree->Branch("trackVisibleCalHitCaloEnergy", &m_trackVisibleCalHitCaloEnergy);
+    m_eventTree->Branch("trackFullCalHitCaloEnergy", &m_trackFullCalHitCaloEnergy);
     m_eventTree->Branch("trackSubtractedCaloEnergy", &m_trackSubtractedCaloEnergy);
 
     // Track quality variables
@@ -371,8 +372,8 @@ StatusCode MLTreeMaker::initialize()
         }
         if (m_doTruthParticles)
         {
-          m_eventTree->Branch("cluster_hitsTruthIndex", &m_cluster_hitsTruthIndex);
-          m_eventTree->Branch("cluster_hitsTruthE", &m_cluster_hitsTruthE);
+          m_eventTree->Branch("cluster_fullHitsTruthIndex", &m_cluster_fullHitsTruthIndex);
+          m_eventTree->Branch("cluster_fullHitsTruthE", &m_cluster_fullHitsTruthE);
           m_eventTree->Branch("cluster_visibleHitsTruthIndex", &m_cluster_visibleHitsTruthIndex);
           m_eventTree->Branch("cluster_visibleHitsTruthE", &m_cluster_visibleHitsTruthE);
         }
@@ -428,7 +429,8 @@ StatusCode MLTreeMaker::execute()
   m_trackEta.clear();
   m_trackPhi.clear();
   m_trackTruthParticleIndex.clear();
-  m_trackCalHitCaloEnergy.clear();
+  m_trackVisibleCalHitCaloEnergy.clear();
+  m_trackFullCalHitCaloEnergy.clear();
   m_trackSubtractedCaloEnergy.clear();
 
   m_trackNumberOfPixelHits.clear();
@@ -754,10 +756,11 @@ StatusCode MLTreeMaker::execute()
     }
   }
 
-  //Create a map between the truth particle matched to each track
-  //(using its barcode) and the sum of the visible calibration hit 
+  //Create maps between the truth particle matched to each track
+  //(using its barcode) and the sum of the visible/full calibration hit 
   //energy for that truth particle found in topoclusters
-  std::map<int, float> truthCalHitCaloEnergyMap;
+  std::map<int, float> truthVisibleCalHitCaloEnergyMap;
+  std::map<int, float> truthFullCalHitCaloEnergyMap;
 
   if (m_doTracking)
   {
@@ -809,8 +812,9 @@ StatusCode MLTreeMaker::execute()
       m_trackMass.push_back(track->m() * 1e-3);
       m_trackEta.push_back(track->eta());
       m_trackPhi.push_back(track->phi());
-      //initialise the value of the calibration hit sum - this is filled in later on in the cluster loop      
-      m_trackCalHitCaloEnergy.push_back(0.0);
+      //initialise the value of the calibration hit sums - this is filled in later on in the cluster loop      
+      m_trackVisibleCalHitCaloEnergy.push_back(0.0);
+      m_trackFullCalHitCaloEnergy.push_back(0.0);
 
       //get truth particle link for track
       const xAOD::TruthParticle *linkedTruthParticle = nullptr;
@@ -826,7 +830,8 @@ StatusCode MLTreeMaker::execute()
         int barcode = linkedTruthParticle->barcode();
         unsigned int truthParticleIndex = truthBarcodeMap[barcode];
         m_trackTruthParticleIndex.push_back(truthParticleIndex);
-        truthCalHitCaloEnergyMap[barcode] = m_trackCalHitCaloEnergy[m_nTrack];
+        truthVisibleCalHitCaloEnergyMap[barcode] = m_trackVisibleCalHitCaloEnergy[m_nTrack];
+        truthFullCalHitCaloEnergyMap[barcode] = m_trackFullCalHitCaloEnergy[m_nTrack];
       }
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
@@ -1290,11 +1295,11 @@ StatusCode MLTreeMaker::execute()
         }
         if (m_doTruthParticles)
         {
-          m_cluster_hitsTruthIndex.clear();
-          m_cluster_hitsTruthE.clear();
+          m_cluster_fullHitsTruthIndex.clear();
+          m_cluster_fullHitsTruthE.clear();
 
-          m_cluster_hitsTruthIndex.assign(m_nCluster, std::vector<int>());
-          m_cluster_hitsTruthE.assign(m_nCluster, std::vector<float>());
+          m_cluster_fullHitsTruthIndex.assign(m_nCluster, std::vector<int>());
+          m_cluster_fullHitsTruthE.assign(m_nCluster, std::vector<float>());
 
           m_cluster_visibleHitsTruthIndex.clear();
           m_cluster_visibleHitsTruthE.clear();
@@ -1398,8 +1403,8 @@ StatusCode MLTreeMaker::execute()
         std::vector<float> &cluster_cell_hitsE_nonEM = m_cluster_cell_hitsE_nonEM[jCluster];
         std::vector<float> &cluster_cell_hitsE_Invisible = m_cluster_cell_hitsE_Invisible[jCluster];
         std::vector<float> &cluster_cell_hitsE_Escaped = m_cluster_cell_hitsE_Escaped[jCluster];
-        std::vector<int> &cluster_hitsTruthIndex = m_cluster_hitsTruthIndex[jCluster];
-        std::vector<float> &cluster_hitsTruthE = m_cluster_hitsTruthE[jCluster];
+        std::vector<int> &cluster_fullHitsTruthIndex = m_cluster_fullHitsTruthIndex[jCluster];
+        std::vector<float> &cluster_fullHitsTruthE = m_cluster_fullHitsTruthE[jCluster];
         std::vector<int> &cluster_visibleHitsTruthIndex = m_cluster_visibleHitsTruthIndex[jCluster];
         std::vector<float> &cluster_visibleHitsTruthE = m_cluster_visibleHitsTruthE[jCluster];
 
@@ -1471,7 +1476,7 @@ StatusCode MLTreeMaker::execute()
               cluster_visibleHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
               cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
-              if (m_doTracking) truthCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
+              if (m_doTracking) truthVisibleCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations
 
@@ -1484,9 +1489,10 @@ StatusCode MLTreeMaker::execute()
             const auto mapItr = truthBarcodeMap.find(barcode);
             if (mapItr != truthBarcodeMap.end())
             {
-              cluster_hitsTruthIndex.push_back(mapItr->second);
+              cluster_fullHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
-              cluster_hitsTruthE.push_back(calibrationHitEnergy);
+              cluster_fullHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTracking) truthFullCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations_Full
 
