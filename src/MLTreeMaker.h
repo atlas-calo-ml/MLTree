@@ -18,6 +18,7 @@
 #include "RecoToolInterfaces/IParticleCaloExtensionTool.h"
 #include "xAODCaloEvent/CaloClusterContainer.h"
 #include "xAODCaloEvent/CaloClusterChangeSignalState.h"
+#include "CaloEvent/CaloCellContainer.h"
 #include "xAODPFlow/FlowElementContainer.h"
 #include "xAODTruth/TruthEventContainer.h"
 #include "xAODTracking/VertexContainer.h"
@@ -96,6 +97,9 @@ private:
 
   /** ReadDecorHandleKey for the CaloCluster calibration hit decorations */
   SG::ReadDecorHandleKey<xAOD::CaloClusterContainer> m_caloClusterCalibHitsDecorHandleKey{this, "CaloClusterCalibHitsDecor", "CaloCalTopoClusters.calclus_NLeadingTruthParticleBarcodeEnergyPairs", "ReadDecorHandleKey for the CaloCluster calibration hit decorations"};
+
+  /** ReadhandleKey for the CaloCellContainer */
+  SG::ReadHandleKey<CaloCellContainer> m_caloCellReadHandleKey{this, "CaloCellContainer", "AllCalo", "ReadHandleKey for CaloCells"};
 
   /** ReadHandleKey for EventInfo */
   SG::ReadHandleKey<xAOD::EventInfo> m_eventInfoReadHandleKey{this, "EventContainer", "EventInfo", "ReadHandleKey for EventInfo"};
@@ -319,6 +323,7 @@ private:
   std::vector<float> m_cluster_ISOLATION;
   std::vector<float> m_cluster_ENERGY_DigiHSTruth;
 
+  //cells in clusters
   std::vector<std::vector<size_t>> m_cluster_cell_ID;
   std::vector<std::vector<float>> m_cluster_cell_E;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_EM;
@@ -329,6 +334,17 @@ private:
   std::vector<std::vector<float>> m_cluster_fullHitsTruthE;
   std::vector<std::vector<int>> m_cluster_visibleHitsTruthIndex;
   std::vector<std::vector<float>> m_cluster_visibleHitsTruthE;
+
+  //all cells
+  Gaudi::Property<bool> m_doAllCells{this, "AllCells", false, "Whether to store all cells in the event"};
+  int m_nCells;
+  std::vector<float> m_cell_E;
+  std::vector<float> m_cell_Eta;
+  std::vector<float> m_cell_Phi;
+  std::vector<float> m_cell_Et;
+  std::vector<int> m_cell_Sampling;
+  std::vector<float> m_cell_Time;
+  std::vector<float> m_cell_Quality;
 
   static constexpr int m_G4BarcodeOffset = 200000;
 

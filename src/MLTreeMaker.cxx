@@ -124,6 +124,7 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(m_jetReadHandleKeyArray.initialize());
   ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
   ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
+  ATH_CHECK(m_caloCellReadHandleKey.initialize());
 
   // Setup the event level TTree and its branches
   CHECK(book(TTree("EventTree", "EventTree")));
@@ -379,6 +380,17 @@ StatusCode MLTreeMaker::initialize()
         }
       }
     }
+  }
+
+  if (m_doAllCells){
+    m_eventTree->Branch("nAllCells", &m_nCells);
+    m_eventTree->Branch("cell_E", &m_cell_E);
+    m_eventTree->Branch("cell_Eta", &m_cell_Eta);
+    m_eventTree->Branch("cell_Phi", &m_cell_Phi);
+    m_eventTree->Branch("cell_Et", &m_cell_Et);
+    m_eventTree->Branch("cell_Sampling", &m_cell_Sampling);
+    m_eventTree->Branch("cell_Time", &m_cell_Time);
+    m_eventTree->Branch("cell_Quality", &m_cell_Quality);
   }
 
   return StatusCode::SUCCESS;
@@ -1501,7 +1513,46 @@ StatusCode MLTreeMaker::execute()
       } //end m_doClusterCells
       jCluster++;
     } //end cluster loop
+  }//end m_doCaloClusters
+
+  //Cells
+  if (m_doAllCells){
+
+    //clear all the vectors
+    m_cell_E.clear();
+    m_cell_Eta.clear();
+    m_cell_Phi.clear();
+    m_cell_Et.clear();
+    m_cell_Sampling.clear();
+    m_cell_Time.clear();
+    m_cell_Quality.clear();
+
+    SG::ReadHandle<CaloCellContainer> cellContainerHandle(m_caloCellReadHandleKey);
+    if (!cellContainerHandle.isValid())
+    {
+      ATH_MSG_ERROR("Could not retrieve cell container " << m_caloCellReadHandleKey.key());
+      return StatusCode::FAILURE;
+    }
+
+    //fill cell branches
+    for (auto thisCaloCell : *cellContainerHandle){
+      m_cell_E.push_back(thisCaloCell->e()*1e-3);
+      m_cell_Eta.push_back(thisCaloCell->eta());
+      m_cell_Phi.push_back(thisCaloCell->phi());
+      m_cell_Et.push_back(thisCaloCell->et()*1e-3);
+      m_cell_Time.push_back(thisCaloCell->time());
+      m_cell_Quality.push_back(thisCaloCell->quality());
+
+      const CaloDetDescrElement* caloDDE = thisCaloCell->caloDDE();
+      if (caloDDE) m_cell_Sampling.push_back(caloDDE->getSampling());
+      else {
+        ATH_MSG_WARNING("Cell with no CaloDetDescrElement found!");
+        m_cell_Sampling.push_back(-1);
+      }
+    }//end loop on cells
+
   }
+
   m_eventTree->Fill();
   return StatusCode::SUCCESS;
 }
