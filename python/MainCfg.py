@@ -1,8 +1,5 @@
 from AthenaConfiguration.ComponentFactory import CompFactory
 
-#You can run this code from the command line (after Athena setup) with a command:
-#python runCA.py --filesInput=<inputFileName> MLTree.NtupleName=<outputNtupleFileName>"
-
 def __MLTree():
   from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
   return createMLTreeConfigFlags()

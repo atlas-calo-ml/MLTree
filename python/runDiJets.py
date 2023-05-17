@@ -1,5 +1,5 @@
 #You can run this code from the command line (after Athena setup) with a command:
-#python runCA.py --filesInput=<inputFileName> MLTree.NtupleName=<outputNtupleFileName>"
+#python runDiJets.py --filesInput=<inputFileName> MLTree.NtupleName=<outputNtupleFileName>"
 
 #This configuration is designed to run on di-jet samples for the HSF May 2023 Workshop
 
