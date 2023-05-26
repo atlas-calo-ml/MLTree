@@ -8,34 +8,6 @@
 # Declare the package name:
 atlas_subdir( MLTree )
 
-atlas_depends_on_subdirs(	PRIVATE
-				Control/AthenaBaseComps
-				Calorimeter/CaloIdentifier
-				Trigger/TrigEvent/TrigCaloEvent
-				Reconstruction/RecoTools/RecoToolInterfaces
-				Event/xAOD/xAODCaloEvent
-				Event/xAOD/xAODEventInfo
-				Event/xAOD/xAODTruth
-				Event/xAOD/xAODEventShape
-				Event/xAOD/xAODJet
-				Calorimeter/CaloEvent
-				Calorimeter/CaloSimEvent
-				Calorimeter/CaloUtils
-				TileCalorimeter/TileIdentifier
-				TileCalorimeter/TileEvent
-				Tracking/TrkExtrapolation/TrkExInterfaces
-				Tracking/TrkEvent/TrkParameters
-				Tracking/TrkEvent/TrkTrack
-				Event/xAOD/xAODTracking
-				Calorimeter/CaloTrackingGeometry
-				Tracking/TrkDetDescr/TrkSurfaces
-				DetectorDescription/GeoPrimitives
-				DetectorDescription/Identifier
-				Tracking/TrkEvent/TrkCaloExtension
-				Calorimeter/CaloDetDescr
-				Tracking/TrkEvent/TrkParametersIdentificationHelpers
-				InnerDetector/InDetRecTools/InDetTrackSelectionTool)
-
 # Define long list of link libraries as a local variable
 set(	_athLINKLIBS	AthenaBaseComps
 			CaloIdentifier
@@ -46,22 +18,24 @@ set(	_athLINKLIBS	AthenaBaseComps
 			xAODTruth
 			xAODEventShape
 			xAODJet
+      xAODPFlow     
 			CaloEvent
+      CaloConditions
 			CaloSimEvent
-			CaloUtils
+			CaloUtilsLib
 			TileIdentifier
 			TileEvent
 			TrkExInterfaces
 			TrkParameters
 			TrkTrack
 			xAODTracking
-			CaloTrackingGeometry
+			CaloTrackingGeometryLib
 			TrkSurfaces
 			GeoPrimitives
 			TrkCaloExtension
-			CaloDetDescr
+			CaloDetDescrLib
 			TrkParametersIdentificationHelpers
-			InDetTrackSelectionTool)
+			InDetTrackSelectionToolLib)
 
 
 

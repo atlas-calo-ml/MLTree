@@ -7,7 +7,8 @@
 #include <GaudiKernel/ToolHandle.h>
 #include <AthenaBaseComps/AthHistogramAlgorithm.h>
 #include <CaloIdentifier/LArNeighbours.h>
-class ICalorimeterNoiseTool;
+#include "CaloConditions/CaloNoise.h"
+#include "CaloDetDescr/CaloDetDescrManager.h"
 
 class CellGeometryTreeMaker: public ::AthHistogramAlgorithm { 
 
@@ -21,7 +22,15 @@ public:
 
 private: 
   typedef CaloCellContainer::size_type size_type;
-  ToolHandle<ICalorimeterNoiseTool> m_noiseTool;
+  /** Conditions Handle to access calorimeter noise */
+  SG::ReadCondHandleKey<CaloNoise> m_caloNoiseKey{this, "CaloNoise","electronicNoise","CaloNoise object to read."};  
+
+  /** ReadCondHandleKey for CaloDetDescrManager */
+  SG::ReadCondHandleKey<CaloDetDescrManager> m_caloMgrKey { this
+     , "CaloDetDescrManager"
+     , "CaloDetDescrManager"
+     , "SG Key for CaloDetDescrManager in the Condition Store" };
+
   bool m_doNeighbours;
 
   TTree* m_cellGeometryTree;
