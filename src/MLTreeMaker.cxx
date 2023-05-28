@@ -362,6 +362,14 @@ StatusCode MLTreeMaker::initialize()
     {
       m_eventTree->Branch("cluster_cell_ID", &m_cluster_cell_ID);
       m_eventTree->Branch("cluster_cell_E", &m_cluster_cell_E);
+      m_eventTree->Branch("cluster_cell_Eta", &m_cluster_cell_Eta);
+      m_eventTree->Branch("cluster_cell_Phi", &m_cluster_cell_Phi);
+      m_eventTree->Branch("cluster_cell_X",   &m_cluster_cell_X);
+      m_eventTree->Branch("cluster_cell_Y",   &m_cluster_cell_Y);
+      m_eventTree->Branch("cluster_cell_Z",   &m_cluster_cell_Z);
+      m_eventTree->Branch("cluster_cell_CaloRegion",   &m_cluster_cell_CaloRegion);
+      m_eventTree->Branch("cluster_cell_IsDead",   &m_cluster_cell_IsDead);
+
       if (m_doCalibHits)
       {
         if (m_doCalibHitsPerCell)
@@ -1288,10 +1296,25 @@ StatusCode MLTreeMaker::execute()
     {
       m_cluster_cell_ID.clear();
       m_cluster_cell_E.clear();
+      m_cluster_cell_Eta.clear();
+      m_cluster_cell_Phi.clear();
+      m_cluster_cell_X.clear();
+      m_cluster_cell_Y.clear();
+      m_cluster_cell_Z.clear();
+      m_cluster_cell_CaloRegion.clear();
+      m_cluster_cell_IsDead.clear();
+
       m_cluster_cell_hitsE_EM.clear();
 
       m_cluster_cell_ID.assign(m_nCluster, std::vector<size_t>());
       m_cluster_cell_E.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_Eta.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_Phi.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_X.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_Y.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_Z.assign(m_nCluster, std::vector<float>());
+      m_cluster_cell_CaloRegion.assign(m_nCluster, std::vector<int>());
+      m_cluster_cell_IsDead.assign(m_nCluster, std::vector<int>());
       m_cluster_cell_hitsE_EM.assign(m_nCluster, std::vector<float>());
       if (m_doCalibHits)
       {
@@ -1411,6 +1434,13 @@ StatusCode MLTreeMaker::execute()
 
         std::vector<size_t> &cluster_cell_ID = m_cluster_cell_ID[jCluster];
         std::vector<float> &cluster_cell_E = m_cluster_cell_E[jCluster];
+        std::vector<float> &cluster_cell_Eta = m_cluster_cell_Eta[jCluster];
+        std::vector<float> &cluster_cell_Phi = m_cluster_cell_Phi[jCluster];
+        std::vector<float> &cluster_cell_X = m_cluster_cell_X[jCluster];
+        std::vector<float> &cluster_cell_Y = m_cluster_cell_Y[jCluster];
+        std::vector<float> &cluster_cell_Z = m_cluster_cell_Z[jCluster];
+        std::vector<int> &cluster_cell_CaloRegion = m_cluster_cell_CaloRegion[jCluster];
+        std::vector<int> &cluster_cell_IsDead = m_cluster_cell_IsDead[jCluster];
         std::vector<float> &cluster_cell_hitsE_EM = m_cluster_cell_hitsE_EM[jCluster];
         std::vector<float> &cluster_cell_hitsE_nonEM = m_cluster_cell_hitsE_nonEM[jCluster];
         std::vector<float> &cluster_cell_hitsE_Invisible = m_cluster_cell_hitsE_Invisible[jCluster];
@@ -1423,6 +1453,14 @@ StatusCode MLTreeMaker::execute()
         auto nCells_cl = cluster->size();
         cluster_cell_ID.reserve(nCells_cl);
         cluster_cell_E.reserve(nCells_cl);
+        cluster_cell_Eta.reserve(nCells_cl);
+        cluster_cell_Phi.reserve(nCells_cl);
+        cluster_cell_X.reserve(nCells_cl);
+        cluster_cell_Y.reserve(nCells_cl);
+        cluster_cell_Z.reserve(nCells_cl);
+        cluster_cell_CaloRegion.reserve(nCells_cl);
+        cluster_cell_IsDead.reserve(nCells_cl);
+
 
         if (m_doCalibHits && m_doCalibHitsPerCell)
         {
@@ -1441,6 +1479,14 @@ StatusCode MLTreeMaker::execute()
 
           cluster_cell_ID.push_back(cell->ID().get_identifier32().get_compact());
           cluster_cell_E.push_back(cellE);
+          cluster_cell_Eta.push_back(cell->eta());
+          cluster_cell_Phi.push_back(cell->phi());
+          cluster_cell_X.push_back(cell->x());
+          cluster_cell_Y.push_back(cell->y());
+          cluster_cell_Z.push_back(cell->z());
+          cluster_cell_CaloRegion.push_back(cell->caloDDE()->getSampling());
+          cluster_cell_IsDead.push_back(int(cell->badcell()));
+
           if (m_doCalibHits)
           {
             float energy_EM = 0.;

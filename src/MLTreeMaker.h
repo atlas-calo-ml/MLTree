@@ -326,6 +326,13 @@ private:
   //cells in clusters
   std::vector<std::vector<size_t>> m_cluster_cell_ID;
   std::vector<std::vector<float>> m_cluster_cell_E;
+  std::vector<std::vector<float>> m_cluster_cell_Eta;
+  std::vector<std::vector<float>> m_cluster_cell_Phi;
+  std::vector<std::vector<float>> m_cluster_cell_X;
+  std::vector<std::vector<float>> m_cluster_cell_Y;
+  std::vector<std::vector<float>> m_cluster_cell_Z;
+  std::vector<std::vector<int>> m_cluster_cell_CaloRegion;
+  std::vector<std::vector<int>> m_cluster_cell_IsDead;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_EM;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_nonEM;
   std::vector<std::vector<float>> m_cluster_cell_hitsE_Invisible;
