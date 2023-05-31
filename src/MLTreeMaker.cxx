@@ -59,14 +59,14 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_keepOnlyStableTruthParticles(true),
                                                                               m_keepG4TruthParticles(false),
                                                                               m_prefix(""),
+                                                                              m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>()),
                                                                               m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool",this),
                                                                               m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),                                                                              
                                                                               m_tileTBID(0),
                                                                               m_clusterE_min(0.),
                                                                               m_clusterE_max(1e4),
-                                                                              m_clusterEtaAbs_max(2.5),
-                                                                              m_cellE_thres(0.005), // 5 MeV threshold
-                                                                              m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>())
+                                                                              m_clusterEtaAbs_max(2.5),                                                                              
+                                                                              m_cellE_thres(0.005) // 5 MeV threshold
 {
   declareProperty("Clusters", m_doClusters);
   declareProperty("ClusterCells", m_doClusterCells);
