@@ -845,6 +845,7 @@ StatusCode MLTreeMaker::execute()
         truthVisibleCalHitCaloEnergyMap[barcode] = m_trackVisibleCalHitCaloEnergy[m_nTrack];
         truthFullCalHitCaloEnergyMap[barcode] = m_trackFullCalHitCaloEnergy[m_nTrack];
       }
+      else m_trackTruthParticleIndex.push_back(-1);
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
         m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);	
