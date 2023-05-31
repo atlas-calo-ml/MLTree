@@ -1515,6 +1515,20 @@ StatusCode MLTreeMaker::execute()
     } //end cluster loop
   }//end m_doCaloClusters
 
+  if (m_doTracking){
+    //loop over track truth match indices and fill cal hit variables, if a match                                                                                                                                                                                                
+    unsigned int trackIndex = 0;
+    for (auto thisIndex : m_trackTruthParticleIndex){
+      if (thisIndex < 0) {
+	trackIndex++;
+        continue;
+      }
+      m_trackVisibleCalHitCaloEnergy[trackIndex] = truthVisibleCalHitCaloEnergyMap[m_truthPartBarcode[thisIndex]];
+      m_trackFullCalHitCaloEnergy[trackIndex] = truthFullCalHitCaloEnergyMap[m_truthPartBarcode[thisIndex]];
+      trackIndex++;
+    }
+  }
+
   //Cells
   if (m_doAllCells){
 

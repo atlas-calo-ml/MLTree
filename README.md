@@ -15,13 +15,11 @@ lsetup git
 git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
 cd athena
 git clone  git@github.com:atlas-calo-ml/MLTree.git MLTree
-cd MLTree
-git checkout origin/Release22
-cd ../../
+cd ../
 echo "+ MLTree" > package_filters.txt
 echo "- .*" >> package_filters.txt
 mkdir build; cd build
-asetup Athena,22.0.78
+asetup Athena,24.0.4
 cmake -DATLAS_PACKAGE_FILTER_FILE=../package_filters.txt ../athena/Projects/WorkDir
 make
 source ../build/x86*/setup.sh
