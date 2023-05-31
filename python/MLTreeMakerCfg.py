@@ -14,6 +14,9 @@ def MLTreeMakerCfg(flags, name = "MLTreeMaker", **kwargs):
     MLTreeMaker.TheTrackExtrapolatorTool = pcExtensionTool
     MLTreeMaker.TrackSelectionTool=result.popToolsAndMerge(PFTrackSelectionToolCfg(flags))
 
+    for c in flags.Input.Collections:
+        print ("c is ", c)
+
     #Need to specify sequence name, otherwise the tool will not be added to the correct sequence and some 
     #containers such as EventInfo will not be available
     result.addEventAlgo(MLTreeMaker,sequenceName="AthAlgSeq")

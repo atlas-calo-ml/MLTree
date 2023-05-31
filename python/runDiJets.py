@@ -24,7 +24,6 @@ if __name__=="__main__":
     cfg.merge(MLTreeMakerCfg(cfgFlags,
                           TrackContainer = "InDetTrackParticles",
                            CaloClusterContainer = "CaloCalTopoClusters",
-                           Prefix = "CALO",
                            ClusterEmin = 0.0,
                            ClusterEmax = 2000.0,
                            ClusterEtaAbsmax = 3.0,

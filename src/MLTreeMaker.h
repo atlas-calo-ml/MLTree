@@ -30,6 +30,7 @@
 #include "CaloSimEvent/CaloCalibrationHitContainer.h"
 #include "StoreGate/ReadHandleKey.h"
 #include "StoreGate/ReadHandleKeyArray.h"
+#include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
 
 class TileTBID;
 class ICaloSurfaceHelper;
@@ -58,27 +59,24 @@ public:
   virtual StatusCode finalize();
 
 private:
-  bool m_doClusters;
-  bool m_doClusterCells;
-  bool m_doCalibHits;
-  bool m_doCalibHitsPerCell;
-  int m_numClusterTruthAssoc;
+  Gaudi::Property<bool> m_doClusters{this, "Clusters", true, "Write clusters to tree"};
+  Gaudi::Property<bool> m_doClusterCells{this, "ClusterCells", true, "Write cluster cells to tree"};
+  Gaudi::Property<bool> m_doCalibHits{this, "ClusterCalibHits", true, "Write calibration hits data, for clusters and cells in clusters, to tree"};
+  Gaudi::Property<bool> m_doCalibHitsPerCell{this, "ClusterCalibHitsPerCell", true, "Write calibration hits data, for cells in clusters, to tree"};
+  Gaudi::Property<bool> m_doClusterMoments{this, "ClusterMoments", true, "Write cluster moments to tree"};
+  Gaudi::Property<bool> m_doUncalibratedClusters{this, "UncalibratedClusters", true, "Use uncalibrated EM scale clusters to write cluster data to tree"};
 
-  bool m_doClusterMoments;
-  bool m_doUncalibratedClusters;
-  // bool m_isMC;
-  bool m_doTracking;
-  bool m_doJets;
-  bool m_doEventCleaning;
-  bool m_doPileup;
-  bool m_doShapeEM;
-  bool m_doShapeLC;
-  bool m_doEventTruth;
-  bool m_doTruthParticles;
-  bool m_keepOnlyStableTruthParticles;
-  bool m_keepG4TruthParticles;
-  std::string m_prefix;
-  std::string m_eventInfoContainerName;
+  Gaudi::Property<bool> m_doTracking{this, "Tracking", false, "Write tracks to tree"};
+  Gaudi::Property<bool> m_doJets{this, "Jets", false, "Write jets to tree"};
+  Gaudi::Property<bool> m_doEventCleaning{this, "EventCleaning", false, "Write event cleaning data to tree"};
+  Gaudi::Property<bool> m_doPileup{this, "Pileup", false, "Write pileup data to tree"};
+  Gaudi::Property<bool> m_doShapeEM{this, "ShapeEM", false, "Write EM shape data to tree"};
+  Gaudi::Property<bool> m_doShapeLC{this, "ShapeLC", false, "Write LC shape data to tree"};
+  Gaudi::Property<bool> m_doEventTruth{this, "EventTruth", false, "Write event truth data to tree"};
+  Gaudi::Property<bool> m_doTruthParticles{this, "TruthParticles", false, "Write truth particle related data to tree"};
+
+  Gaudi::Property<bool> m_keepOnlyStableTruthParticles{this, "OnlyStableTruthParticles", true, "Write out truth particle data only for stable truth particles"};
+  Gaudi::Property<bool> m_keepG4TruthParticles{this, "G4TruthParticles", false, "Write out truth particle data for G4 truth particles"};
 
   /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
   SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "JetETMissChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
@@ -112,22 +110,25 @@ private:
   SG::ReadHandleKey<xAOD::TruthEventContainer> m_truthEventReadHandleKey{this, "TruthEventContainer", "TruthEvents", "ReadHandleKey for TruthEvents"};
 
   /** ReadHandleKeyArray for JetContainers */
-  SG::ReadHandleKeyArray<xAOD::JetContainer> m_jetReadHandleKeyArray;
+  SG::ReadHandleKeyArray<xAOD::JetContainer> m_jetReadHandleKeyArray{this, "JetContainers", {}, "ReadHandleKeyArray for JetContainers"};
 
   /** ReadHandleKeyArray for CalibrationHitContainers */
-  SG::ReadHandleKeyArray<CaloCalibrationHitContainer> m_CalibrationHitContainerKeys;
-
+  SG::ReadHandleKeyArray<CaloCalibrationHitContainer> m_CalibrationHitContainerKeys{this, "CalibrationHitContainerNames", 
+                                                                                          {"LArCalibrationHitActive",
+                                                                                           "LArCalibrationHitInactive",
+                                                                                           "TileCalibHitActiveCell",
+                                                                                           "TileCalibHitInactiveCell"},
+                                                                                           "ReadHandleKeyArray for CalibrationHitContainers"};
 
   std::unique_ptr<Trk::TrackParametersIdHelper> m_trackParametersIdHelper;
-  ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool;
-  ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool;
-  const TileTBID *m_tileTBID;
+  ToolHandle<Trk::IParticleCaloExtensionTool> m_theTrackExtrapolatorTool{this, "TheTrackExtrapolatorTool", "Trk::ParticleCaloExtensionTool", "Tool to extrapolate tracks to the calorimeter"};
+  ToolHandle<InDet::IInDetTrackSelectionTool> m_trkSelectionTool{this, "TrackSelectionTool", "InDet::InDetTrackSelectionTool/TrackSelectionTool", "Tool to select tracks"};
 
-  // Cluster and cell selections
-  float m_clusterE_min;
-  float m_clusterE_max;
-  float m_clusterEtaAbs_max;
-  float m_cellE_thres;
+  // Cluster and cell selections (energies are in MeV)
+  Gaudi::Property<float> m_clusterE_min{this, "ClusterEmin", 0.0, "Minimum cluster energy to write to TTree"};
+  Gaudi::Property<float> m_clusterE_max{this, "ClusterEmax", 1e4, "Maximum cluster energy to write to TTree"};
+  Gaudi::Property<float> m_clusterEtaAbs_max{this, "ClusterEtaAbsmax", 2.5, "Maximum cluster |eta| to write to TTree"};
+  Gaudi::Property<float> m_cellE_thres{this, "CellEthres", 0.005, "Minimum clustered cell energy to write to TTree"};
 
   //Tree and branch data structures
   TTree *m_eventTree;
