@@ -10,9 +10,6 @@
 //Jets
 #include "xAODJet/JetTypes.h"
 
-// Track selection
-#include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
-
 // Extrapolation to the calo
 #include "TrkCaloExtension/CaloExtension.h"
 #include "TrkCaloExtension/CaloExtensionCollection.h"
@@ -41,75 +38,17 @@
 #include <map>
 
 MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : AthHistogramAlgorithm(name, pSvcLocator),
-                                                                              m_doClusters(true),
-                                                                              m_doClusterCells(true),
-                                                                              m_doCalibHits(true),
-                                                                              m_doCalibHitsPerCell(true),
-                                                                              m_numClusterTruthAssoc(5),
-                                                                              m_doClusterMoments(true),
-                                                                              m_doUncalibratedClusters(true),
-                                                                              m_doTracking(false),
-                                                                              m_doJets(false),
-                                                                              m_doEventCleaning(false),
-                                                                              m_doPileup(false),
-                                                                              m_doShapeEM(false),
-                                                                              m_doShapeLC(false),
-                                                                              m_doEventTruth(false),
-                                                                              m_doTruthParticles(false),
-                                                                              m_keepOnlyStableTruthParticles(true),
-                                                                              m_keepG4TruthParticles(false),
-                                                                              m_prefix(""),
-                                                                              m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>()),
-                                                                              m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool",this),
-                                                                              m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),                                                                              
-                                                                              m_tileTBID(0),
-                                                                              m_clusterE_min(0.),
-                                                                              m_clusterE_max(1e4),
-                                                                              m_clusterEtaAbs_max(2.5),                                                                              
-                                                                              m_cellE_thres(0.005) // 5 MeV threshold
-{
-  declareProperty("Clusters", m_doClusters);
-  declareProperty("ClusterCells", m_doClusterCells);
-  declareProperty("ClusterCalibHits", m_doCalibHits);
-  declareProperty("ClusterCalibHitsPerCell", m_doCalibHitsPerCell);
-  declareProperty("CalibrationHitContainerNames", m_CalibrationHitContainerKeys);
-  declareProperty("ClusterMoments", m_doClusterMoments);
-  declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
-  declareProperty("ClusterEmin", m_clusterE_min);
-  declareProperty("ClusterEmax", m_clusterE_max);
-  declareProperty("ClusterEtaAbsmax", m_clusterEtaAbs_max);
-
-  declareProperty("Tracking", m_doTracking);
-  declareProperty("Jets", m_doJets);
-  declareProperty("EventCleaning", m_doEventCleaning);
-  declareProperty("Pileup", m_doPileup);
-  declareProperty("ShapeEM", m_doShapeEM);
-  declareProperty("ShapeLC", m_doShapeLC);
-  declareProperty("EventTruth", m_doEventTruth);
-  declareProperty("TruthParticles", m_doTruthParticles);
-  declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
-  declareProperty("G4TruthParticles", m_keepG4TruthParticles);
-  declareProperty("Prefix", m_prefix);
-  declareProperty("JetContainers", m_jetReadHandleKeyArray);
-  declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
-  declareProperty("TrackSelectionTool", m_trkSelectionTool);
-}
+                                                                              m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>())
+{}
 
 MLTreeMaker::~MLTreeMaker() {}
 
 StatusCode MLTreeMaker::initialize()
 {
-  ATH_MSG_INFO("Initializing " << name() << "...");
-
-  if (m_prefix == "")
-  {
-    ATH_MSG_WARNING("No decoration prefix name provided");
-  }
+  ATH_MSG_INFO("Initializing " << name() << "...");  
 
   ATH_CHECK(m_theTrackExtrapolatorTool.retrieve());
   ATH_CHECK(m_trkSelectionTool.retrieve());
-  // Get the test beam identifier for the MBTS
-  ATH_CHECK(detStore()->retrieve(m_tileTBID));
 
   //Initialize the ReadHandle keys
   ATH_CHECK(m_chargedFlowElementReadHandleKey.initialize());
