@@ -874,218 +874,41 @@ StatusCode MLTreeMaker::execute()
       //  FCAL0, FCAL1, FCAL2,             // Forward EM endcap (excluded)
       //  Unknown
 
-      // Presampler
-      float trackEta_PreSamplerB_tmp = -999999999;
-      float trackPhi_PreSamplerB_tmp = -999999999;
-      float trackEta_PreSamplerE_tmp = -999999999;
-      float trackPhi_PreSamplerE_tmp = -999999999;
-      // LAr EM Barrel layers
-      float trackEta_EMB1_tmp = -999999999;
-      float trackPhi_EMB1_tmp = -999999999;
-      float trackEta_EMB2_tmp = -999999999;
-      float trackPhi_EMB2_tmp = -999999999;
-      float trackEta_EMB3_tmp = -999999999;
-      float trackPhi_EMB3_tmp = -999999999;
-      // LAr EM Endcap layers
-      float trackEta_EME1_tmp = -999999999;
-      float trackPhi_EME1_tmp = -999999999;
-      float trackEta_EME2_tmp = -999999999;
-      float trackPhi_EME2_tmp = -999999999;
-      float trackEta_EME3_tmp = -999999999;
-      float trackPhi_EME3_tmp = -999999999;
-      // Hadronic Endcap layers
-      float trackEta_HEC0_tmp = -999999999;
-      float trackPhi_HEC0_tmp = -999999999;
-      float trackEta_HEC1_tmp = -999999999;
-      float trackPhi_HEC1_tmp = -999999999;
-      float trackEta_HEC2_tmp = -999999999;
-      float trackPhi_HEC2_tmp = -999999999;
-      float trackEta_HEC3_tmp = -999999999;
-      float trackPhi_HEC3_tmp = -999999999;
-      // Tile Barrel layers
-      float trackEta_TileBar0_tmp = -999999999;
-      float trackPhi_TileBar0_tmp = -999999999;
-      float trackEta_TileBar1_tmp = -999999999;
-      float trackPhi_TileBar1_tmp = -999999999;
-      float trackEta_TileBar2_tmp = -999999999;
-      float trackPhi_TileBar2_tmp = -999999999;
-      // Tile Gap layers
-      float trackEta_TileGap1_tmp = -999999999;
-      float trackPhi_TileGap1_tmp = -999999999;
-      float trackEta_TileGap2_tmp = -999999999;
-      float trackPhi_TileGap2_tmp = -999999999;
-      float trackEta_TileGap3_tmp = -999999999;
-      float trackPhi_TileGap3_tmp = -999999999;
-      // Tile Extended Barrel layers
-      float trackEta_TileExt0_tmp = -999999999;
-      float trackPhi_TileExt0_tmp = -999999999;
-      float trackEta_TileExt1_tmp = -999999999;
-      float trackPhi_TileExt1_tmp = -999999999;
-      float trackEta_TileExt2_tmp = -999999999;
-      float trackPhi_TileExt2_tmp = -999999999;
+      auto getTrackEtaPhi = [](std::map<CaloCell_ID::CaloSample, std::pair<double, double>> &parametersMap, CaloCell_ID::CaloSample layer, std::vector<float> &trackEta, std::vector<float> &trackPhi) {
+        if (parametersMap.find(layer) != parametersMap.end())
+        {
+          trackEta.push_back(parametersMap[layer].first);
+          trackPhi.push_back(parametersMap[layer].second);
+        }
+        else {
+          float defaultValue = -999999999;
+          trackEta.push_back(defaultValue);
+          trackPhi.push_back(defaultValue);
+        }
+      };
 
-      //first is eta, second is phi
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerB) != parametersMap.end())
-      {
-        trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].first;
-        trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerE) != parametersMap.end())
-      {
-        trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].first;
-        trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
-      {        
-        trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
-        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;        
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB2) != parametersMap.end())
-      {
-        trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].first;
-        trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB3) != parametersMap.end())
-      {
-        trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].first;
-        trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME1) != parametersMap.end())
-      {
-        trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].first;
-        trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME2) != parametersMap.end())
-      {
-        trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].first;
-        trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME3) != parametersMap.end())
-      {
-        trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].first;
-        trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC0) != parametersMap.end())
-      {
-        trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].first;
-        trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC1) != parametersMap.end())
-      {
-        trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].first;
-        trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC2) != parametersMap.end())
-      {
-        trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].first;
-        trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC3) != parametersMap.end())
-      {
-        trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].first;
-        trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar1) != parametersMap.end())
-      {
-        trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].first;
-        trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar2) != parametersMap.end())
-      {
-        trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].first;
-        trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap1) != parametersMap.end())
-      {
-        trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].first;
-        trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap2) != parametersMap.end())
-      {
-        trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].first;
-        trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap3) != parametersMap.end())
-      {
-        trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].first;
-        trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt1) != parametersMap.end())
-      {
-        trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].first;
-        trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt2) != parametersMap.end())
-      {
-        trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].first;
-        trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].second;
-      }
-
-      m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
-      m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
-      m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
-      m_trackPhi_PreSamplerE.push_back(trackPhi_PreSamplerE_tmp);
-
-      m_trackEta_EMB1.push_back(trackEta_EMB1_tmp);
-      m_trackPhi_EMB1.push_back(trackPhi_EMB1_tmp);
-      m_trackEta_EMB2.push_back(trackEta_EMB2_tmp);
-      m_trackPhi_EMB2.push_back(trackPhi_EMB2_tmp);
-      m_trackEta_EMB3.push_back(trackEta_EMB3_tmp);
-      m_trackPhi_EMB3.push_back(trackPhi_EMB3_tmp);
-
-      m_trackEta_EME1.push_back(trackEta_EME1_tmp);
-      m_trackPhi_EME1.push_back(trackPhi_EME1_tmp);
-      m_trackEta_EME2.push_back(trackEta_EME2_tmp);
-      m_trackPhi_EME2.push_back(trackPhi_EME2_tmp);
-      m_trackEta_EME3.push_back(trackEta_EME3_tmp);
-      m_trackPhi_EME3.push_back(trackPhi_EME3_tmp);
-
-      m_trackEta_HEC0.push_back(trackEta_HEC0_tmp);
-      m_trackPhi_HEC0.push_back(trackPhi_HEC0_tmp);
-      m_trackEta_HEC1.push_back(trackEta_HEC1_tmp);
-      m_trackPhi_HEC1.push_back(trackPhi_HEC1_tmp);
-      m_trackEta_HEC2.push_back(trackEta_HEC2_tmp);
-      m_trackPhi_HEC2.push_back(trackPhi_HEC2_tmp);
-      m_trackEta_HEC3.push_back(trackEta_HEC3_tmp);
-      m_trackPhi_HEC3.push_back(trackPhi_HEC3_tmp);
-
-      m_trackEta_TileBar0.push_back(trackEta_TileBar0_tmp);
-      m_trackPhi_TileBar0.push_back(trackPhi_TileBar0_tmp);
-      m_trackEta_TileBar1.push_back(trackEta_TileBar1_tmp);
-      m_trackPhi_TileBar1.push_back(trackPhi_TileBar1_tmp);
-      m_trackEta_TileBar2.push_back(trackEta_TileBar2_tmp);
-      m_trackPhi_TileBar2.push_back(trackPhi_TileBar2_tmp);
-
-      m_trackEta_TileGap1.push_back(trackEta_TileGap1_tmp);
-      m_trackPhi_TileGap1.push_back(trackPhi_TileGap1_tmp);
-      m_trackEta_TileGap2.push_back(trackEta_TileGap2_tmp);
-      m_trackPhi_TileGap2.push_back(trackPhi_TileGap2_tmp);
-      m_trackEta_TileGap3.push_back(trackEta_TileGap3_tmp);
-      m_trackPhi_TileGap3.push_back(trackPhi_TileGap3_tmp);
-
-      m_trackEta_TileExt0.push_back(trackEta_TileExt0_tmp);
-      m_trackPhi_TileExt0.push_back(trackPhi_TileExt0_tmp);
-      m_trackEta_TileExt1.push_back(trackEta_TileExt1_tmp);
-      m_trackPhi_TileExt1.push_back(trackPhi_TileExt1_tmp);
-      m_trackEta_TileExt2.push_back(trackEta_TileExt2_tmp);
-      m_trackPhi_TileExt2.push_back(trackPhi_TileExt2_tmp);
-
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerB, m_trackEta_PreSamplerB, m_trackPhi_PreSamplerB);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerE, m_trackEta_PreSamplerE, m_trackPhi_PreSamplerE);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB1, m_trackEta_EMB1, m_trackPhi_EMB1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB2, m_trackEta_EMB2, m_trackPhi_EMB2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB3, m_trackEta_EMB3, m_trackPhi_EMB3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME1, m_trackEta_EME1, m_trackPhi_EME1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME2, m_trackEta_EME2, m_trackPhi_EME2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME3, m_trackEta_EME3, m_trackPhi_EME3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC0, m_trackEta_HEC0, m_trackPhi_HEC0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC1, m_trackEta_HEC1, m_trackPhi_HEC1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC2, m_trackEta_HEC2, m_trackPhi_HEC2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC3, m_trackEta_HEC3, m_trackPhi_HEC3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar0, m_trackEta_TileBar0, m_trackPhi_TileBar0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar1, m_trackEta_TileBar1, m_trackPhi_TileBar1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar2, m_trackEta_TileBar2, m_trackPhi_TileBar2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap1, m_trackEta_TileGap1, m_trackPhi_TileGap1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap2, m_trackEta_TileGap2, m_trackPhi_TileGap2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap3, m_trackEta_TileGap3, m_trackPhi_TileGap3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt0, m_trackEta_TileExt0, m_trackPhi_TileExt0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt1, m_trackEta_TileExt1, m_trackPhi_TileExt1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt2, m_trackEta_TileExt2, m_trackPhi_TileExt2);
+      
       m_nTrack++;
     }
   }
