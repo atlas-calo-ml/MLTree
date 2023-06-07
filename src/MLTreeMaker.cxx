@@ -324,10 +324,7 @@ StatusCode MLTreeMaker::initialize()
   if (m_doAllCells){
     m_eventTree->Branch("nAllCells", &m_nCells);
     m_eventTree->Branch("cell_E", &m_cell_E);
-    m_eventTree->Branch("cell_Eta", &m_cell_Eta);
-    m_eventTree->Branch("cell_Phi", &m_cell_Phi);
-    m_eventTree->Branch("cell_Et", &m_cell_Et);
-    m_eventTree->Branch("cell_Sampling", &m_cell_Sampling);
+    m_eventTree->Branch("cell_ID", &m_cell_ID);
     m_eventTree->Branch("cell_Time", &m_cell_Time);
     m_eventTree->Branch("cell_Quality", &m_cell_Quality);
   }
@@ -1106,68 +1103,27 @@ StatusCode MLTreeMaker::execute()
 
       if (m_doClusterMoments)
       {
-        double cluster_ENG_CALIB_TOT = 0;
-        double cluster_ENG_CALIB_OUT_T = 0;
-        double cluster_ENG_CALIB_DEAD_TOT = 0;
-        double cluster_EM_PROBABILITY = 0;
-        double cluster_HAD_WEIGHT = 0;
-        double cluster_OOC_WEIGHT = 0;
-        double cluster_DM_WEIGHT = 0;
-        double cluster_CENTER_MAG = 0;
-        double cluster_FIRST_ENG_DENS = 0;
-        double cluster_CENTER_LAMBDA = 0;
-        double cluster_ISOLATION = 0;
-        double cluster_ENERGY_DigiHSTruth = 0;
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT))
-          cluster_ENG_CALIB_TOT = -1.;
-        else
-          cluster_ENG_CALIB_TOT *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_OUT_T, cluster_ENG_CALIB_OUT_T))
-          cluster_ENG_CALIB_OUT_T = -1.;
-        else
-          cluster_ENG_CALIB_OUT_T *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, cluster_ENG_CALIB_DEAD_TOT))
-          cluster_ENG_CALIB_DEAD_TOT = -1.;
-        else
-          cluster_ENG_CALIB_DEAD_TOT *= 1e-3;
+        auto getMoment = [](const xAOD::CaloCluster& theCluster, const xAOD::CaloCluster::MomentType& momentType, std::vector<float>& momentVector, const double& defaultValue){
+          double moment = defaultValue;
+          if (!theCluster.retrieveMoment(momentType, moment)) momentVector.push_back(moment);
+          else momentVector.push_back(moment*1e-3);
+        };
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG))
-          cluster_CENTER_MAG = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS))
-          cluster_FIRST_ENG_DENS = -1.;
-        else
-          cluster_FIRST_ENG_DENS *= 1e-3;
-
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_LAMBDA, cluster_CENTER_LAMBDA))
-          cluster_CENTER_LAMBDA = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ISOLATION, cluster_ISOLATION))
-          cluster_ISOLATION = -1.;
-
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_TOT, m_cluster_ENG_CALIB_TOT,-1);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_OUT_T, m_cluster_ENG_CALIB_OUT_T,-1);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, m_cluster_ENG_CALIB_DEAD_TOT,-1);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_MAG, m_cluster_CENTER_MAG,-1);
+        getMoment(*cluster, xAOD::CaloCluster::FIRST_ENG_DENS, m_cluster_FIRST_ENG_DENS,-1);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_LAMBDA, m_cluster_CENTER_LAMBDA,-1);
+        getMoment(*cluster, xAOD::CaloCluster::ISOLATION, m_cluster_ISOLATION,-1);
         //for moments related to the calibration, use calibratedCluster or they will be undefined
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY))
-          cluster_EM_PROBABILITY = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT))
-          cluster_HAD_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT))
-          cluster_OOC_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT))
-          cluster_DM_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::ENERGY_DigiHSTruth, cluster_ENERGY_DigiHSTruth))
-          cluster_ENERGY_DigiHSTruth = -999.;
+        getMoment(*calibratedCluster, xAOD::CaloCluster::EM_PROBABILITY, m_cluster_EM_PROBABILITY,-1);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::HAD_WEIGHT, m_cluster_HAD_WEIGHT,-1);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::OOC_WEIGHT, m_cluster_OOC_WEIGHT,-1);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::DM_WEIGHT, m_cluster_DM_WEIGHT,-1);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::ENERGY_DigiHSTruth, m_cluster_ENERGY_DigiHSTruth,-999);
 
-        m_cluster_ENG_CALIB_TOT.push_back(cluster_ENG_CALIB_TOT);
-        m_cluster_ENG_CALIB_OUT_T.push_back(cluster_ENG_CALIB_OUT_T);
-        m_cluster_ENG_CALIB_DEAD_TOT.push_back(cluster_ENG_CALIB_DEAD_TOT);
-        m_cluster_EM_PROBABILITY.push_back(cluster_EM_PROBABILITY);
-        m_cluster_HAD_WEIGHT.push_back(cluster_HAD_WEIGHT);
-        m_cluster_OOC_WEIGHT.push_back(cluster_OOC_WEIGHT);
-        m_cluster_DM_WEIGHT.push_back(cluster_DM_WEIGHT);
-        m_cluster_CENTER_MAG.push_back(cluster_CENTER_MAG);
-        m_cluster_FIRST_ENG_DENS.push_back(cluster_FIRST_ENG_DENS);
-        m_cluster_CENTER_LAMBDA.push_back(cluster_CENTER_LAMBDA);
-        m_cluster_ISOLATION.push_back(cluster_ISOLATION);
-        m_cluster_ENERGY_DigiHSTruth.push_back(cluster_ENERGY_DigiHSTruth);
       }
       if (m_doClusterCells)
       {
@@ -1297,10 +1253,7 @@ StatusCode MLTreeMaker::execute()
 
     //clear all the vectors
     m_cell_E.clear();
-    m_cell_Eta.clear();
-    m_cell_Phi.clear();
-    m_cell_Et.clear();
-    m_cell_Sampling.clear();
+    m_cell_ID.clear();
     m_cell_Time.clear();
     m_cell_Quality.clear();
 
@@ -1314,18 +1267,9 @@ StatusCode MLTreeMaker::execute()
     //fill cell branches
     for (auto thisCaloCell : *cellContainerHandle){
       m_cell_E.push_back(thisCaloCell->e()*1e-3);
-      m_cell_Eta.push_back(thisCaloCell->eta());
-      m_cell_Phi.push_back(thisCaloCell->phi());
-      m_cell_Et.push_back(thisCaloCell->et()*1e-3);
+      m_cell_ID.push_back(thisCaloCell->ID().get_identifier32().get_compact());
       m_cell_Time.push_back(thisCaloCell->time());
       m_cell_Quality.push_back(thisCaloCell->quality());
-
-      const CaloDetDescrElement* caloDDE = thisCaloCell->caloDDE();
-      if (caloDDE) m_cell_Sampling.push_back(caloDDE->getSampling());
-      else {
-        ATH_MSG_WARNING("Cell with no CaloDetDescrElement found!");
-        m_cell_Sampling.push_back(-1);
-      }
     }//end loop on cells
 
   }
