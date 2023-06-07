@@ -324,10 +324,7 @@ StatusCode MLTreeMaker::initialize()
   if (m_doAllCells){
     m_eventTree->Branch("nAllCells", &m_nCells);
     m_eventTree->Branch("cell_E", &m_cell_E);
-    m_eventTree->Branch("cell_Eta", &m_cell_Eta);
-    m_eventTree->Branch("cell_Phi", &m_cell_Phi);
-    m_eventTree->Branch("cell_Et", &m_cell_Et);
-    m_eventTree->Branch("cell_Sampling", &m_cell_Sampling);
+    m_eventTree->Branch("cell_ID", &m_cell_ID);
     m_eventTree->Branch("cell_Time", &m_cell_Time);
     m_eventTree->Branch("cell_Quality", &m_cell_Quality);
   }
@@ -874,218 +871,41 @@ StatusCode MLTreeMaker::execute()
       //  FCAL0, FCAL1, FCAL2,             // Forward EM endcap (excluded)
       //  Unknown
 
-      // Presampler
-      float trackEta_PreSamplerB_tmp = -999999999;
-      float trackPhi_PreSamplerB_tmp = -999999999;
-      float trackEta_PreSamplerE_tmp = -999999999;
-      float trackPhi_PreSamplerE_tmp = -999999999;
-      // LAr EM Barrel layers
-      float trackEta_EMB1_tmp = -999999999;
-      float trackPhi_EMB1_tmp = -999999999;
-      float trackEta_EMB2_tmp = -999999999;
-      float trackPhi_EMB2_tmp = -999999999;
-      float trackEta_EMB3_tmp = -999999999;
-      float trackPhi_EMB3_tmp = -999999999;
-      // LAr EM Endcap layers
-      float trackEta_EME1_tmp = -999999999;
-      float trackPhi_EME1_tmp = -999999999;
-      float trackEta_EME2_tmp = -999999999;
-      float trackPhi_EME2_tmp = -999999999;
-      float trackEta_EME3_tmp = -999999999;
-      float trackPhi_EME3_tmp = -999999999;
-      // Hadronic Endcap layers
-      float trackEta_HEC0_tmp = -999999999;
-      float trackPhi_HEC0_tmp = -999999999;
-      float trackEta_HEC1_tmp = -999999999;
-      float trackPhi_HEC1_tmp = -999999999;
-      float trackEta_HEC2_tmp = -999999999;
-      float trackPhi_HEC2_tmp = -999999999;
-      float trackEta_HEC3_tmp = -999999999;
-      float trackPhi_HEC3_tmp = -999999999;
-      // Tile Barrel layers
-      float trackEta_TileBar0_tmp = -999999999;
-      float trackPhi_TileBar0_tmp = -999999999;
-      float trackEta_TileBar1_tmp = -999999999;
-      float trackPhi_TileBar1_tmp = -999999999;
-      float trackEta_TileBar2_tmp = -999999999;
-      float trackPhi_TileBar2_tmp = -999999999;
-      // Tile Gap layers
-      float trackEta_TileGap1_tmp = -999999999;
-      float trackPhi_TileGap1_tmp = -999999999;
-      float trackEta_TileGap2_tmp = -999999999;
-      float trackPhi_TileGap2_tmp = -999999999;
-      float trackEta_TileGap3_tmp = -999999999;
-      float trackPhi_TileGap3_tmp = -999999999;
-      // Tile Extended Barrel layers
-      float trackEta_TileExt0_tmp = -999999999;
-      float trackPhi_TileExt0_tmp = -999999999;
-      float trackEta_TileExt1_tmp = -999999999;
-      float trackPhi_TileExt1_tmp = -999999999;
-      float trackEta_TileExt2_tmp = -999999999;
-      float trackPhi_TileExt2_tmp = -999999999;
+      auto getTrackEtaPhi = [](std::map<CaloCell_ID::CaloSample, std::pair<double, double>> &parametersMap, CaloCell_ID::CaloSample layer, std::vector<float> &trackEta, std::vector<float> &trackPhi) {
+        if (parametersMap.find(layer) != parametersMap.end())
+        {
+          trackEta.push_back(parametersMap[layer].first);
+          trackPhi.push_back(parametersMap[layer].second);
+        }
+        else {
+          float defaultValue = -999999999;
+          trackEta.push_back(defaultValue);
+          trackPhi.push_back(defaultValue);
+        }
+      };
 
-      //first is eta, second is phi
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerB) != parametersMap.end())
-      {
-        trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].first;
-        trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerE) != parametersMap.end())
-      {
-        trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].first;
-        trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
-      {        
-        trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
-        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;        
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB2) != parametersMap.end())
-      {
-        trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].first;
-        trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB3) != parametersMap.end())
-      {
-        trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].first;
-        trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME1) != parametersMap.end())
-      {
-        trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].first;
-        trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME2) != parametersMap.end())
-      {
-        trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].first;
-        trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME3) != parametersMap.end())
-      {
-        trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].first;
-        trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC0) != parametersMap.end())
-      {
-        trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].first;
-        trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC1) != parametersMap.end())
-      {
-        trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].first;
-        trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC2) != parametersMap.end())
-      {
-        trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].first;
-        trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC3) != parametersMap.end())
-      {
-        trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].first;
-        trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar1) != parametersMap.end())
-      {
-        trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].first;
-        trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar2) != parametersMap.end())
-      {
-        trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].first;
-        trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap1) != parametersMap.end())
-      {
-        trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].first;
-        trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap2) != parametersMap.end())
-      {
-        trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].first;
-        trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap3) != parametersMap.end())
-      {
-        trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].first;
-        trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt1) != parametersMap.end())
-      {
-        trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].first;
-        trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt2) != parametersMap.end())
-      {
-        trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].first;
-        trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].second;
-      }
-
-      m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
-      m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
-      m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
-      m_trackPhi_PreSamplerE.push_back(trackPhi_PreSamplerE_tmp);
-
-      m_trackEta_EMB1.push_back(trackEta_EMB1_tmp);
-      m_trackPhi_EMB1.push_back(trackPhi_EMB1_tmp);
-      m_trackEta_EMB2.push_back(trackEta_EMB2_tmp);
-      m_trackPhi_EMB2.push_back(trackPhi_EMB2_tmp);
-      m_trackEta_EMB3.push_back(trackEta_EMB3_tmp);
-      m_trackPhi_EMB3.push_back(trackPhi_EMB3_tmp);
-
-      m_trackEta_EME1.push_back(trackEta_EME1_tmp);
-      m_trackPhi_EME1.push_back(trackPhi_EME1_tmp);
-      m_trackEta_EME2.push_back(trackEta_EME2_tmp);
-      m_trackPhi_EME2.push_back(trackPhi_EME2_tmp);
-      m_trackEta_EME3.push_back(trackEta_EME3_tmp);
-      m_trackPhi_EME3.push_back(trackPhi_EME3_tmp);
-
-      m_trackEta_HEC0.push_back(trackEta_HEC0_tmp);
-      m_trackPhi_HEC0.push_back(trackPhi_HEC0_tmp);
-      m_trackEta_HEC1.push_back(trackEta_HEC1_tmp);
-      m_trackPhi_HEC1.push_back(trackPhi_HEC1_tmp);
-      m_trackEta_HEC2.push_back(trackEta_HEC2_tmp);
-      m_trackPhi_HEC2.push_back(trackPhi_HEC2_tmp);
-      m_trackEta_HEC3.push_back(trackEta_HEC3_tmp);
-      m_trackPhi_HEC3.push_back(trackPhi_HEC3_tmp);
-
-      m_trackEta_TileBar0.push_back(trackEta_TileBar0_tmp);
-      m_trackPhi_TileBar0.push_back(trackPhi_TileBar0_tmp);
-      m_trackEta_TileBar1.push_back(trackEta_TileBar1_tmp);
-      m_trackPhi_TileBar1.push_back(trackPhi_TileBar1_tmp);
-      m_trackEta_TileBar2.push_back(trackEta_TileBar2_tmp);
-      m_trackPhi_TileBar2.push_back(trackPhi_TileBar2_tmp);
-
-      m_trackEta_TileGap1.push_back(trackEta_TileGap1_tmp);
-      m_trackPhi_TileGap1.push_back(trackPhi_TileGap1_tmp);
-      m_trackEta_TileGap2.push_back(trackEta_TileGap2_tmp);
-      m_trackPhi_TileGap2.push_back(trackPhi_TileGap2_tmp);
-      m_trackEta_TileGap3.push_back(trackEta_TileGap3_tmp);
-      m_trackPhi_TileGap3.push_back(trackPhi_TileGap3_tmp);
-
-      m_trackEta_TileExt0.push_back(trackEta_TileExt0_tmp);
-      m_trackPhi_TileExt0.push_back(trackPhi_TileExt0_tmp);
-      m_trackEta_TileExt1.push_back(trackEta_TileExt1_tmp);
-      m_trackPhi_TileExt1.push_back(trackPhi_TileExt1_tmp);
-      m_trackEta_TileExt2.push_back(trackEta_TileExt2_tmp);
-      m_trackPhi_TileExt2.push_back(trackPhi_TileExt2_tmp);
-
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerB, m_trackEta_PreSamplerB, m_trackPhi_PreSamplerB);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerE, m_trackEta_PreSamplerE, m_trackPhi_PreSamplerE);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB1, m_trackEta_EMB1, m_trackPhi_EMB1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB2, m_trackEta_EMB2, m_trackPhi_EMB2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB3, m_trackEta_EMB3, m_trackPhi_EMB3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME1, m_trackEta_EME1, m_trackPhi_EME1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME2, m_trackEta_EME2, m_trackPhi_EME2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME3, m_trackEta_EME3, m_trackPhi_EME3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC0, m_trackEta_HEC0, m_trackPhi_HEC0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC1, m_trackEta_HEC1, m_trackPhi_HEC1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC2, m_trackEta_HEC2, m_trackPhi_HEC2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC3, m_trackEta_HEC3, m_trackPhi_HEC3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar0, m_trackEta_TileBar0, m_trackPhi_TileBar0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar1, m_trackEta_TileBar1, m_trackPhi_TileBar1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar2, m_trackEta_TileBar2, m_trackPhi_TileBar2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap1, m_trackEta_TileGap1, m_trackPhi_TileGap1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap2, m_trackEta_TileGap2, m_trackPhi_TileGap2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap3, m_trackEta_TileGap3, m_trackPhi_TileGap3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt0, m_trackEta_TileExt0, m_trackPhi_TileExt0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt1, m_trackEta_TileExt1, m_trackPhi_TileExt1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt2, m_trackEta_TileExt2, m_trackPhi_TileExt2);
+      
       m_nTrack++;
     }
   }
@@ -1283,68 +1103,30 @@ StatusCode MLTreeMaker::execute()
 
       if (m_doClusterMoments)
       {
-        double cluster_ENG_CALIB_TOT = 0;
-        double cluster_ENG_CALIB_OUT_T = 0;
-        double cluster_ENG_CALIB_DEAD_TOT = 0;
-        double cluster_EM_PROBABILITY = 0;
-        double cluster_HAD_WEIGHT = 0;
-        double cluster_OOC_WEIGHT = 0;
-        double cluster_DM_WEIGHT = 0;
-        double cluster_CENTER_MAG = 0;
-        double cluster_FIRST_ENG_DENS = 0;
-        double cluster_CENTER_LAMBDA = 0;
-        double cluster_ISOLATION = 0;
-        double cluster_ENERGY_DigiHSTruth = 0;
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT))
-          cluster_ENG_CALIB_TOT = -1.;
-        else
-          cluster_ENG_CALIB_TOT *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_OUT_T, cluster_ENG_CALIB_OUT_T))
-          cluster_ENG_CALIB_OUT_T = -1.;
-        else
-          cluster_ENG_CALIB_OUT_T *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, cluster_ENG_CALIB_DEAD_TOT))
-          cluster_ENG_CALIB_DEAD_TOT = -1.;
-        else
-          cluster_ENG_CALIB_DEAD_TOT *= 1e-3;
+        auto getMoment = [](const xAOD::CaloCluster& theCluster, const xAOD::CaloCluster::MomentType& momentType, std::vector<float>& momentVector, const double& defaultValue, bool scale){
+          double moment = defaultValue;
+          if (!theCluster.retrieveMoment(momentType, moment)) momentVector.push_back(moment);
+          else {
+            if (scale) momentVector.push_back(moment*1e-3);
+            else momentVector.push_back(moment);
+          }
+        };
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG))
-          cluster_CENTER_MAG = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS))
-          cluster_FIRST_ENG_DENS = -1.;
-        else
-          cluster_FIRST_ENG_DENS *= 1e-3;
-
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_LAMBDA, cluster_CENTER_LAMBDA))
-          cluster_CENTER_LAMBDA = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ISOLATION, cluster_ISOLATION))
-          cluster_ISOLATION = -1.;
-
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_TOT, m_cluster_ENG_CALIB_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_OUT_T, m_cluster_ENG_CALIB_OUT_T,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, m_cluster_ENG_CALIB_DEAD_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_MAG, m_cluster_CENTER_MAG,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::FIRST_ENG_DENS, m_cluster_FIRST_ENG_DENS,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_LAMBDA, m_cluster_CENTER_LAMBDA,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::ISOLATION, m_cluster_ISOLATION,-1,false);
         //for moments related to the calibration, use calibratedCluster or they will be undefined
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY))
-          cluster_EM_PROBABILITY = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT))
-          cluster_HAD_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT))
-          cluster_OOC_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT))
-          cluster_DM_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::ENERGY_DigiHSTruth, cluster_ENERGY_DigiHSTruth))
-          cluster_ENERGY_DigiHSTruth = -999.;
+        getMoment(*calibratedCluster, xAOD::CaloCluster::EM_PROBABILITY, m_cluster_EM_PROBABILITY,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::HAD_WEIGHT, m_cluster_HAD_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::OOC_WEIGHT, m_cluster_OOC_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::DM_WEIGHT, m_cluster_DM_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::ENERGY_DigiHSTruth, m_cluster_ENERGY_DigiHSTruth,-999,false);
 
-        m_cluster_ENG_CALIB_TOT.push_back(cluster_ENG_CALIB_TOT);
-        m_cluster_ENG_CALIB_OUT_T.push_back(cluster_ENG_CALIB_OUT_T);
-        m_cluster_ENG_CALIB_DEAD_TOT.push_back(cluster_ENG_CALIB_DEAD_TOT);
-        m_cluster_EM_PROBABILITY.push_back(cluster_EM_PROBABILITY);
-        m_cluster_HAD_WEIGHT.push_back(cluster_HAD_WEIGHT);
-        m_cluster_OOC_WEIGHT.push_back(cluster_OOC_WEIGHT);
-        m_cluster_DM_WEIGHT.push_back(cluster_DM_WEIGHT);
-        m_cluster_CENTER_MAG.push_back(cluster_CENTER_MAG);
-        m_cluster_FIRST_ENG_DENS.push_back(cluster_FIRST_ENG_DENS);
-        m_cluster_CENTER_LAMBDA.push_back(cluster_CENTER_LAMBDA);
-        m_cluster_ISOLATION.push_back(cluster_ISOLATION);
-        m_cluster_ENERGY_DigiHSTruth.push_back(cluster_ENERGY_DigiHSTruth);
       }
       if (m_doClusterCells)
       {
@@ -1474,10 +1256,7 @@ StatusCode MLTreeMaker::execute()
 
     //clear all the vectors
     m_cell_E.clear();
-    m_cell_Eta.clear();
-    m_cell_Phi.clear();
-    m_cell_Et.clear();
-    m_cell_Sampling.clear();
+    m_cell_ID.clear();
     m_cell_Time.clear();
     m_cell_Quality.clear();
 
@@ -1491,18 +1270,9 @@ StatusCode MLTreeMaker::execute()
     //fill cell branches
     for (auto thisCaloCell : *cellContainerHandle){
       m_cell_E.push_back(thisCaloCell->e()*1e-3);
-      m_cell_Eta.push_back(thisCaloCell->eta());
-      m_cell_Phi.push_back(thisCaloCell->phi());
-      m_cell_Et.push_back(thisCaloCell->et()*1e-3);
+      m_cell_ID.push_back(thisCaloCell->ID().get_identifier32().get_compact());
       m_cell_Time.push_back(thisCaloCell->time());
       m_cell_Quality.push_back(thisCaloCell->quality());
-
-      const CaloDetDescrElement* caloDDE = thisCaloCell->caloDDE();
-      if (caloDDE) m_cell_Sampling.push_back(caloDDE->getSampling());
-      else {
-        ATH_MSG_WARNING("Cell with no CaloDetDescrElement found!");
-        m_cell_Sampling.push_back(-1);
-      }
     }//end loop on cells
 
   }

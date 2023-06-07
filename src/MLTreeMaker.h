@@ -340,10 +340,7 @@ private:
   Gaudi::Property<bool> m_doAllCells{this, "AllCells", false, "Whether to store all cells in the event"};
   int m_nCells;
   std::vector<float> m_cell_E;
-  std::vector<float> m_cell_Eta;
-  std::vector<float> m_cell_Phi;
-  std::vector<float> m_cell_Et;
-  std::vector<int> m_cell_Sampling;
+  std::vector<size_t> m_cell_ID;
   std::vector<float> m_cell_Time;
   std::vector<float> m_cell_Quality;
 
