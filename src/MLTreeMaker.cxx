@@ -1104,25 +1104,28 @@ StatusCode MLTreeMaker::execute()
       if (m_doClusterMoments)
       {
 
-        auto getMoment = [](const xAOD::CaloCluster& theCluster, const xAOD::CaloCluster::MomentType& momentType, std::vector<float>& momentVector, const double& defaultValue){
+        auto getMoment = [](const xAOD::CaloCluster& theCluster, const xAOD::CaloCluster::MomentType& momentType, std::vector<float>& momentVector, const double& defaultValue, bool scale){
           double moment = defaultValue;
           if (!theCluster.retrieveMoment(momentType, moment)) momentVector.push_back(moment);
-          else momentVector.push_back(moment*1e-3);
+          else {
+            if (scale) momentVector.push_back(moment*1e-3);
+            else momentVector.push_back(moment);
+          }
         };
 
-        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_TOT, m_cluster_ENG_CALIB_TOT,-1);
-        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_OUT_T, m_cluster_ENG_CALIB_OUT_T,-1);
-        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, m_cluster_ENG_CALIB_DEAD_TOT,-1);
-        getMoment(*cluster, xAOD::CaloCluster::CENTER_MAG, m_cluster_CENTER_MAG,-1);
-        getMoment(*cluster, xAOD::CaloCluster::FIRST_ENG_DENS, m_cluster_FIRST_ENG_DENS,-1);
-        getMoment(*cluster, xAOD::CaloCluster::CENTER_LAMBDA, m_cluster_CENTER_LAMBDA,-1);
-        getMoment(*cluster, xAOD::CaloCluster::ISOLATION, m_cluster_ISOLATION,-1);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_TOT, m_cluster_ENG_CALIB_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_OUT_T, m_cluster_ENG_CALIB_OUT_T,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, m_cluster_ENG_CALIB_DEAD_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_MAG, m_cluster_CENTER_MAG,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::FIRST_ENG_DENS, m_cluster_FIRST_ENG_DENS,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_LAMBDA, m_cluster_CENTER_LAMBDA,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::ISOLATION, m_cluster_ISOLATION,-1,false);
         //for moments related to the calibration, use calibratedCluster or they will be undefined
-        getMoment(*calibratedCluster, xAOD::CaloCluster::EM_PROBABILITY, m_cluster_EM_PROBABILITY,-1);
-        getMoment(*calibratedCluster, xAOD::CaloCluster::HAD_WEIGHT, m_cluster_HAD_WEIGHT,-1);
-        getMoment(*calibratedCluster, xAOD::CaloCluster::OOC_WEIGHT, m_cluster_OOC_WEIGHT,-1);
-        getMoment(*calibratedCluster, xAOD::CaloCluster::DM_WEIGHT, m_cluster_DM_WEIGHT,-1);
-        getMoment(*calibratedCluster, xAOD::CaloCluster::ENERGY_DigiHSTruth, m_cluster_ENERGY_DigiHSTruth,-999);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::EM_PROBABILITY, m_cluster_EM_PROBABILITY,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::HAD_WEIGHT, m_cluster_HAD_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::OOC_WEIGHT, m_cluster_OOC_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::DM_WEIGHT, m_cluster_DM_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::ENERGY_DigiHSTruth, m_cluster_ENERGY_DigiHSTruth,-999,false);
 
       }
       if (m_doClusterCells)
