@@ -319,6 +319,11 @@ StatusCode MLTreeMaker::initialize()
           m_eventTree->Branch("cluster_visibleHitsTruthIndex", &m_cluster_visibleHitsTruthIndex);
           m_eventTree->Branch("cluster_visibleHitsTruthE", &m_cluster_visibleHitsTruthE);
         }
+        if (m_doTruthParticlesPerCell)
+        {
+          m_eventTree->Branch("cluster_cell_hitsTruthIndex",&m_cluster_cell_hitsTruthIndex);
+          m_eventTree->Branch("cluster_cell_hitsTruthE",&m_cluster_cell_hitsTruthE);
+        }
       }
     }
   }
@@ -631,7 +636,8 @@ StatusCode MLTreeMaker::execute()
   //note this index is not necessarily the same as the index in the truthContainer
   //e.g. you filter some of the particles
   std::map<int, unsigned int> truthBarcodeMap;
-  if (m_doTruthParticles || m_doCalibHits)
+
+  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell)
   {
 
     SG::ReadHandle<xAOD::TruthParticleContainer> truthParticleReadHandle(m_truthParticleReadHandleKey);
@@ -1090,6 +1096,14 @@ StatusCode MLTreeMaker::execute()
 
 
         }
+        if (m_doTruthParticlesPerCell)
+        {
+          m_cluster_cell_hitsTruthIndex.clear();
+          m_cluster_cell_hitsTruthE.clear();
+
+          m_cluster_cell_hitsTruthIndex.assign(m_nCluster, std::vector<std::vector<int>>());
+          m_cluster_cell_hitsTruthE.assign(m_nCluster, std::vector<std::vector<float>>());
+        }
       }
     }
     //loop over clusters in order of their energies
@@ -1155,6 +1169,11 @@ StatusCode MLTreeMaker::execute()
         cluster_cell_ID.reserve(nCells_cl);
         cluster_cell_E.reserve(nCells_cl);
 
+        std::vector<std::vector<int>> &cluster_cell_hitsTruthIndex = m_cluster_cell_hitsTruthIndex[jCluster];
+        std::vector<std::vector<float>> &cluster_cell_hitsTruthE = m_cluster_cell_hitsTruthE[jCluster];
+        cluster_cell_hitsTruthIndex.assign(nCells_cl, std::vector<int>());
+        cluster_cell_hitsTruthE.assign(nCells_cl, std::vector<float>());
+    
         if (m_doCalibHits && m_doCalibHitsPerCell)
         {
           cluster_cell_hitsE_EM.reserve(nCells_cl);
@@ -1163,8 +1182,17 @@ StatusCode MLTreeMaker::execute()
           cluster_cell_hitsE_Escaped.reserve(nCells_cl);
         }
 
+        unsigned int jCell = 0;
         for (CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin(); it_cell != cluster->cell_end(); it_cell++)
         {
+          // store truth particle index, energy depostit per cell
+          // ultimately these end up in the vectors, but first we have to calculate a map
+          // map will be indexed by particle index, loooked up via barcode
+          // map value will be total hits energy
+          std::map<unsigned int, float > truthIndexEnergyMapPerCell;
+          std::vector<int> &hitsTruthIndex = m_cluster_cell_hitsTruthIndex[jCluster][jCell];
+          std::vector<float> &hitsTruthE = m_cluster_cell_hitsTruthE[jCluster][jCell];
+
           const CaloCell *cell = (*it_cell);
           float cellE = cell->e() * (it_cell.weight()) * 1e-3;
           if (cellE < m_cellE_thres)
@@ -1189,6 +1217,28 @@ StatusCode MLTreeMaker::execute()
                 energy_nonEM += ch->energyNonEM();
                 energy_Invisible += ch->energyInvisible();
                 energy_Escaped += ch->energyEscaped();
+
+                if (m_doTruthParticlesPerCell)
+                {
+                  // add to the map that is indexed by the particle index, and contains the vector of particle energies
+                  unsigned int barcode = ch->particleID();
+                  const auto mapItr=truthBarcodeMap.find(barcode);
+                  // safety check that the truth particle exists 
+                  if(mapItr!=truthBarcodeMap.end()) 
+                  {
+                    // check that there is an entry for this truth particle
+                    const auto energyMapItr = truthIndexEnergyMapPerCell.find(mapItr->second);
+                    if (energyMapItr==truthIndexEnergyMapPerCell.end())
+                    {
+                      truthIndexEnergyMapPerCell.insert( std::pair<int, float>(mapItr->second, ch->energyTotal()) );        
+                    }
+                    else // if the entry exists, then just add the energy
+                    {
+                      energyMapItr->second += ch->energyTotal();
+                    }
+                  }
+                }
+
               }
             } //end loop on calib hits containers
             if (m_doCalibHitsPerCell)
@@ -1198,7 +1248,28 @@ StatusCode MLTreeMaker::execute()
               cluster_cell_hitsE_Invisible.push_back(energy_Invisible * 1e-3);
               cluster_cell_hitsE_Escaped.push_back(energy_Escaped * 1e-3);
             }
+            if (m_doTruthParticlesPerCell)
+            { 
+              // now we have to construct the vectors from the map
+              std::vector<std::pair<int, float>> sortedPairs;
+              for (auto& it : truthIndexEnergyMapPerCell)
+              {
+                sortedPairs.push_back(it);
+              }
+
+              // now we sort
+              std::sort(sortedPairs.begin(), sortedPairs.end(), cmp);
+
+              // now we copy to actual vectors, up to the limit
+              for(unsigned int i = 0; i < sortedPairs.size() && i < m_truthParticlesPerLimitLimit; i++)
+              {
+                hitsTruthIndex.push_back(sortedPairs[i].first);
+                hitsTruthE.push_back(sortedPairs[i].second);
+              }
+
+            }
           } //end m_doCalibHits
+          jCell++;
         }   //end cell loop
         if (m_doCalibHits)
         {

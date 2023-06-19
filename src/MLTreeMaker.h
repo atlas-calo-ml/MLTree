@@ -130,6 +130,10 @@ private:
   Gaudi::Property<float> m_clusterE_max{this, "ClusterEmax", 1e4, "Maximum cluster energy to write to TTree"};
   Gaudi::Property<float> m_clusterEtaAbs_max{this, "ClusterEtaAbsmax", 2.5, "Maximum cluster |eta| to write to TTree"};
   Gaudi::Property<float> m_cellE_thres{this, "CellEthres", 0.005, "Minimum clustered cell energy to write to TTree"};
+  
+  // Cluster truth particle branches control
+  Gaudi::Property<bool> m_doTruthParticlesPerCell{this, "TruthParticlesPerCell", false, "Whether to store truth particle information per cell"};
+  Gaudi::Property<int> m_truthParticlesPerLimitLimit{this, "TruthParticlesPerCellLimt", 3, "Store only the leading N truth particle contributions per cell"};
 
   //Tree and branch data structures
   TTree *m_eventTree;
@@ -336,6 +340,10 @@ private:
   std::vector<std::vector<float>> m_cluster_fullHitsTruthE;
   std::vector<std::vector<int>> m_cluster_visibleHitsTruthIndex;
   std::vector<std::vector<float>> m_cluster_visibleHitsTruthE;
+  
+  // truth info per per cell
+  std::vector<std::vector<std::vector<int>>> m_cluster_cell_hitsTruthIndex;
+  std::vector<std::vector<std::vector<float>>> m_cluster_cell_hitsTruthE;
 
   //all cells
   Gaudi::Property<bool> m_doAllCells{this, "AllCells", false, "Whether to store all cells in the event"};
@@ -351,6 +359,10 @@ private:
   //Cylinder defined by these parameters is "inside" the calorimeter
   static constexpr float m_CaloBarrelRadius = 1450.;
   static constexpr float m_CaloBarrelEndCapTransitionZ = 3000.;
+
+  // comparator for sorting maps
+  inline static bool cmp(std::pair<int, float>& a, std::pair<int, float>& b) {return (a.second < b.second);}
+
 };
 
 #endif
