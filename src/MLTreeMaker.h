@@ -67,6 +67,7 @@ private:
   Gaudi::Property<bool> m_doUncalibratedClusters{this, "UncalibratedClusters", true, "Use uncalibrated EM scale clusters to write cluster data to tree"};
 
   Gaudi::Property<bool> m_doTracking{this, "Tracking", false, "Write tracks to tree"};
+  Gaudi::Property<bool> m_doDetailedTracking{this,"DetailedTracking",false,"Write details of track parameters etc to tree"};
   Gaudi::Property<bool> m_doJets{this, "Jets", false, "Write jets to tree"};
   Gaudi::Property<bool> m_doEventCleaning{this, "EventCleaning", false, "Write event cleaning data to tree"};
   Gaudi::Property<bool> m_doPileup{this, "Pileup", false, "Write pileup data to tree"};

@@ -155,24 +155,26 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackSubtractedCaloEnergy", &m_trackSubtractedCaloEnergy);
 
     // Track quality variables
-    m_eventTree->Branch("trackNumberOfPixelHits", &m_trackNumberOfPixelHits);
-    m_eventTree->Branch("trackNumberOfSCTHits", &m_trackNumberOfSCTHits);
-    m_eventTree->Branch("trackNumberOfPixelDeadSensors", &m_trackNumberOfPixelDeadSensors);
-    m_eventTree->Branch("trackNumberOfSCTDeadSensors", &m_trackNumberOfSCTDeadSensors);
-    m_eventTree->Branch("trackNumberOfPixelSharedHits", &m_trackNumberOfPixelSharedHits);
-    m_eventTree->Branch("trackNumberOfSCTSharedHits", &m_trackNumberOfSCTSharedHits);
-    m_eventTree->Branch("trackNumberOfPixelHoles", &m_trackNumberOfPixelHoles);
-    m_eventTree->Branch("trackNumberOfSCTHoles", &m_trackNumberOfSCTHoles);
-    m_eventTree->Branch("trackNumberOfInnermostPixelLayerHits", &m_trackNumberOfInnermostPixelLayerHits);
-    m_eventTree->Branch("trackNumberOfNextToInnermostPixelLayerHits", &m_trackNumberOfNextToInnermostPixelLayerHits);
-    m_eventTree->Branch("trackExpectInnermostPixelLayerHit", &m_trackExpectInnermostPixelLayerHit);
-    m_eventTree->Branch("trackExpectNextToInnermostPixelLayerHit", &m_trackExpectNextToInnermostPixelLayerHit);
-    m_eventTree->Branch("trackNumberOfTRTHits", &m_trackNumberOfTRTHits);
-    m_eventTree->Branch("trackNumberOfTRTOutliers", &m_trackNumberOfTRTOutliers);
-    m_eventTree->Branch("trackChiSquared", &m_trackChiSquared);
-    m_eventTree->Branch("trackNumberDOF", &m_trackNumberDOF);
-    m_eventTree->Branch("trackD0", &m_trackD0);
-    m_eventTree->Branch("trackZ0", &m_trackZ0);
+    if (m_doDetailedTracking){
+      m_eventTree->Branch("trackNumberOfPixelHits", &m_trackNumberOfPixelHits);
+      m_eventTree->Branch("trackNumberOfSCTHits", &m_trackNumberOfSCTHits);
+      m_eventTree->Branch("trackNumberOfPixelDeadSensors", &m_trackNumberOfPixelDeadSensors);
+      m_eventTree->Branch("trackNumberOfSCTDeadSensors", &m_trackNumberOfSCTDeadSensors);
+      m_eventTree->Branch("trackNumberOfPixelSharedHits", &m_trackNumberOfPixelSharedHits);
+      m_eventTree->Branch("trackNumberOfSCTSharedHits", &m_trackNumberOfSCTSharedHits);
+      m_eventTree->Branch("trackNumberOfPixelHoles", &m_trackNumberOfPixelHoles);
+      m_eventTree->Branch("trackNumberOfSCTHoles", &m_trackNumberOfSCTHoles);
+      m_eventTree->Branch("trackNumberOfInnermostPixelLayerHits", &m_trackNumberOfInnermostPixelLayerHits);
+      m_eventTree->Branch("trackNumberOfNextToInnermostPixelLayerHits", &m_trackNumberOfNextToInnermostPixelLayerHits);
+      m_eventTree->Branch("trackExpectInnermostPixelLayerHit", &m_trackExpectInnermostPixelLayerHit);
+      m_eventTree->Branch("trackExpectNextToInnermostPixelLayerHit", &m_trackExpectNextToInnermostPixelLayerHit);
+      m_eventTree->Branch("trackNumberOfTRTHits", &m_trackNumberOfTRTHits);
+      m_eventTree->Branch("trackNumberOfTRTOutliers", &m_trackNumberOfTRTOutliers);
+      m_eventTree->Branch("trackChiSquared", &m_trackChiSquared);
+      m_eventTree->Branch("trackNumberDOF", &m_trackNumberDOF);
+      m_eventTree->Branch("trackD0", &m_trackD0);
+      m_eventTree->Branch("trackZ0", &m_trackZ0);
+    }
 
     // Track extrapolation
     // Presampler
@@ -629,7 +631,7 @@ StatusCode MLTreeMaker::execute()
   //note this index is not necessarily the same as the index in the truthContainer
   //e.g. you filter some of the particles
   std::map<int, unsigned int> truthBarcodeMap;
-  if (m_doTruthParticles)
+  if (m_doTruthParticles || m_doCalibHits)
   {
 
     SG::ReadHandle<xAOD::TruthParticleContainer> truthParticleReadHandle(m_truthParticleReadHandleKey);
@@ -690,14 +692,19 @@ StatusCode MLTreeMaker::execute()
         if (!m_keepG4TruthParticles)
           continue;
       }
-      m_truthPartPdgId.push_back(truth->pdgId());
-      m_truthPartStatus.push_back(truth->status());
-      m_truthPartBarcode.push_back(truth->barcode());
-      m_truthPartPt.push_back(truth->pt() * 1e-3);
-      m_truthPartE.push_back(truth->e() * 1e-3);
-      m_truthPartMass.push_back(truth->m() * 1e-3);
-      m_truthPartEta.push_back(truth->eta());
-      m_truthPartPhi.push_back(truth->phi());
+
+      if (m_doTruthParticles || m_doCalibHits) m_truthPartBarcode.push_back(truth->barcode());
+
+      if (m_doTruthParticles){
+        m_truthPartPdgId.push_back(truth->pdgId());
+        m_truthPartStatus.push_back(truth->status());
+        m_truthPartPt.push_back(truth->pt() * 1e-3);
+        m_truthPartE.push_back(truth->e() * 1e-3);
+        m_truthPartMass.push_back(truth->m() * 1e-3);
+        m_truthPartEta.push_back(truth->eta());
+        m_truthPartPhi.push_back(truth->phi());
+      }
+      
       if (m_doCalibHits)
         truthBarcodeMap.emplace_hint(truthBarcodeMap.end(), truth->barcode(), m_nTruthPart);
       m_nTruthPart++;
@@ -789,40 +796,42 @@ StatusCode MLTreeMaker::execute()
       else
         m_trackSubtractedCaloEnergy.push_back(-999.);
 
-      // Load track quality variables
-      track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
-      track->summaryValue(m_numberOfSCTHits, xAOD::numberOfSCTHits);
-      track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
-      track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
-      track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
-      track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
-      track->summaryValue(m_numberOfPixelHoles, xAOD::numberOfPixelHoles);
-      track->summaryValue(m_numberOfSCTHoles, xAOD::numberOfSCTHoles);
-      track->summaryValue(m_numberOfInnermostPixelLayerHits, xAOD::numberOfInnermostPixelLayerHits);
-      track->summaryValue(m_numberOfNextToInnermostPixelLayerHits, xAOD::numberOfNextToInnermostPixelLayerHits);
-      track->summaryValue(m_expectInnermostPixelLayerHit, xAOD::expectInnermostPixelLayerHit);
-      track->summaryValue(m_expectNextToInnermostPixelLayerHit, xAOD::expectNextToInnermostPixelLayerHit);
-      track->summaryValue(m_numberOfTRTHits, xAOD::numberOfTRTHits);
-      track->summaryValue(m_numberOfTRTOutliers, xAOD::numberOfTRTOutliers);
+      if (m_doDetailedTracking){
+        // Load track quality variables
+        track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
+        track->summaryValue(m_numberOfSCTHits, xAOD::numberOfSCTHits);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelHoles, xAOD::numberOfPixelHoles);
+        track->summaryValue(m_numberOfSCTHoles, xAOD::numberOfSCTHoles);
+        track->summaryValue(m_numberOfInnermostPixelLayerHits, xAOD::numberOfInnermostPixelLayerHits);
+        track->summaryValue(m_numberOfNextToInnermostPixelLayerHits, xAOD::numberOfNextToInnermostPixelLayerHits);
+        track->summaryValue(m_expectInnermostPixelLayerHit, xAOD::expectInnermostPixelLayerHit);
+        track->summaryValue(m_expectNextToInnermostPixelLayerHit, xAOD::expectNextToInnermostPixelLayerHit);
+        track->summaryValue(m_numberOfTRTHits, xAOD::numberOfTRTHits);
+        track->summaryValue(m_numberOfTRTOutliers, xAOD::numberOfTRTOutliers);
 
-      m_trackNumberOfPixelHits.push_back(m_numberOfPixelHits);
-      m_trackNumberOfSCTHits.push_back(m_numberOfSCTHits);
-      m_trackNumberOfPixelDeadSensors.push_back(m_numberOfPixelDeadSensors);
-      m_trackNumberOfSCTDeadSensors.push_back(m_numberOfSCTDeadSensors);
-      m_trackNumberOfPixelSharedHits.push_back(m_numberOfPixelSharedHits);
-      m_trackNumberOfSCTSharedHits.push_back(m_numberOfSCTSharedHits);
-      m_trackNumberOfPixelHoles.push_back(m_numberOfPixelHoles);
-      m_trackNumberOfSCTHoles.push_back(m_numberOfSCTHoles);
-      m_trackNumberOfInnermostPixelLayerHits.push_back(m_numberOfInnermostPixelLayerHits);
-      m_trackNumberOfNextToInnermostPixelLayerHits.push_back(m_numberOfNextToInnermostPixelLayerHits);
-      m_trackExpectInnermostPixelLayerHit.push_back(m_expectInnermostPixelLayerHit);
-      m_trackExpectNextToInnermostPixelLayerHit.push_back(m_expectNextToInnermostPixelLayerHit);
-      m_trackNumberOfTRTHits.push_back(m_numberOfTRTHits);
-      m_trackNumberOfTRTOutliers.push_back(m_numberOfTRTOutliers);
-      m_trackChiSquared.push_back(track->chiSquared());
-      m_trackNumberDOF.push_back(track->numberDoF());
-      m_trackD0.push_back(track->definingParameters()[0]);
-      m_trackZ0.push_back(track->definingParameters()[1]);
+        m_trackNumberOfPixelHits.push_back(m_numberOfPixelHits);
+        m_trackNumberOfSCTHits.push_back(m_numberOfSCTHits);
+        m_trackNumberOfPixelDeadSensors.push_back(m_numberOfPixelDeadSensors);
+        m_trackNumberOfSCTDeadSensors.push_back(m_numberOfSCTDeadSensors);
+        m_trackNumberOfPixelSharedHits.push_back(m_numberOfPixelSharedHits);
+        m_trackNumberOfSCTSharedHits.push_back(m_numberOfSCTSharedHits);
+        m_trackNumberOfPixelHoles.push_back(m_numberOfPixelHoles);
+        m_trackNumberOfSCTHoles.push_back(m_numberOfSCTHoles);
+        m_trackNumberOfInnermostPixelLayerHits.push_back(m_numberOfInnermostPixelLayerHits);
+        m_trackNumberOfNextToInnermostPixelLayerHits.push_back(m_numberOfNextToInnermostPixelLayerHits);
+        m_trackExpectInnermostPixelLayerHit.push_back(m_expectInnermostPixelLayerHit);
+        m_trackExpectNextToInnermostPixelLayerHit.push_back(m_expectNextToInnermostPixelLayerHit);
+        m_trackNumberOfTRTHits.push_back(m_numberOfTRTHits);
+        m_trackNumberOfTRTOutliers.push_back(m_numberOfTRTOutliers);
+        m_trackChiSquared.push_back(track->chiSquared());
+        m_trackNumberDOF.push_back(track->numberDoF());
+        m_trackD0.push_back(track->definingParameters()[0]);
+        m_trackZ0.push_back(track->definingParameters()[1]);
+      }
 
       // A map to store the track parameters (eta,phi) associated with the different layers of the calorimeter system
       std::map<CaloCell_ID::CaloSample, std::pair<double, double>> parametersMap;
@@ -1191,7 +1200,7 @@ StatusCode MLTreeMaker::execute()
             }
           } //end m_doCalibHits
         }   //end cell loop
-        if (m_doTruthParticles && m_doCalibHits)
+        if (m_doCalibHits)
         {
 
           //now get visible energy contributions via calo cluster decorations
