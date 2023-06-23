@@ -2,7 +2,7 @@
 
 ATLAS Athena package to save calorimeter clusters as images, with normalized cell energies as pixel values. Six images are saved for each cluster, corresponding to the barrels layers of the EM (EMB1, EMB2, EMB3) and HAD calorimeters (TileBar0, TileBar2, TileBar3). The image size is 0.4x0.4 in eta-phi space. Images are generated from ESD (Event Summary Data).
 
-For questions please contact: joakim.olsson[at]cern.ch in general and m.hodgkinson[at]sheffield.ac.uk for questions specific to the Release 22 branch.
+For questions please contact: mswiatlo[at]cern.ch in general and m.hodgkinson[at]sheffield.ac.uk for questions specific to the Release 22 branch.
 
 ## Setup
 
