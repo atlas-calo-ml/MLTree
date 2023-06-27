@@ -873,7 +873,6 @@ StatusCode MLTreeMaker::execute()
       else
       {
         ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
-        continue;
       }
       
       //  ---------Calo Sample layer Variables---------
