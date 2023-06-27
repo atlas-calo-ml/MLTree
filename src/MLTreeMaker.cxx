@@ -1181,13 +1181,6 @@ StatusCode MLTreeMaker::execute()
           cluster_cell_hitsTruthE->assign(nCells_cl, std::vector<float>());          
         }
 
-        /*
-        std::vector<std::vector<int>> &cluster_cell_hitsTruthIndex = m_cluster_cell_hitsTruthIndex[jCluster];
-        std::vector<std::vector<float>> &cluster_cell_hitsTruthE = m_cluster_cell_hitsTruthE[jCluster];
-        cluster_cell_hitsTruthIndex.assign(nCells_cl, std::vector<int>());
-        cluster_cell_hitsTruthE.assign(nCells_cl, std::vector<float>());
-        */
-
         if (m_doCalibHits && m_doCalibHitsPerCell)
         {
           cluster_cell_hitsE_EM.reserve(nCells_cl);
@@ -1210,9 +1203,6 @@ StatusCode MLTreeMaker::execute()
             hitsTruthIndex = &cluster_cell_hitsTruthIndex->at(jCell);
             hitsTruthE = &cluster_cell_hitsTruthE->at(jCell);
           }
-
-          //std::vector<int> &hitsTruthIndex = m_cluster_cell_hitsTruthIndex[jCluster][jCell];
-          //std::vector<float> &hitsTruthE = m_cluster_cell_hitsTruthE[jCluster][jCell];
 
           const CaloCell *cell = (*it_cell);
           float cellE = cell->e() * (it_cell.weight()) * 1e-3;

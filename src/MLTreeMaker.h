@@ -133,7 +133,7 @@ private:
   
   // Cluster truth particle branches control
   Gaudi::Property<bool> m_doTruthParticlesPerCell{this, "TruthParticlesPerCell", false, "Whether to store truth particle information per cell"};
-  Gaudi::Property<int> m_truthParticlesPerLimitLimit{this, "TruthParticlesPerCellLimt", 3, "Store only the leading N truth particle contributions per cell"};
+  Gaudi::Property<unsigned int> m_truthParticlesPerLimitLimit{this, "TruthParticlesPerCellLimt", 3, "Store only the leading N truth particle contributions per cell"};
 
   //Tree and branch data structures
   TTree *m_eventTree;
