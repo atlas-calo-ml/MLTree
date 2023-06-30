@@ -1297,9 +1297,9 @@ StatusCode MLTreeMaker::execute()
             const auto mapItr = truthBarcodeMap.find(barcode);
             if (mapItr != truthBarcodeMap.end())
             {
-              cluster_visibleHitsTruthIndex.push_back(mapItr->second);
+              if (m_doTruthParticles) cluster_visibleHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
-              cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTruthParticles) cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
               if (m_doTracking) truthVisibleCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations
@@ -1313,9 +1313,9 @@ StatusCode MLTreeMaker::execute()
             const auto mapItr = truthBarcodeMap.find(barcode);
             if (mapItr != truthBarcodeMap.end())
             {
-              cluster_fullHitsTruthIndex.push_back(mapItr->second);
+              if (m_doTruthParticles) cluster_fullHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
-              cluster_fullHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTruthParticles) cluster_fullHitsTruthE.push_back(calibrationHitEnergy);
               if (m_doTracking) truthFullCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations_Full
