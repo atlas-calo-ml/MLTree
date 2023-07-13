@@ -120,9 +120,15 @@ StatusCode MLTreeMaker::initialize()
   }
 
   // Truth particles
+  
+  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell || m_doTrackTruthMatching) m_eventTree->Branch("nTruthPart", &m_nTruthPart, "nTruthPart/I");
+
+  if (m_doCalibHits || m_doTruthParticles) m_eventTree->Branch("truthPartBarcode", &m_truthPartBarcode);
+
+  if (m_doTrackTruthMatching || m_doTruthParticles) m_eventTree->Branch("truthPartPdgId", &m_truthPartPdgId);
+
   if (m_doTruthParticles)
   {
-    m_eventTree->Branch("nTruthPart", &m_nTruthPart, "nTruthPart/I");
     m_eventTree->Branch("G4PreCalo_n_EM", &m_G4PreCalo_n_EM);
     m_eventTree->Branch("G4PreCalo_E_EM", &m_G4PreCalo_E_EM);
     m_eventTree->Branch("G4PreCalo_n_Had", &m_G4PreCalo_n_Had);
@@ -130,9 +136,7 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("truthVertexX", &m_truthVertexX);
     m_eventTree->Branch("truthVertexY", &m_truthVertexY);
     m_eventTree->Branch("truthVertexZ", &m_truthVertexZ);
-    m_eventTree->Branch("truthPartPdgId", &m_truthPartPdgId);
     m_eventTree->Branch("truthPartStatus", &m_truthPartStatus);
-    m_eventTree->Branch("truthPartBarcode", &m_truthPartBarcode);
     m_eventTree->Branch("truthPartPt", &m_truthPartPt);
     m_eventTree->Branch("truthPartE", &m_truthPartE);
     m_eventTree->Branch("truthPartMass", &m_truthPartMass);
@@ -637,7 +641,7 @@ StatusCode MLTreeMaker::execute()
   //e.g. you filter some of the particles
   std::map<int, unsigned int> truthBarcodeMap;
 
-  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell)
+  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell || m_doTrackTruthMatching)
   {
 
     SG::ReadHandle<xAOD::TruthParticleContainer> truthParticleReadHandle(m_truthParticleReadHandleKey);
@@ -701,8 +705,9 @@ StatusCode MLTreeMaker::execute()
 
       if (m_doTruthParticles || m_doCalibHits) m_truthPartBarcode.push_back(truth->barcode());
 
+      if (m_doTruthParticles || m_doTrackTruthMatching) m_truthPartPdgId.push_back(truth->pdgId());
+
       if (m_doTruthParticles){
-        m_truthPartPdgId.push_back(truth->pdgId());
         m_truthPartStatus.push_back(truth->status());
         m_truthPartPt.push_back(truth->pt() * 1e-3);
         m_truthPartE.push_back(truth->e() * 1e-3);
