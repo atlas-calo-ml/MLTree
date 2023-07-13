@@ -40,7 +40,7 @@ def MainCfg(cfgFlags):
     #decorate the topoclusters with calib hit calculations
     from CaloCalibHitRec.CaloCalibHitDecoratorCfg import CaloCalibHitDecoratorCfg, CaloCalibHitDecoratorFullEnergyCfg 
     #The decoration algorithms add the leading numTruthParticles energy deposits, in that topocluster, to each topocluster
-    numTruthParticles = 10
+    numTruthParticles = 100
     cfg.merge(CaloCalibHitDecoratorCfg(cfgFlags,name="CaloCalibClusterDecoratorAlgorithm_Visible", 
                                        CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName+"_Visible",
                                        NumTruthParticles = numTruthParticles))

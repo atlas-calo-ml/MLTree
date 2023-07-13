@@ -5,12 +5,27 @@ if __name__=="__main__":
 
     from AthenaConfiguration.AllConfigFlags import ConfigFlags as cfgFlags
     from MLTree.MainCfg import __MLTree
+    #from AthenaCommon.Constants import DEBUG
+ 
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
 
+    flist = [
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000012.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000018.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000019.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000022.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000035.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000045.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000055.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000056.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000077.pool.root.1",
+          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000079.pool.root.1",
+    ]
+
     cfgFlags.Exec.MaxEvents=-1
+    #cfgFlags.Exec.OutputLevel=DEBUG
     cfgFlags.Input.isMC=True
-    #cfgFlags.Input.Files=["/home/markhodgkinson.linux/ESD.28115683._000440.pool.root.1"]    
-    cfgFlags.Input.Files= ["/cvmfs/atlas-nightlies.cern.ch/repo/data/data-art/PFlowTests/mc16_13TeV/mc16_13TeV.410470.PhPy8EG_A14_ttbar_hdamp258p75_nonallhad.recon.ESD.e6337_e5984_s3170_r12674/ESD.25732025._000034.pool.root.1"]
+    cfgFlags.Input.Files=flist
     cfgFlags.Concurrency.NumThreads=1
     cfgFlags.fillFromArgs()
     cfgFlags.lock()
@@ -38,9 +53,9 @@ if __name__=="__main__":
                            UncalibratedClusters = True,
                            TruthParticles = True,
                            EventTruth = False,
-                           OnlyStableTruthParticles = False,
+                           OnlyStableTruthParticles = True,
                            G4TruthParticles = False,
-                           Jets = False,
+                           Jets = True,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
                            RootStreamName = "OutputStream"))                         
 
