@@ -56,6 +56,7 @@ if __name__=="__main__":
                            OnlyStableTruthParticles = True,
                            G4TruthParticles = False,
                            Jets = True,
+                           Pflow = True,
                            JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
                            RootStreamName = "OutputStream"))                         
 

@@ -50,6 +50,7 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
                                                                               m_doUncalibratedClusters(true),
                                                                               m_doTracking(false),
                                                                               m_doJets(false),
+                                                                              m_doPflow(false),
                                                                               m_doEventCleaning(false),
                                                                               m_doPileup(false),
                                                                               m_doShapeEM(false),
@@ -81,6 +82,7 @@ MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : At
 
   declareProperty("Tracking", m_doTracking);
   declareProperty("Jets", m_doJets);
+  declareProperty("Pflow", m_doPflow);
   declareProperty("EventCleaning", m_doEventCleaning);
   declareProperty("Pileup", m_doPileup);
   declareProperty("ShapeEM", m_doShapeEM);
@@ -122,6 +124,7 @@ StatusCode MLTreeMaker::initialize()
   if (!m_emTopoEventShapeReadHandleKey.empty()) ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
   ATH_CHECK(m_truthEventReadHandleKey.initialize());
   ATH_CHECK(m_jetReadHandleKeyArray.initialize());
+  ATH_CHECK(m_pflowReadHandleKey.initialize());
   ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
   ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
   ATH_CHECK(m_caloCellReadHandleKey.initialize());
@@ -677,6 +680,25 @@ StatusCode MLTreeMaker::execute()
       truthEventContainervent->pdfInfoParameter(m_x2, xAOD::TruthEvent::X2);
       truthEventContainervent->pdfInfoParameter(m_xf1, xAOD::TruthEvent::XF1);
       truthEventContainervent->pdfInfoParameter(m_xf2, xAOD::TruthEvent::XF2);
+    }
+  }
+  if (m_doPflow)
+  {
+    SG::ReadHandle<xAOD::FlowElementContainer> pflowReadHandle(m_pflowReadHandleKey);
+    if (!pflowReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to FlowElementContainer with key " << pflowReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+    else
+    {
+      const xAOD::FlowElement *pflowElement = pflowReadHandle->at(0);
+
+      ATH_MSG_WARNING("TEST! " << pflowReadHandle.key());
+      return StatusCode::SUCCESS;
+      // pflowElement->...;
+      // pflowElement->...;
+      // pflowElement->...;
     }
   }
 
