@@ -69,6 +69,7 @@ private:
   // bool m_isMC;
   bool m_doTracking;
   bool m_doJets;
+  bool m_doPflow;
   bool m_doEventCleaning;
   bool m_doPileup;
   bool m_doShapeEM;
@@ -82,6 +83,9 @@ private:
 
   /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
   SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "JetETMissChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
+
+  /** ReadHandle to retrieve xAOD::FlowElementContainer (neutral) */
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_neutralFlowElementReadHandleKey{this, "NeutralFlowElementContainer", "JetETMissNeutralParticleFlowObjects", "ReadHandleKey for the neutral FlowElement container"};
 
   /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
   SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
@@ -292,6 +296,14 @@ private:
   std::vector<float> m_trackPhi_TileExt1;
   std::vector<float> m_trackEta_TileExt2;
   std::vector<float> m_trackPhi_TileExt2;
+
+  // PFlow variables
+  int m_nPflow;
+  std::vector<float> m_PflowPt;
+  std::vector<float> m_PflowMass;
+  std::vector<float> m_PflowEta;
+  std::vector<float> m_PflowPhi;
+  std::vector<float> m_PflowCharge;
 
   //outer index is for jet container
   //inner index is for jets index w/in that container

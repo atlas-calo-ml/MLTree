@@ -115,6 +115,7 @@ StatusCode MLTreeMaker::initialize()
 
   //Initialize the ReadHandle keys
   ATH_CHECK(m_chargedFlowElementReadHandleKey.initialize());
+  ATH_CHECK(m_neutralFlowElementReadHandleKey.initialize());
   ATH_CHECK(m_truthParticleReadHandleKey.initialize());
   ATH_CHECK(m_vxReadHandleKey.initialize());
   ATH_CHECK(m_trackParticleReadHandleKey.initialize());
@@ -124,7 +125,6 @@ StatusCode MLTreeMaker::initialize()
   if (!m_emTopoEventShapeReadHandleKey.empty()) ATH_CHECK(m_emTopoEventShapeReadHandleKey.initialize());
   ATH_CHECK(m_truthEventReadHandleKey.initialize());
   ATH_CHECK(m_jetReadHandleKeyArray.initialize());
-  ATH_CHECK(m_pflowReadHandleKey.initialize());
   ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
   ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
   ATH_CHECK(m_caloCellReadHandleKey.initialize());
@@ -288,6 +288,16 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackPhi_TileExt1", &m_trackPhi_TileExt1);
     m_eventTree->Branch("trackEta_TileExt2", &m_trackEta_TileExt2);
     m_eventTree->Branch("trackPhi_TileExt2", &m_trackPhi_TileExt2);
+  }
+
+  if (m_doPflow)
+  {
+    m_eventTree->Branch("nPflow",      &m_nPflow, "nPflow/I");
+    m_eventTree->Branch("PflowPt",     &m_PflowPt);
+    m_eventTree->Branch("PflowMass",   &m_PflowMass);
+    m_eventTree->Branch("PflowEta",    &m_PflowEta);
+    m_eventTree->Branch("PflowPhi",    &m_PflowPhi);
+    m_eventTree->Branch("PflowCharge", &m_PflowCharge);
   }
 
   if (m_doJets)
@@ -524,6 +534,13 @@ StatusCode MLTreeMaker::execute()
   m_trackEta_TileExt2.clear();
   m_trackPhi_TileExt2.clear();
 
+  m_nPflow = 0;
+  m_PflowPt.clear();
+  m_PflowMass.clear();
+  m_PflowEta.clear();
+  m_PflowPhi.clear();
+  m_PflowCharge.clear();
+
   // General event information
   
   SG::ReadHandle<xAOD::EventInfo> eventInfoReadHandle(m_eventInfoReadHandleKey);
@@ -684,22 +701,42 @@ StatusCode MLTreeMaker::execute()
   }
   if (m_doPflow)
   {
-    SG::ReadHandle<xAOD::FlowElementContainer> pflowReadHandle(m_pflowReadHandleKey);
-    if (!pflowReadHandle.isValid())
-    {
-      ATH_MSG_WARNING("Invalid ReadHandle to FlowElementContainer with key " << pflowReadHandle.key());
-      return StatusCode::SUCCESS;
-    }
-    else
-    {
-      const xAOD::FlowElement *pflowElement = pflowReadHandle->at(0);
 
-      ATH_MSG_WARNING("TEST! " << pflowReadHandle.key());
+    SG::ReadHandle<xAOD::FlowElementContainer> neutralFlowElementReadHandle(m_neutralFlowElementReadHandleKey);
+    if (!neutralFlowElementReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle to FlowElementContainer with key " << neutralFlowElementReadHandle.key());
       return StatusCode::SUCCESS;
-      // pflowElement->...;
-      // pflowElement->...;
-      // pflowElement->...;
     }
+
+    SG::ReadHandle<xAOD::FlowElementContainer> chargedFlowElementReadHandle(m_chargedFlowElementReadHandleKey);
+
+    if (!chargedFlowElementReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::FlowElementContainer with key: " << chargedFlowElementReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
+    m_nPflow = 0;
+    for (auto nu_pflow : *neutralFlowElementReadHandle)
+    {
+      m_PflowPt.push_back(nu_pflow->pt() * 1e-3);
+      m_PflowMass.push_back(nu_pflow->m() * 1e-3);
+      m_PflowEta.push_back(nu_pflow->eta());
+      m_PflowPhi.push_back(nu_pflow->phi());
+      m_PflowCharge.push_back(nu_pflow->charge());
+      m_nPflow++;
+    }
+    for (auto ch_pflow : *chargedFlowElementReadHandle)
+    {
+      m_PflowPt.push_back(ch_pflow->pt() * 1e-3);
+      m_PflowMass.push_back(ch_pflow->m() * 1e-3);
+      m_PflowEta.push_back(ch_pflow->eta());
+      m_PflowPhi.push_back(ch_pflow->phi());
+      m_PflowCharge.push_back(ch_pflow->charge());
+      m_nPflow++;
+    }
+
   }
 
   std::vector<const CaloCalibrationHitContainer *> v_calibHitContainer;

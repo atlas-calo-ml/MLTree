@@ -9,18 +9,12 @@ if __name__=="__main__":
  
     cfgFlags.addFlagsCategory("MLTree",__MLTree)
 
-    flist = [
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000012.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000018.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000019.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000022.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000035.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000045.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000055.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000056.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000077.pool.root.1",
-          "/storage/agrp/dreyet/MLTreeAthenaAnalysis/samples/mc20_13TeV.364702.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ2WithSW.recon.ESD.e7142_e5984_s4027_r14266/test/ESD.31872166._000079.pool.root.1",
-    ]
+    import os
+    file_list = os.getenv('FILELIST')
+    #file_list = '/eos/user/e/edreyer/MLTreeAthenaAnalysis/samples/train.txt'
+
+    with open(file_list, "r") as f:
+        flist = [line.strip() for line in f if not line.startswith("#")]
 
     cfgFlags.Exec.MaxEvents=-1
     #cfgFlags.Exec.OutputLevel=DEBUG
@@ -57,7 +51,7 @@ if __name__=="__main__":
                            G4TruthParticles = False,
                            Jets = True,
                            Pflow = True,
-                           JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets"],
+                           JetContainers = ["AntiKt4EMTopoJets","AntiKt4LCTopoJets","AntiKt4TruthJets","AntiKt4EMPFlowJets"],
                            RootStreamName = "OutputStream"))                         
 
     cfg.run()
