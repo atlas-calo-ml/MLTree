@@ -1224,6 +1224,7 @@ StatusCode MLTreeMaker::execute()
     {
       std::string jetCollName = jetKey.key();
       bool isTruthJetColl = (jetCollName.find("Truth") != std::string::npos);
+      bool isPflowJetColl = (jetCollName.find("PFlow") != std::string::npos);
       SG::ReadHandle<xAOD::JetContainer> jetReadHandle(jetKey);
       if (!jetReadHandle.isValid())
       {
@@ -1252,6 +1253,14 @@ StatusCode MLTreeMaker::execute()
       }
       for (auto jet : *jetReadHandle)
       {
+        if (isTruthJetColl || isPflowJetColl)
+        {
+          for(auto constituent : jet->getConstituents())
+          {
+            ATH_MSG_INFO(jetCollName << " jet constituent pt: " << constituent->pt());
+          }
+        }
+
         xAOD::JetFourMom_t jet_p4;
         if (isTruthJetColl)
         {

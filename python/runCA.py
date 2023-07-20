@@ -16,7 +16,7 @@ if __name__=="__main__":
     with open(file_list, "r") as f:
         flist = [line.strip() for line in f if not line.startswith("#")]
 
-    cfgFlags.Exec.MaxEvents=-1
+    cfgFlags.Exec.MaxEvents=10
     #cfgFlags.Exec.OutputLevel=DEBUG
     cfgFlags.Input.isMC=True
     cfgFlags.Input.Files=flist
