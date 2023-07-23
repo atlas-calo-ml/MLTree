@@ -292,7 +292,8 @@ StatusCode MLTreeMaker::initialize()
 
   if (m_doPflow)
   {
-    m_eventTree->Branch("nPflow",      &m_nPflow, "nPflow/I");
+    m_eventTree->Branch("nNuPflow",    &m_nNuPflow, "nNuPflow/I");
+    m_eventTree->Branch("nChPflow",    &m_nChPflow, "nChPflow/I");
     m_eventTree->Branch("PflowPt",     &m_PflowPt);
     m_eventTree->Branch("PflowMass",   &m_PflowMass);
     m_eventTree->Branch("PflowEta",    &m_PflowEta);
@@ -309,12 +310,14 @@ StatusCode MLTreeMaker::initialize()
     m_jet_phi.clear();
     m_jet_E.clear();
     m_jet_flavor.clear();
+    m_jet_constit_ID.clear();
 
     m_jet_pt.assign(nJetColl, std::vector<float>());
     m_jet_eta.assign(nJetColl, std::vector<float>());
     m_jet_phi.assign(nJetColl, std::vector<float>());
     m_jet_E.assign(nJetColl, std::vector<float>());
     m_jet_flavor.assign(nJetColl, std::vector<int>());
+    m_jet_constit_ID.assign(nJetColl, std::vector<std::vector<int>>());
 
     unsigned int iColl = 0;
     for (auto jetKey : m_jetReadHandleKeyArray)
@@ -342,6 +345,14 @@ StatusCode MLTreeMaker::initialize()
         ss << jet_name << "Flavor";
         m_eventTree->Branch(ss.str().c_str(), &(m_jet_flavor[iColl]));
       }
+
+      if (jet_name.find("PFlow") != std::string::npos)
+      {
+        ss.str("");
+        ss << jet_name << "ConstituentID";
+        m_eventTree->Branch(ss.str().c_str(), &(m_jet_constit_ID[iColl]));
+      }
+
       iColl++;
     }
   }
@@ -534,7 +545,8 @@ StatusCode MLTreeMaker::execute()
   m_trackEta_TileExt2.clear();
   m_trackPhi_TileExt2.clear();
 
-  m_nPflow = 0;
+  m_nNuPflow = 0;
+  m_nChPflow = 0;
   m_PflowPt.clear();
   m_PflowMass.clear();
   m_PflowEta.clear();
@@ -717,7 +729,8 @@ StatusCode MLTreeMaker::execute()
       return StatusCode::SUCCESS;
     }
 
-    m_nPflow = 0;
+    m_nNuPflow = 0;
+    m_nChPflow = 0;
     for (auto nu_pflow : *neutralFlowElementReadHandle)
     {
       m_PflowPt.push_back(nu_pflow->pt() * 1e-3);
@@ -725,7 +738,7 @@ StatusCode MLTreeMaker::execute()
       m_PflowEta.push_back(nu_pflow->eta());
       m_PflowPhi.push_back(nu_pflow->phi());
       m_PflowCharge.push_back(nu_pflow->charge());
-      m_nPflow++;
+      m_nNuPflow++;
     }
     for (auto ch_pflow : *chargedFlowElementReadHandle)
     {
@@ -734,9 +747,8 @@ StatusCode MLTreeMaker::execute()
       m_PflowEta.push_back(ch_pflow->eta());
       m_PflowPhi.push_back(ch_pflow->phi());
       m_PflowCharge.push_back(ch_pflow->charge());
-      m_nPflow++;
+      m_nChPflow++;
     }
-
   }
 
   std::vector<const CaloCalibrationHitContainer *> v_calibHitContainer;
@@ -1237,6 +1249,7 @@ StatusCode MLTreeMaker::execute()
       std::vector<float> &v_phi = m_jet_phi.at(iColl);
       std::vector<float> &v_E = m_jet_E.at(iColl);
       std::vector<int> &v_flavor = m_jet_flavor.at(iColl);
+      std::vector<std::vector<int>> &v_constit_ID = m_jet_constit_ID.at(iColl);
       v_pt.clear();
       v_eta.clear();
       v_phi.clear();
@@ -1251,16 +1264,14 @@ StatusCode MLTreeMaker::execute()
         v_flavor.clear();
         v_flavor.reserve(jetReadHandle->size());
       }
+      if (isPflowJetColl)
+      {
+        v_constit_ID.clear();
+        v_constit_ID.reserve(jetReadHandle->size()*10); //EXPERIMENTAL: assume upper bound of 10 jet constituents on avg
+      }
+
       for (auto jet : *jetReadHandle)
       {
-        if (isTruthJetColl || isPflowJetColl)
-        {
-          for(auto constituent : jet->getConstituents())
-          {
-            ATH_MSG_INFO(jetCollName << " jet constituent pt: " << constituent->pt());
-          }
-        }
-
         xAOD::JetFourMom_t jet_p4;
         if (isTruthJetColl)
         {
@@ -1272,11 +1283,30 @@ StatusCode MLTreeMaker::execute()
           v_flavor.push_back(jetFlavor);
         }
         else
+        {
           jet_p4 = jet->jetP4(xAOD::JetConstitScaleMomentum);
+        }
         v_pt.push_back(jet_p4.Pt() * 1e-3);
         v_eta.push_back(jet_p4.Eta());
         v_phi.push_back(jet_p4.Phi());
         v_E.push_back(jet_p4.E() * 1e-3);
+
+        if (isPflowJetColl)
+        {
+          std::vector<int> thisJet_v_constit_ID;
+          for(auto constituent : jet->getConstituents())
+          {
+            int charge = constituent->rawConstituent()->auxdata<float>("charge");
+            int index  = constituent->rawConstituent()->index();
+            //int shift  = constituent->rawConstituent()->container()->size_v(); // offset for charged pflow objects (indexed after neutrals)
+            int shift = m_nNuPflow;
+
+            thisJet_v_constit_ID.push_back(index + abs(charge)*shift);
+          }
+          v_constit_ID.push_back(thisJet_v_constit_ID);
+
+        }
+
       }
       iColl++;
     }

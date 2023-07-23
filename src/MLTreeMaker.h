@@ -298,7 +298,8 @@ private:
   std::vector<float> m_trackPhi_TileExt2;
 
   // PFlow variables
-  int m_nPflow;
+  int m_nNuPflow;
+  int m_nChPflow;
   std::vector<float> m_PflowPt;
   std::vector<float> m_PflowMass;
   std::vector<float> m_PflowEta;
@@ -312,6 +313,7 @@ private:
   std::vector<std::vector<float>> m_jet_phi;
   std::vector<std::vector<float>> m_jet_E;
   std::vector<std::vector<int>> m_jet_flavor;
+  std::vector<std::vector<std::vector<int>>> m_jet_constit_ID;
 
   // Clusters and cells
   int m_nCluster;
