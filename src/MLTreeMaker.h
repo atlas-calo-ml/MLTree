@@ -305,6 +305,8 @@ private:
   std::vector<float> m_PflowEta;
   std::vector<float> m_PflowPhi;
   std::vector<float> m_PflowCharge;
+  std::vector<int> m_PflowTrackID;
+  std::vector<std::vector<int>> m_PflowClusterID;
 
   //outer index is for jet container
   //inner index is for jets index w/in that container

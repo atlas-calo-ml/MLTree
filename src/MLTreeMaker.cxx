@@ -299,6 +299,8 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("PflowEta",    &m_PflowEta);
     m_eventTree->Branch("PflowPhi",    &m_PflowPhi);
     m_eventTree->Branch("PflowCharge", &m_PflowCharge);
+    m_eventTree->Branch("PflowTrackID", &m_PflowTrackID);
+    m_eventTree->Branch("PflowClusterID", &m_PflowClusterID);
   }
 
   if (m_doJets)
@@ -552,6 +554,8 @@ StatusCode MLTreeMaker::execute()
   m_PflowEta.clear();
   m_PflowPhi.clear();
   m_PflowCharge.clear();
+  m_PflowTrackID.clear();
+  m_PflowClusterID.clear();
 
   // General event information
   
@@ -738,6 +742,15 @@ StatusCode MLTreeMaker::execute()
       m_PflowEta.push_back(nu_pflow->eta());
       m_PflowPhi.push_back(nu_pflow->phi());
       m_PflowCharge.push_back(nu_pflow->charge());
+
+      std::vector<int> clusterID;
+      for (auto clust : nu_pflow->otherObjects())
+      {
+        clusterID.push_back(clust->index());
+      }
+      m_PflowClusterID.push_back(clusterID);
+      m_PflowTrackID.push_back(-1); //no associated track for neutral pflow objects
+
       m_nNuPflow++;
     }
     for (auto ch_pflow : *chargedFlowElementReadHandle)
@@ -747,6 +760,31 @@ StatusCode MLTreeMaker::execute()
       m_PflowEta.push_back(ch_pflow->eta());
       m_PflowPhi.push_back(ch_pflow->phi());
       m_PflowCharge.push_back(ch_pflow->charge());
+
+      std::vector<int> clusterID;
+      for (auto clust : ch_pflow->otherObjects())
+      {
+        clusterID.push_back(clust->index());
+      }
+      m_PflowClusterID.push_back(clusterID);
+
+      int nAssocTracks = ch_pflow->chargedObjects().size();
+      int trackID = -1;
+      if(nAssocTracks == 0)
+      {
+        ATH_MSG_WARNING("No track associated with charged pflow object " << m_nChPflow);
+      }
+      else if(nAssocTracks > 1)
+      {
+        ATH_MSG_WARNING("More than one track associated with charged pflow object " << m_nChPflow);
+      }
+      else
+      {
+        trackID = ch_pflow->chargedObjects()[0]->index();
+      }
+
+      m_PflowTrackID.push_back(trackID);
+
       m_nChPflow++;
     }
   }
