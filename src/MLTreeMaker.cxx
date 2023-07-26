@@ -208,6 +208,7 @@ StatusCode MLTreeMaker::initialize()
   if (m_doTracking)
   {
     m_eventTree->Branch("nTrack", &m_nTrack, "nTrack/I");
+    m_eventTree->Branch("trackID", &m_trackID);
     m_eventTree->Branch("trackPt", &m_trackPt);
     m_eventTree->Branch("trackP", &m_trackP);
     m_eventTree->Branch("trackMass", &m_trackMass);
@@ -294,6 +295,7 @@ StatusCode MLTreeMaker::initialize()
   {
     m_eventTree->Branch("nNuPflow",    &m_nNuPflow, "nNuPflow/I");
     m_eventTree->Branch("nChPflow",    &m_nChPflow, "nChPflow/I");
+    m_eventTree->Branch("PflowID",     &m_PflowID);
     m_eventTree->Branch("PflowPt",     &m_PflowPt);
     m_eventTree->Branch("PflowMass",   &m_PflowMass);
     m_eventTree->Branch("PflowEta",    &m_PflowEta);
@@ -362,6 +364,7 @@ StatusCode MLTreeMaker::initialize()
   {
     // Clusters
     m_eventTree->Branch("nCluster", &m_nCluster, "nCluster/I");
+    m_eventTree->Branch("cluster_ID", &m_cluster_ID);
     m_eventTree->Branch("cluster_E", &m_cluster_E);
     m_eventTree->Branch("cluster_E_LCCalib", &m_cluster_E_LCCalib);
     m_eventTree->Branch("cluster_Pt", &m_cluster_Pt);
@@ -469,6 +472,7 @@ StatusCode MLTreeMaker::execute()
   m_truthPartEta.clear();
   m_truthPartPhi.clear();
 
+  m_trackID.clear();
   m_trackPt.clear();
   m_trackP.clear();
   m_trackMass.clear();
@@ -549,6 +553,7 @@ StatusCode MLTreeMaker::execute()
 
   m_nNuPflow = 0;
   m_nChPflow = 0;
+  m_PflowID.clear();
   m_PflowPt.clear();
   m_PflowMass.clear();
   m_PflowEta.clear();
@@ -737,6 +742,7 @@ StatusCode MLTreeMaker::execute()
     m_nChPflow = 0;
     for (auto nu_pflow : *neutralFlowElementReadHandle)
     {
+      m_PflowID.push_back(nu_pflow->index());
       m_PflowPt.push_back(nu_pflow->pt() * 1e-3);
       m_PflowMass.push_back(nu_pflow->m() * 1e-3);
       m_PflowEta.push_back(nu_pflow->eta());
@@ -755,6 +761,7 @@ StatusCode MLTreeMaker::execute()
     }
     for (auto ch_pflow : *chargedFlowElementReadHandle)
     {
+      m_PflowID.push_back(ch_pflow->index() + m_nNuPflow); //offset by the number of neutral pflow objects
       m_PflowPt.push_back(ch_pflow->pt() * 1e-3);
       m_PflowMass.push_back(ch_pflow->m() * 1e-3);
       m_PflowEta.push_back(ch_pflow->eta());
@@ -936,6 +943,7 @@ StatusCode MLTreeMaker::execute()
       if (!m_trkSelectionTool->accept(track))
         continue;
 
+      m_trackID.push_back(track->index());
       m_trackPt.push_back(track->pt() * 1e-3);
       m_trackP.push_back(TMath::Abs(1. / track->qOverP()) * 1e-3);
       m_trackMass.push_back(track->m() * 1e-3);
@@ -1372,6 +1380,7 @@ StatusCode MLTreeMaker::execute()
       if (m_doUncalibratedClusters)
       {
         auto sisterCluster = calibratedCluster->getSisterCluster();
+
         if (sisterCluster)
           cluster = sisterCluster;
         else
@@ -1392,6 +1401,7 @@ StatusCode MLTreeMaker::execute()
     m_nCluster = clusterRanks.size();
     //
     m_cluster_nCells.clear();
+    m_cluster_ID.clear();
     m_cluster_E.clear();
     m_cluster_E_LCCalib.clear();
     m_cluster_Pt.clear();
@@ -1411,6 +1421,7 @@ StatusCode MLTreeMaker::execute()
     m_cluster_ENERGY_DigiHSTruth.clear();
 
     m_cluster_nCells.reserve(m_nCluster);
+    m_cluster_ID.reserve(m_nCluster);
     m_cluster_E.reserve(m_nCluster);
     m_cluster_E_LCCalib.reserve(m_nCluster);
     m_cluster_Pt.reserve(m_nCluster);
@@ -1495,6 +1506,7 @@ StatusCode MLTreeMaker::execute()
         cluster = calibratedCluster->getSisterCluster();
 
       m_cluster_nCells.push_back(cluster->size());
+      m_cluster_ID.push_back(cluster->index());
       m_cluster_E.push_back(cluster->e() * 1e-3);
       m_cluster_E_LCCalib.push_back(calibratedCluster->e() * 1e-3);
       m_cluster_Pt.push_back(cluster->pt() * 1e-3);

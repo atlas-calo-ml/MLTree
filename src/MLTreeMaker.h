@@ -195,6 +195,7 @@ private:
 
   // Track variables
   int m_nTrack;
+  std::vector<int> m_trackID;
   std::vector<float> m_trackPt;
   std::vector<float> m_trackP;
   std::vector<float> m_trackMass;
@@ -300,6 +301,7 @@ private:
   // PFlow variables
   int m_nNuPflow;
   int m_nChPflow;
+  std::vector<float> m_PflowID;
   std::vector<float> m_PflowPt;
   std::vector<float> m_PflowMass;
   std::vector<float> m_PflowEta;
@@ -319,6 +321,7 @@ private:
 
   // Clusters and cells
   int m_nCluster;
+  std::vector<int> m_cluster_ID;
   std::vector<int> m_cluster_nCells;
   std::vector<float> m_cluster_E;
   std::vector<float> m_cluster_E_LCCalib;
