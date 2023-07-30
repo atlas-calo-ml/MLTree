@@ -1344,7 +1344,6 @@ StatusCode MLTreeMaker::execute()
           {
             int charge = constituent->rawConstituent()->auxdata<float>("charge");
             int index  = constituent->rawConstituent()->index();
-            //int shift  = constituent->rawConstituent()->container()->size_v(); // offset for charged pflow objects (indexed after neutrals)
             int shift = m_nNuPflow;
 
             thisJet_v_constit_ID.push_back(index + abs(charge)*shift);

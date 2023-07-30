@@ -82,10 +82,10 @@ private:
   std::string m_eventInfoContainerName;
 
   /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
-  SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "JetETMissChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "GlobalChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
 
   /** ReadHandle to retrieve xAOD::FlowElementContainer (neutral) */
-  SG::ReadHandleKey<xAOD::FlowElementContainer> m_neutralFlowElementReadHandleKey{this, "NeutralFlowElementContainer", "JetETMissNeutralParticleFlowObjects", "ReadHandleKey for the neutral FlowElement container"};
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_neutralFlowElementReadHandleKey{this, "NeutralFlowElementContainer", "GlobalNeutralParticleFlowObjects", "ReadHandleKey for the neutral FlowElement container"};
 
   /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
   SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
