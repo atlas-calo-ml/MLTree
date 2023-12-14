@@ -8,7 +8,6 @@ CellGeometryTreeMaker::CellGeometryTreeMaker( const std::string& name, ISvcLocat
   AthHistogramAlgorithm( name, pSvcLocator ),  
   m_doNeighbours(true)
 {
-  declareProperty("CaloCellContainer", m_cellContainerKey="AllCalo");
   declareProperty("DoNeighbours",m_doNeighbours);
 }
 
@@ -49,15 +48,22 @@ StatusCode CellGeometryTreeMaker::initialize()
   /* Retrieve calorimeter detector manager */
   ATH_CHECK(m_caloMgrKey.initialize());
 
+  ATH_CHECK(m_cellContainerKey.initialize());
+
   return StatusCode::SUCCESS;
 }
 
 StatusCode CellGeometryTreeMaker::execute() 
 {
-  const CaloCellContainer* CellContainer = 0;
-  CHECK(evtStore()->retrieve(CellContainer,m_cellContainerKey));
+
+  SG::ReadHandle<CaloCellContainer> cellContainerHandle(m_cellContainerKey);
+  if (!cellContainerHandle.isValid()) {
+    ATH_MSG_ERROR("Could not retrieve CaloCellContainer with key " << m_cellContainerKey);
+    return StatusCode::FAILURE;
+  }
+
   //
-  auto nCells=CellContainer->size();
+  auto nCells=cellContainerHandle->size();
 
   if(m_cellGeometryTree->GetEntries() > 0) return StatusCode::SUCCESS;
   SG::ReadCondHandle<CaloDetDescrManager> caloMgrHandle{m_caloMgrKey};
@@ -97,7 +103,7 @@ StatusCode CellGeometryTreeMaker::execute()
   
   for(unsigned int iCell=0; iCell < nCells; iCell++)
   {
-    auto pCell=CellContainer->at(iCell);
+    auto pCell=cellContainerHandle->at(iCell);
     auto theDDE= pCell->caloDDE();
     m_b_cell_geo_ID.push_back(pCell->ID().get_identifier32().get_compact());
     m_b_cell_geo_sampling.push_back(theDDE->getSampling());
@@ -109,7 +115,10 @@ StatusCode CellGeometryTreeMaker::execute()
     m_b_cell_geo_deta.push_back(theDDE->deta());
     m_b_cell_geo_dphi.push_back(theDDE->dphi());
     m_b_cell_geo_volume.push_back(theDDE->volume());
-    m_b_cell_geo_sigma.push_back(caloNoise->getNoise(pCell->ID(), pCell->gain()));
+
+    float sigma = m_twoGaussianNoise ? caloNoise->getEffectiveSigma(pCell->ID(),pCell->gain(),pCell->energy()) : 
+    caloNoise->getNoise(pCell->ID(), pCell->gain());
+    m_b_cell_geo_sigma.push_back(sigma);
 
     if(m_doNeighbours) cellHashMap[theDDE->calo_hash().value()]=iCell;
 
@@ -121,7 +130,7 @@ StatusCode CellGeometryTreeMaker::execute()
     v_NN.reserve(22);
     for(unsigned int jCell=0; jCell<nCells; jCell++)
     {
-      unsigned int cellHash=CellContainer->at(jCell)->caloDDE()->calo_hash().value();
+      unsigned int cellHash=cellContainerHandle->at(jCell)->caloDDE()->calo_hash().value();
       for(unsigned int nType=0; nType<m_b_cell_geo_neighbourhood.size(); nType++)
       {
 	calo_id->get_neighbours(cellHash,m_neighbourTypes[nType],v_NN);

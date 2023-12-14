@@ -25,11 +25,18 @@ private:
   /** Conditions Handle to access calorimeter noise */
   SG::ReadCondHandleKey<CaloNoise> m_caloNoiseKey{this, "CaloNoise","electronicNoise","CaloNoise object to read."};  
 
+  /** Toggle what type of noise to get */
+  Gaudi::Property<bool> m_twoGaussianNoise{this,"TwoGaussianNoise",true,"Whether to use 2-gaussian noise description for TileCal"};
+
   /** ReadCondHandleKey for CaloDetDescrManager */
   SG::ReadCondHandleKey<CaloDetDescrManager> m_caloMgrKey { this
      , "CaloDetDescrManager"
      , "CaloDetDescrManager"
      , "SG Key for CaloDetDescrManager in the Condition Store" };
+
+  /** ReadHandleKey for the CaloCellContainer */
+
+  SG::ReadHandleKey<CaloCellContainer> m_cellContainerKey{this, "CaloCellContainer", "AllCalo", "SG key for the CaloCellContainer"};
 
   bool m_doNeighbours;
 
@@ -45,7 +52,6 @@ private:
   std::vector<float> m_b_cell_geo_sigma;
   std::vector<std::vector<int> > m_b_cell_geo_neighbourhood;
 
-  std::string m_cellContainerKey;
   std::vector<std::string> m_neighbourNames;
   std::vector<LArNeighbours::neighbourOption> m_neighbourTypes;
 

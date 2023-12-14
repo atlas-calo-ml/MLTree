@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+
+# Copyright (C) 2002-2023 CERN for the benefit of the ATLAS collaboration
 # @file     submit_grid.py
 # @author   Joakim Olsson <joakim.olsson@cern.ch>
 # @brief    Launch grid jobs with the MLTree package
