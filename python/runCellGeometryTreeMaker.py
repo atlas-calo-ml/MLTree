@@ -10,12 +10,14 @@ if __name__=="__main__":
 
     cfgFlags.Exec.MaxEvents=-1
     cfgFlags.Input.isMC=True
-    #cfgFlags.Input.Files=["/home/markhodgkinson.linux/ESD.28115683._000440.pool.root.1"]    
     cfgFlags.Input.Files= ["/cvmfs/atlas-nightlies.cern.ch/repo/data/data-art/PFlowTests/mc16_13TeV/mc16_13TeV.410470.PhPy8EG_A14_ttbar_hdamp258p75_nonallhad.recon.ESD.e6337_e5984_s3170_r12674/ESD.25732025._000034.pool.root.1"]
     cfgFlags.Concurrency.NumThreads=1
     cfgFlags.MLTree.NtupleName="CellGeo"
     cfgFlags.fillFromArgs()
     cfgFlags.lock()
+
+    from MainCfg import GeneralServicesCfg
+    result = GeneralServicesCfg(flags)
 
     from MLTree.CellGeometryTreeMaker import CellGeometryTreeMakerCfg
     cfg = CellGeometryTreeMakerCfg(cfgFlags,ExtraInputs =  [('CaloCellContainer','StoreGateSvc+AllCalo')])

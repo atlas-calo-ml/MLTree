@@ -4,9 +4,6 @@ from AthenaConfiguration.ComponentAccumulator import ComponentAccumulator
 
 def CellGeometryTreeMakerCfg(flags,name="CellGeometryTreeMaker",**kwargs):
 
-    from MainCfg import GeneralServicesCfg
-    result = GeneralServicesCfg(flags)
- 
     from LArGeoAlgsNV.LArGMConfig import LArGMCfg
     result.merge(LArGMCfg(flags))
  
