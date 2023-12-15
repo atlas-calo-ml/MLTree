@@ -17,9 +17,9 @@ if __name__=="__main__":
     cfgFlags.lock()
 
     from MainCfg import GeneralServicesCfg
-    result = GeneralServicesCfg(flags)
+    cfg = GeneralServicesCfg(cfgFlags)
 
     from MLTree.CellGeometryTreeMaker import CellGeometryTreeMakerCfg
-    cfg = CellGeometryTreeMakerCfg(cfgFlags,ExtraInputs =  [('CaloCellContainer','StoreGateSvc+AllCalo')])
+    cfg.merge(CellGeometryTreeMakerCfg(cfgFlags))
 
     cfg.run()

@@ -22,8 +22,10 @@ public:
 
 private: 
   typedef CaloCellContainer::size_type size_type;
-  /** Conditions Handle to access calorimeter noise */
-  SG::ReadCondHandleKey<CaloNoise> m_caloNoiseKey{this, "CaloNoise","electronicNoise","CaloNoise object to read."};  
+
+  /** Conditions Handles to access calorimeter noise */
+  SG::ReadCondHandleKey<CaloNoise> m_caloElectronicNoiseKey{this, "CaloNoise","electronicNoise","CaloNoise object to read."};  
+  SG::ReadCondHandleKey<CaloNoise> m_caloTotalNoiseKey{this, "CaloNoise","totalNoise","CaloNoise object to read."};  
 
   /** Toggle what type of noise to get */
   Gaudi::Property<bool> m_twoGaussianNoise{this,"TwoGaussianNoise",true,"Whether to use 2-gaussian noise description for TileCal"};
@@ -49,7 +51,8 @@ private:
   std::vector<float> m_b_cell_geo_deta;
   std::vector<float> m_b_cell_geo_dphi;
   std::vector<float> m_b_cell_geo_volume;
-  std::vector<float> m_b_cell_geo_sigma;
+  std::vector<float> m_b_cell_geo_electronicNoise;
+  std::vector<float> m_b_cell_geo_totalNoise;
   std::vector<std::vector<int> > m_b_cell_geo_neighbourhood;
 
   std::vector<std::string> m_neighbourNames;
