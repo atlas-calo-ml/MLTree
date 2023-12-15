@@ -64,7 +64,6 @@ StatusCode CellGeometryTreeMaker::execute()
     return StatusCode::FAILURE;
   }
 
-  //
   auto nCells=cellContainerHandle->size();
 
   if(m_cellGeometryTree->GetEntries() > 0) return StatusCode::SUCCESS;
@@ -99,7 +98,6 @@ StatusCode CellGeometryTreeMaker::execute()
   hashNeighbourhood.reserve(nCells);
   
   //the neighbour information
-  //std::unordered_map<IdentifierHash,unsigned int> cell_map;
   std::unordered_map<unsigned int,unsigned int> cellHashMap;
   cellHashMap.reserve(nCells);
 
@@ -150,9 +148,6 @@ StatusCode CellGeometryTreeMaker::execute()
   }
   m_cellGeometryTree->Fill();
   return StatusCode::SUCCESS;
-
-
-  //
 
 }
 
