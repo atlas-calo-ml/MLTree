@@ -10,9 +10,6 @@
 //Jets
 #include "xAODJet/JetTypes.h"
 
-// Track selection
-#include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
-
 // Extrapolation to the calo
 #include "TrkCaloExtension/CaloExtension.h"
 #include "TrkCaloExtension/CaloExtensionCollection.h"
@@ -41,75 +38,17 @@
 #include <map>
 
 MLTreeMaker::MLTreeMaker(const std::string &name, ISvcLocator *pSvcLocator) : AthHistogramAlgorithm(name, pSvcLocator),
-                                                                              m_doClusters(true),
-                                                                              m_doClusterCells(true),
-                                                                              m_doCalibHits(true),
-                                                                              m_doCalibHitsPerCell(true),
-                                                                              m_numClusterTruthAssoc(5),
-                                                                              m_doClusterMoments(true),
-                                                                              m_doUncalibratedClusters(true),
-                                                                              m_doTracking(false),
-                                                                              m_doJets(false),
-                                                                              m_doEventCleaning(false),
-                                                                              m_doPileup(false),
-                                                                              m_doShapeEM(false),
-                                                                              m_doShapeLC(false),
-                                                                              m_doEventTruth(false),
-                                                                              m_doTruthParticles(false),
-                                                                              m_keepOnlyStableTruthParticles(true),
-                                                                              m_keepG4TruthParticles(false),
-                                                                              m_prefix(""),
-                                                                              m_theTrackExtrapolatorTool("Trk::ParticleCaloExtensionTool",this),
-                                                                              m_trkSelectionTool("InDet::InDetTrackSelectionTool/TrackSelectionTool", this),                                                                              
-                                                                              m_tileTBID(0),
-                                                                              m_clusterE_min(0.),
-                                                                              m_clusterE_max(1e4),
-                                                                              m_clusterEtaAbs_max(2.5),
-                                                                              m_cellE_thres(0.005), // 5 MeV threshold
                                                                               m_trackParametersIdHelper(std::make_unique<Trk::TrackParametersIdHelper>())
-{
-  declareProperty("Clusters", m_doClusters);
-  declareProperty("ClusterCells", m_doClusterCells);
-  declareProperty("ClusterCalibHits", m_doCalibHits);
-  declareProperty("ClusterCalibHitsPerCell", m_doCalibHitsPerCell);
-  declareProperty("CalibrationHitContainerNames", m_CalibrationHitContainerKeys);
-  declareProperty("ClusterMoments", m_doClusterMoments);
-  declareProperty("UncalibratedClusters", m_doUncalibratedClusters);
-  declareProperty("ClusterEmin", m_clusterE_min);
-  declareProperty("ClusterEmax", m_clusterE_max);
-  declareProperty("ClusterEtaAbsmax", m_clusterEtaAbs_max);
-
-  declareProperty("Tracking", m_doTracking);
-  declareProperty("Jets", m_doJets);
-  declareProperty("EventCleaning", m_doEventCleaning);
-  declareProperty("Pileup", m_doPileup);
-  declareProperty("ShapeEM", m_doShapeEM);
-  declareProperty("ShapeLC", m_doShapeLC);
-  declareProperty("EventTruth", m_doEventTruth);
-  declareProperty("TruthParticles", m_doTruthParticles);
-  declareProperty("OnlyStableTruthParticles", m_keepOnlyStableTruthParticles);
-  declareProperty("G4TruthParticles", m_keepG4TruthParticles);
-  declareProperty("Prefix", m_prefix);
-  declareProperty("JetContainers", m_jetReadHandleKeyArray);
-  declareProperty("TheTrackExtrapolatorTool", m_theTrackExtrapolatorTool);
-  declareProperty("TrackSelectionTool", m_trkSelectionTool);
-}
+{}
 
 MLTreeMaker::~MLTreeMaker() {}
 
 StatusCode MLTreeMaker::initialize()
 {
-  ATH_MSG_INFO("Initializing " << name() << "...");
-
-  if (m_prefix == "")
-  {
-    ATH_MSG_WARNING("No decoration prefix name provided");
-  }
+  ATH_MSG_INFO("Initializing " << name() << "...");  
 
   ATH_CHECK(m_theTrackExtrapolatorTool.retrieve());
   ATH_CHECK(m_trkSelectionTool.retrieve());
-  // Get the test beam identifier for the MBTS
-  ATH_CHECK(detStore()->retrieve(m_tileTBID));
 
   //Initialize the ReadHandle keys
   ATH_CHECK(m_chargedFlowElementReadHandleKey.initialize());
@@ -181,9 +120,15 @@ StatusCode MLTreeMaker::initialize()
   }
 
   // Truth particles
+  
+  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell || m_doTrackTruthMatching) m_eventTree->Branch("nTruthPart", &m_nTruthPart, "nTruthPart/I");
+
+  if (m_doCalibHits || m_doTruthParticles) m_eventTree->Branch("truthPartBarcode", &m_truthPartBarcode);
+
+  if (m_doTrackTruthMatching || m_doTruthParticles) m_eventTree->Branch("truthPartPdgId", &m_truthPartPdgId);
+
   if (m_doTruthParticles)
   {
-    m_eventTree->Branch("nTruthPart", &m_nTruthPart, "nTruthPart/I");
     m_eventTree->Branch("G4PreCalo_n_EM", &m_G4PreCalo_n_EM);
     m_eventTree->Branch("G4PreCalo_E_EM", &m_G4PreCalo_E_EM);
     m_eventTree->Branch("G4PreCalo_n_Had", &m_G4PreCalo_n_Had);
@@ -191,9 +136,7 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("truthVertexX", &m_truthVertexX);
     m_eventTree->Branch("truthVertexY", &m_truthVertexY);
     m_eventTree->Branch("truthVertexZ", &m_truthVertexZ);
-    m_eventTree->Branch("truthPartPdgId", &m_truthPartPdgId);
     m_eventTree->Branch("truthPartStatus", &m_truthPartStatus);
-    m_eventTree->Branch("truthPartBarcode", &m_truthPartBarcode);
     m_eventTree->Branch("truthPartPt", &m_truthPartPt);
     m_eventTree->Branch("truthPartE", &m_truthPartE);
     m_eventTree->Branch("truthPartMass", &m_truthPartMass);
@@ -216,24 +159,26 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackSubtractedCaloEnergy", &m_trackSubtractedCaloEnergy);
 
     // Track quality variables
-    m_eventTree->Branch("trackNumberOfPixelHits", &m_trackNumberOfPixelHits);
-    m_eventTree->Branch("trackNumberOfSCTHits", &m_trackNumberOfSCTHits);
-    m_eventTree->Branch("trackNumberOfPixelDeadSensors", &m_trackNumberOfPixelDeadSensors);
-    m_eventTree->Branch("trackNumberOfSCTDeadSensors", &m_trackNumberOfSCTDeadSensors);
-    m_eventTree->Branch("trackNumberOfPixelSharedHits", &m_trackNumberOfPixelSharedHits);
-    m_eventTree->Branch("trackNumberOfSCTSharedHits", &m_trackNumberOfSCTSharedHits);
-    m_eventTree->Branch("trackNumberOfPixelHoles", &m_trackNumberOfPixelHoles);
-    m_eventTree->Branch("trackNumberOfSCTHoles", &m_trackNumberOfSCTHoles);
-    m_eventTree->Branch("trackNumberOfInnermostPixelLayerHits", &m_trackNumberOfInnermostPixelLayerHits);
-    m_eventTree->Branch("trackNumberOfNextToInnermostPixelLayerHits", &m_trackNumberOfNextToInnermostPixelLayerHits);
-    m_eventTree->Branch("trackExpectInnermostPixelLayerHit", &m_trackExpectInnermostPixelLayerHit);
-    m_eventTree->Branch("trackExpectNextToInnermostPixelLayerHit", &m_trackExpectNextToInnermostPixelLayerHit);
-    m_eventTree->Branch("trackNumberOfTRTHits", &m_trackNumberOfTRTHits);
-    m_eventTree->Branch("trackNumberOfTRTOutliers", &m_trackNumberOfTRTOutliers);
-    m_eventTree->Branch("trackChiSquared", &m_trackChiSquared);
-    m_eventTree->Branch("trackNumberDOF", &m_trackNumberDOF);
-    m_eventTree->Branch("trackD0", &m_trackD0);
-    m_eventTree->Branch("trackZ0", &m_trackZ0);
+    if (m_doDetailedTracking){
+      m_eventTree->Branch("trackNumberOfPixelHits", &m_trackNumberOfPixelHits);
+      m_eventTree->Branch("trackNumberOfSCTHits", &m_trackNumberOfSCTHits);
+      m_eventTree->Branch("trackNumberOfPixelDeadSensors", &m_trackNumberOfPixelDeadSensors);
+      m_eventTree->Branch("trackNumberOfSCTDeadSensors", &m_trackNumberOfSCTDeadSensors);
+      m_eventTree->Branch("trackNumberOfPixelSharedHits", &m_trackNumberOfPixelSharedHits);
+      m_eventTree->Branch("trackNumberOfSCTSharedHits", &m_trackNumberOfSCTSharedHits);
+      m_eventTree->Branch("trackNumberOfPixelHoles", &m_trackNumberOfPixelHoles);
+      m_eventTree->Branch("trackNumberOfSCTHoles", &m_trackNumberOfSCTHoles);
+      m_eventTree->Branch("trackNumberOfInnermostPixelLayerHits", &m_trackNumberOfInnermostPixelLayerHits);
+      m_eventTree->Branch("trackNumberOfNextToInnermostPixelLayerHits", &m_trackNumberOfNextToInnermostPixelLayerHits);
+      m_eventTree->Branch("trackExpectInnermostPixelLayerHit", &m_trackExpectInnermostPixelLayerHit);
+      m_eventTree->Branch("trackExpectNextToInnermostPixelLayerHit", &m_trackExpectNextToInnermostPixelLayerHit);
+      m_eventTree->Branch("trackNumberOfTRTHits", &m_trackNumberOfTRTHits);
+      m_eventTree->Branch("trackNumberOfTRTOutliers", &m_trackNumberOfTRTOutliers);
+      m_eventTree->Branch("trackChiSquared", &m_trackChiSquared);
+      m_eventTree->Branch("trackNumberDOF", &m_trackNumberDOF);
+      m_eventTree->Branch("trackD0", &m_trackD0);
+      m_eventTree->Branch("trackZ0", &m_trackZ0);
+    }
 
     // Track extrapolation
     // Presampler
@@ -378,6 +323,11 @@ StatusCode MLTreeMaker::initialize()
           m_eventTree->Branch("cluster_visibleHitsTruthIndex", &m_cluster_visibleHitsTruthIndex);
           m_eventTree->Branch("cluster_visibleHitsTruthE", &m_cluster_visibleHitsTruthE);
         }
+        if (m_doTruthParticlesPerCell)
+        {
+          m_eventTree->Branch("cluster_cell_hitsTruthIndex",&m_cluster_cell_hitsTruthIndex);
+          m_eventTree->Branch("cluster_cell_hitsTruthE",&m_cluster_cell_hitsTruthE);
+        }
       }
     }
   }
@@ -385,10 +335,7 @@ StatusCode MLTreeMaker::initialize()
   if (m_doAllCells){
     m_eventTree->Branch("nAllCells", &m_nCells);
     m_eventTree->Branch("cell_E", &m_cell_E);
-    m_eventTree->Branch("cell_Eta", &m_cell_Eta);
-    m_eventTree->Branch("cell_Phi", &m_cell_Phi);
-    m_eventTree->Branch("cell_Et", &m_cell_Et);
-    m_eventTree->Branch("cell_Sampling", &m_cell_Sampling);
+    m_eventTree->Branch("cell_ID", &m_cell_ID);
     m_eventTree->Branch("cell_Time", &m_cell_Time);
     m_eventTree->Branch("cell_Quality", &m_cell_Quality);
   }
@@ -693,7 +640,8 @@ StatusCode MLTreeMaker::execute()
   //note this index is not necessarily the same as the index in the truthContainer
   //e.g. you filter some of the particles
   std::map<int, unsigned int> truthBarcodeMap;
-  if (m_doTruthParticles)
+
+  if (m_doTruthParticles || m_doCalibHits || m_doTruthParticlesPerCell || m_doTrackTruthMatching)
   {
 
     SG::ReadHandle<xAOD::TruthParticleContainer> truthParticleReadHandle(m_truthParticleReadHandleKey);
@@ -754,14 +702,20 @@ StatusCode MLTreeMaker::execute()
         if (!m_keepG4TruthParticles)
           continue;
       }
-      m_truthPartPdgId.push_back(truth->pdgId());
-      m_truthPartStatus.push_back(truth->status());
-      m_truthPartBarcode.push_back(truth->barcode());
-      m_truthPartPt.push_back(truth->pt() * 1e-3);
-      m_truthPartE.push_back(truth->e() * 1e-3);
-      m_truthPartMass.push_back(truth->m() * 1e-3);
-      m_truthPartEta.push_back(truth->eta());
-      m_truthPartPhi.push_back(truth->phi());
+
+      if (m_doTruthParticles || m_doCalibHits) m_truthPartBarcode.push_back(truth->barcode());
+
+      if (m_doTruthParticles || m_doTrackTruthMatching) m_truthPartPdgId.push_back(truth->pdgId());
+
+      if (m_doTruthParticles){
+        m_truthPartStatus.push_back(truth->status());
+        m_truthPartPt.push_back(truth->pt() * 1e-3);
+        m_truthPartE.push_back(truth->e() * 1e-3);
+        m_truthPartMass.push_back(truth->m() * 1e-3);
+        m_truthPartEta.push_back(truth->eta());
+        m_truthPartPhi.push_back(truth->phi());
+      }
+      
       if (m_doCalibHits)
         truthBarcodeMap.emplace_hint(truthBarcodeMap.end(), truth->barcode(), m_nTruthPart);
       m_nTruthPart++;
@@ -859,40 +813,42 @@ StatusCode MLTreeMaker::execute()
       else
         m_trackSubtractedCaloEnergy.push_back(-999.);
 
-      // Load track quality variables
-      track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
-      track->summaryValue(m_numberOfSCTHits, xAOD::numberOfSCTHits);
-      track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
-      track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
-      track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
-      track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
-      track->summaryValue(m_numberOfPixelHoles, xAOD::numberOfPixelHoles);
-      track->summaryValue(m_numberOfSCTHoles, xAOD::numberOfSCTHoles);
-      track->summaryValue(m_numberOfInnermostPixelLayerHits, xAOD::numberOfInnermostPixelLayerHits);
-      track->summaryValue(m_numberOfNextToInnermostPixelLayerHits, xAOD::numberOfNextToInnermostPixelLayerHits);
-      track->summaryValue(m_expectInnermostPixelLayerHit, xAOD::expectInnermostPixelLayerHit);
-      track->summaryValue(m_expectNextToInnermostPixelLayerHit, xAOD::expectNextToInnermostPixelLayerHit);
-      track->summaryValue(m_numberOfTRTHits, xAOD::numberOfTRTHits);
-      track->summaryValue(m_numberOfTRTOutliers, xAOD::numberOfTRTOutliers);
+      if (m_doDetailedTracking){
+        // Load track quality variables
+        track->summaryValue(m_numberOfPixelHits, xAOD::numberOfPixelHits);
+        track->summaryValue(m_numberOfSCTHits, xAOD::numberOfSCTHits);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelDeadSensors, xAOD::numberOfPixelDeadSensors);
+        track->summaryValue(m_numberOfSCTDeadSensors, xAOD::numberOfSCTDeadSensors);
+        track->summaryValue(m_numberOfPixelHoles, xAOD::numberOfPixelHoles);
+        track->summaryValue(m_numberOfSCTHoles, xAOD::numberOfSCTHoles);
+        track->summaryValue(m_numberOfInnermostPixelLayerHits, xAOD::numberOfInnermostPixelLayerHits);
+        track->summaryValue(m_numberOfNextToInnermostPixelLayerHits, xAOD::numberOfNextToInnermostPixelLayerHits);
+        track->summaryValue(m_expectInnermostPixelLayerHit, xAOD::expectInnermostPixelLayerHit);
+        track->summaryValue(m_expectNextToInnermostPixelLayerHit, xAOD::expectNextToInnermostPixelLayerHit);
+        track->summaryValue(m_numberOfTRTHits, xAOD::numberOfTRTHits);
+        track->summaryValue(m_numberOfTRTOutliers, xAOD::numberOfTRTOutliers);
 
-      m_trackNumberOfPixelHits.push_back(m_numberOfPixelHits);
-      m_trackNumberOfSCTHits.push_back(m_numberOfSCTHits);
-      m_trackNumberOfPixelDeadSensors.push_back(m_numberOfPixelDeadSensors);
-      m_trackNumberOfSCTDeadSensors.push_back(m_numberOfSCTDeadSensors);
-      m_trackNumberOfPixelSharedHits.push_back(m_numberOfPixelSharedHits);
-      m_trackNumberOfSCTSharedHits.push_back(m_numberOfSCTSharedHits);
-      m_trackNumberOfPixelHoles.push_back(m_numberOfPixelHoles);
-      m_trackNumberOfSCTHoles.push_back(m_numberOfSCTHoles);
-      m_trackNumberOfInnermostPixelLayerHits.push_back(m_numberOfInnermostPixelLayerHits);
-      m_trackNumberOfNextToInnermostPixelLayerHits.push_back(m_numberOfNextToInnermostPixelLayerHits);
-      m_trackExpectInnermostPixelLayerHit.push_back(m_expectInnermostPixelLayerHit);
-      m_trackExpectNextToInnermostPixelLayerHit.push_back(m_expectNextToInnermostPixelLayerHit);
-      m_trackNumberOfTRTHits.push_back(m_numberOfTRTHits);
-      m_trackNumberOfTRTOutliers.push_back(m_numberOfTRTOutliers);
-      m_trackChiSquared.push_back(track->chiSquared());
-      m_trackNumberDOF.push_back(track->numberDoF());
-      m_trackD0.push_back(track->definingParameters()[0]);
-      m_trackZ0.push_back(track->definingParameters()[1]);
+        m_trackNumberOfPixelHits.push_back(m_numberOfPixelHits);
+        m_trackNumberOfSCTHits.push_back(m_numberOfSCTHits);
+        m_trackNumberOfPixelDeadSensors.push_back(m_numberOfPixelDeadSensors);
+        m_trackNumberOfSCTDeadSensors.push_back(m_numberOfSCTDeadSensors);
+        m_trackNumberOfPixelSharedHits.push_back(m_numberOfPixelSharedHits);
+        m_trackNumberOfSCTSharedHits.push_back(m_numberOfSCTSharedHits);
+        m_trackNumberOfPixelHoles.push_back(m_numberOfPixelHoles);
+        m_trackNumberOfSCTHoles.push_back(m_numberOfSCTHoles);
+        m_trackNumberOfInnermostPixelLayerHits.push_back(m_numberOfInnermostPixelLayerHits);
+        m_trackNumberOfNextToInnermostPixelLayerHits.push_back(m_numberOfNextToInnermostPixelLayerHits);
+        m_trackExpectInnermostPixelLayerHit.push_back(m_expectInnermostPixelLayerHit);
+        m_trackExpectNextToInnermostPixelLayerHit.push_back(m_expectNextToInnermostPixelLayerHit);
+        m_trackNumberOfTRTHits.push_back(m_numberOfTRTHits);
+        m_trackNumberOfTRTOutliers.push_back(m_numberOfTRTOutliers);
+        m_trackChiSquared.push_back(track->chiSquared());
+        m_trackNumberDOF.push_back(track->numberDoF());
+        m_trackD0.push_back(track->definingParameters()[0]);
+        m_trackZ0.push_back(track->definingParameters()[1]);
+      }
 
       // A map to store the track parameters (eta,phi) associated with the different layers of the calorimeter system
       std::map<CaloCell_ID::CaloSample, std::pair<double, double>> parametersMap;
@@ -928,7 +884,6 @@ StatusCode MLTreeMaker::execute()
       else
       {
         ATH_MSG_WARNING("TrackExtension failed for track with pt and eta " << track->pt() << " and " << track->eta());
-        continue;
       }
       
       //  ---------Calo Sample layer Variables---------
@@ -941,218 +896,41 @@ StatusCode MLTreeMaker::execute()
       //  FCAL0, FCAL1, FCAL2,             // Forward EM endcap (excluded)
       //  Unknown
 
-      // Presampler
-      float trackEta_PreSamplerB_tmp = -999999999;
-      float trackPhi_PreSamplerB_tmp = -999999999;
-      float trackEta_PreSamplerE_tmp = -999999999;
-      float trackPhi_PreSamplerE_tmp = -999999999;
-      // LAr EM Barrel layers
-      float trackEta_EMB1_tmp = -999999999;
-      float trackPhi_EMB1_tmp = -999999999;
-      float trackEta_EMB2_tmp = -999999999;
-      float trackPhi_EMB2_tmp = -999999999;
-      float trackEta_EMB3_tmp = -999999999;
-      float trackPhi_EMB3_tmp = -999999999;
-      // LAr EM Endcap layers
-      float trackEta_EME1_tmp = -999999999;
-      float trackPhi_EME1_tmp = -999999999;
-      float trackEta_EME2_tmp = -999999999;
-      float trackPhi_EME2_tmp = -999999999;
-      float trackEta_EME3_tmp = -999999999;
-      float trackPhi_EME3_tmp = -999999999;
-      // Hadronic Endcap layers
-      float trackEta_HEC0_tmp = -999999999;
-      float trackPhi_HEC0_tmp = -999999999;
-      float trackEta_HEC1_tmp = -999999999;
-      float trackPhi_HEC1_tmp = -999999999;
-      float trackEta_HEC2_tmp = -999999999;
-      float trackPhi_HEC2_tmp = -999999999;
-      float trackEta_HEC3_tmp = -999999999;
-      float trackPhi_HEC3_tmp = -999999999;
-      // Tile Barrel layers
-      float trackEta_TileBar0_tmp = -999999999;
-      float trackPhi_TileBar0_tmp = -999999999;
-      float trackEta_TileBar1_tmp = -999999999;
-      float trackPhi_TileBar1_tmp = -999999999;
-      float trackEta_TileBar2_tmp = -999999999;
-      float trackPhi_TileBar2_tmp = -999999999;
-      // Tile Gap layers
-      float trackEta_TileGap1_tmp = -999999999;
-      float trackPhi_TileGap1_tmp = -999999999;
-      float trackEta_TileGap2_tmp = -999999999;
-      float trackPhi_TileGap2_tmp = -999999999;
-      float trackEta_TileGap3_tmp = -999999999;
-      float trackPhi_TileGap3_tmp = -999999999;
-      // Tile Extended Barrel layers
-      float trackEta_TileExt0_tmp = -999999999;
-      float trackPhi_TileExt0_tmp = -999999999;
-      float trackEta_TileExt1_tmp = -999999999;
-      float trackPhi_TileExt1_tmp = -999999999;
-      float trackEta_TileExt2_tmp = -999999999;
-      float trackPhi_TileExt2_tmp = -999999999;
+      auto getTrackEtaPhi = [](std::map<CaloCell_ID::CaloSample, std::pair<double, double>> &parametersMap, CaloCell_ID::CaloSample layer, std::vector<float> &trackEta, std::vector<float> &trackPhi) {
+        if (parametersMap.find(layer) != parametersMap.end())
+        {
+          trackEta.push_back(parametersMap[layer].first);
+          trackPhi.push_back(parametersMap[layer].second);
+        }
+        else {
+          float defaultValue = -999999999;
+          trackEta.push_back(defaultValue);
+          trackPhi.push_back(defaultValue);
+        }
+      };
 
-      //first is eta, second is phi
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerB) != parametersMap.end())
-      {
-        trackEta_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].first;
-        trackPhi_PreSamplerB_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerB].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::PreSamplerE) != parametersMap.end())
-      {
-        trackEta_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].first;
-        trackPhi_PreSamplerE_tmp = parametersMap[CaloCell_ID::CaloSample::PreSamplerE].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB1) != parametersMap.end())
-      {        
-        trackEta_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].first;
-        trackPhi_EMB1_tmp = parametersMap[CaloCell_ID::CaloSample::EMB1].second;        
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB2) != parametersMap.end())
-      {
-        trackEta_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].first;
-        trackPhi_EMB2_tmp = parametersMap[CaloCell_ID::CaloSample::EMB2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EMB3) != parametersMap.end())
-      {
-        trackEta_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].first;
-        trackPhi_EMB3_tmp = parametersMap[CaloCell_ID::CaloSample::EMB3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME1) != parametersMap.end())
-      {
-        trackEta_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].first;
-        trackPhi_EME1_tmp = parametersMap[CaloCell_ID::CaloSample::EME1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME2) != parametersMap.end())
-      {
-        trackEta_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].first;
-        trackPhi_EME2_tmp = parametersMap[CaloCell_ID::CaloSample::EME2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::EME3) != parametersMap.end())
-      {
-        trackEta_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].first;
-        trackPhi_EME3_tmp = parametersMap[CaloCell_ID::CaloSample::EME3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC0) != parametersMap.end())
-      {
-        trackEta_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].first;
-        trackPhi_HEC0_tmp = parametersMap[CaloCell_ID::CaloSample::HEC0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC1) != parametersMap.end())
-      {
-        trackEta_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].first;
-        trackPhi_HEC1_tmp = parametersMap[CaloCell_ID::CaloSample::HEC1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC2) != parametersMap.end())
-      {
-        trackEta_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].first;
-        trackPhi_HEC2_tmp = parametersMap[CaloCell_ID::CaloSample::HEC2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::HEC3) != parametersMap.end())
-      {
-        trackEta_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].first;
-        trackPhi_HEC3_tmp = parametersMap[CaloCell_ID::CaloSample::HEC3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar1) != parametersMap.end())
-      {
-        trackEta_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].first;
-        trackPhi_TileBar1_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileBar2) != parametersMap.end())
-      {
-        trackEta_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].first;
-        trackPhi_TileBar2_tmp = parametersMap[CaloCell_ID::CaloSample::TileBar2].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap1) != parametersMap.end())
-      {
-        trackEta_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].first;
-        trackPhi_TileGap1_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap2) != parametersMap.end())
-      {
-        trackEta_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].first;
-        trackPhi_TileGap2_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap2].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileGap3) != parametersMap.end())
-      {
-        trackEta_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].first;
-        trackPhi_TileGap3_tmp = parametersMap[CaloCell_ID::CaloSample::TileGap3].second;
-      }
-
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt0) != parametersMap.end())
-      {
-        trackEta_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].first;
-        trackPhi_TileBar0_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt0].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt1) != parametersMap.end())
-      {
-        trackEta_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].first;
-        trackPhi_TileExt1_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt1].second;
-      }
-      if (parametersMap.find(CaloCell_ID::CaloSample::TileExt2) != parametersMap.end())
-      {
-        trackEta_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].first;
-        trackPhi_TileExt2_tmp = parametersMap[CaloCell_ID::CaloSample::TileExt2].second;
-      }
-
-      m_trackEta_PreSamplerB.push_back(trackEta_PreSamplerB_tmp);
-      m_trackPhi_PreSamplerB.push_back(trackPhi_PreSamplerB_tmp);
-      m_trackEta_PreSamplerE.push_back(trackEta_PreSamplerE_tmp);
-      m_trackPhi_PreSamplerE.push_back(trackPhi_PreSamplerE_tmp);
-
-      m_trackEta_EMB1.push_back(trackEta_EMB1_tmp);
-      m_trackPhi_EMB1.push_back(trackPhi_EMB1_tmp);
-      m_trackEta_EMB2.push_back(trackEta_EMB2_tmp);
-      m_trackPhi_EMB2.push_back(trackPhi_EMB2_tmp);
-      m_trackEta_EMB3.push_back(trackEta_EMB3_tmp);
-      m_trackPhi_EMB3.push_back(trackPhi_EMB3_tmp);
-
-      m_trackEta_EME1.push_back(trackEta_EME1_tmp);
-      m_trackPhi_EME1.push_back(trackPhi_EME1_tmp);
-      m_trackEta_EME2.push_back(trackEta_EME2_tmp);
-      m_trackPhi_EME2.push_back(trackPhi_EME2_tmp);
-      m_trackEta_EME3.push_back(trackEta_EME3_tmp);
-      m_trackPhi_EME3.push_back(trackPhi_EME3_tmp);
-
-      m_trackEta_HEC0.push_back(trackEta_HEC0_tmp);
-      m_trackPhi_HEC0.push_back(trackPhi_HEC0_tmp);
-      m_trackEta_HEC1.push_back(trackEta_HEC1_tmp);
-      m_trackPhi_HEC1.push_back(trackPhi_HEC1_tmp);
-      m_trackEta_HEC2.push_back(trackEta_HEC2_tmp);
-      m_trackPhi_HEC2.push_back(trackPhi_HEC2_tmp);
-      m_trackEta_HEC3.push_back(trackEta_HEC3_tmp);
-      m_trackPhi_HEC3.push_back(trackPhi_HEC3_tmp);
-
-      m_trackEta_TileBar0.push_back(trackEta_TileBar0_tmp);
-      m_trackPhi_TileBar0.push_back(trackPhi_TileBar0_tmp);
-      m_trackEta_TileBar1.push_back(trackEta_TileBar1_tmp);
-      m_trackPhi_TileBar1.push_back(trackPhi_TileBar1_tmp);
-      m_trackEta_TileBar2.push_back(trackEta_TileBar2_tmp);
-      m_trackPhi_TileBar2.push_back(trackPhi_TileBar2_tmp);
-
-      m_trackEta_TileGap1.push_back(trackEta_TileGap1_tmp);
-      m_trackPhi_TileGap1.push_back(trackPhi_TileGap1_tmp);
-      m_trackEta_TileGap2.push_back(trackEta_TileGap2_tmp);
-      m_trackPhi_TileGap2.push_back(trackPhi_TileGap2_tmp);
-      m_trackEta_TileGap3.push_back(trackEta_TileGap3_tmp);
-      m_trackPhi_TileGap3.push_back(trackPhi_TileGap3_tmp);
-
-      m_trackEta_TileExt0.push_back(trackEta_TileExt0_tmp);
-      m_trackPhi_TileExt0.push_back(trackPhi_TileExt0_tmp);
-      m_trackEta_TileExt1.push_back(trackEta_TileExt1_tmp);
-      m_trackPhi_TileExt1.push_back(trackPhi_TileExt1_tmp);
-      m_trackEta_TileExt2.push_back(trackEta_TileExt2_tmp);
-      m_trackPhi_TileExt2.push_back(trackPhi_TileExt2_tmp);
-
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerB, m_trackEta_PreSamplerB, m_trackPhi_PreSamplerB);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::PreSamplerE, m_trackEta_PreSamplerE, m_trackPhi_PreSamplerE);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB1, m_trackEta_EMB1, m_trackPhi_EMB1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB2, m_trackEta_EMB2, m_trackPhi_EMB2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EMB3, m_trackEta_EMB3, m_trackPhi_EMB3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME1, m_trackEta_EME1, m_trackPhi_EME1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME2, m_trackEta_EME2, m_trackPhi_EME2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::EME3, m_trackEta_EME3, m_trackPhi_EME3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC0, m_trackEta_HEC0, m_trackPhi_HEC0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC1, m_trackEta_HEC1, m_trackPhi_HEC1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC2, m_trackEta_HEC2, m_trackPhi_HEC2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::HEC3, m_trackEta_HEC3, m_trackPhi_HEC3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar0, m_trackEta_TileBar0, m_trackPhi_TileBar0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar1, m_trackEta_TileBar1, m_trackPhi_TileBar1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileBar2, m_trackEta_TileBar2, m_trackPhi_TileBar2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap1, m_trackEta_TileGap1, m_trackPhi_TileGap1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap2, m_trackEta_TileGap2, m_trackPhi_TileGap2);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileGap3, m_trackEta_TileGap3, m_trackPhi_TileGap3);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt0, m_trackEta_TileExt0, m_trackPhi_TileExt0);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt1, m_trackEta_TileExt1, m_trackPhi_TileExt1);
+      getTrackEtaPhi(parametersMap, CaloCell_ID::CaloSample::TileExt2, m_trackEta_TileExt2, m_trackPhi_TileExt2);
+      
       m_nTrack++;
     }
   }
@@ -1328,6 +1106,14 @@ StatusCode MLTreeMaker::execute()
 
 
         }
+        if (m_doTruthParticlesPerCell)
+        {
+          m_cluster_cell_hitsTruthIndex.clear();
+          m_cluster_cell_hitsTruthE.clear();
+
+          m_cluster_cell_hitsTruthIndex.assign(m_nCluster, std::vector<std::vector<int>>());
+          m_cluster_cell_hitsTruthE.assign(m_nCluster, std::vector<std::vector<float>>());
+        }
       }
     }
     //loop over clusters in order of their energies
@@ -1350,68 +1136,30 @@ StatusCode MLTreeMaker::execute()
 
       if (m_doClusterMoments)
       {
-        double cluster_ENG_CALIB_TOT = 0;
-        double cluster_ENG_CALIB_OUT_T = 0;
-        double cluster_ENG_CALIB_DEAD_TOT = 0;
-        double cluster_EM_PROBABILITY = 0;
-        double cluster_HAD_WEIGHT = 0;
-        double cluster_OOC_WEIGHT = 0;
-        double cluster_DM_WEIGHT = 0;
-        double cluster_CENTER_MAG = 0;
-        double cluster_FIRST_ENG_DENS = 0;
-        double cluster_CENTER_LAMBDA = 0;
-        double cluster_ISOLATION = 0;
-        double cluster_ENERGY_DigiHSTruth = 0;
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_TOT, cluster_ENG_CALIB_TOT))
-          cluster_ENG_CALIB_TOT = -1.;
-        else
-          cluster_ENG_CALIB_TOT *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_OUT_T, cluster_ENG_CALIB_OUT_T))
-          cluster_ENG_CALIB_OUT_T = -1.;
-        else
-          cluster_ENG_CALIB_OUT_T *= 1e-3;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, cluster_ENG_CALIB_DEAD_TOT))
-          cluster_ENG_CALIB_DEAD_TOT = -1.;
-        else
-          cluster_ENG_CALIB_DEAD_TOT *= 1e-3;
+        auto getMoment = [](const xAOD::CaloCluster& theCluster, const xAOD::CaloCluster::MomentType& momentType, std::vector<float>& momentVector, const double& defaultValue, bool scale){
+          double moment = defaultValue;
+          if (!theCluster.retrieveMoment(momentType, moment)) momentVector.push_back(moment);
+          else {
+            if (scale) momentVector.push_back(moment*1e-3);
+            else momentVector.push_back(moment);
+          }
+        };
 
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_MAG, cluster_CENTER_MAG))
-          cluster_CENTER_MAG = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::FIRST_ENG_DENS, cluster_FIRST_ENG_DENS))
-          cluster_FIRST_ENG_DENS = -1.;
-        else
-          cluster_FIRST_ENG_DENS *= 1e-3;
-
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::CENTER_LAMBDA, cluster_CENTER_LAMBDA))
-          cluster_CENTER_LAMBDA = -1.;
-        if (!cluster->retrieveMoment(xAOD::CaloCluster::ISOLATION, cluster_ISOLATION))
-          cluster_ISOLATION = -1.;
-
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_TOT, m_cluster_ENG_CALIB_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_OUT_T, m_cluster_ENG_CALIB_OUT_T,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::ENG_CALIB_DEAD_TOT, m_cluster_ENG_CALIB_DEAD_TOT,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_MAG, m_cluster_CENTER_MAG,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::FIRST_ENG_DENS, m_cluster_FIRST_ENG_DENS,-1,true);
+        getMoment(*cluster, xAOD::CaloCluster::CENTER_LAMBDA, m_cluster_CENTER_LAMBDA,-1,false);
+        getMoment(*cluster, xAOD::CaloCluster::ISOLATION, m_cluster_ISOLATION,-1,false);
         //for moments related to the calibration, use calibratedCluster or they will be undefined
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::EM_PROBABILITY, cluster_EM_PROBABILITY))
-          cluster_EM_PROBABILITY = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::HAD_WEIGHT, cluster_HAD_WEIGHT))
-          cluster_HAD_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::OOC_WEIGHT, cluster_OOC_WEIGHT))
-          cluster_OOC_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::DM_WEIGHT, cluster_DM_WEIGHT))
-          cluster_DM_WEIGHT = -1.;
-        if (!calibratedCluster->retrieveMoment(xAOD::CaloCluster::ENERGY_DigiHSTruth, cluster_ENERGY_DigiHSTruth))
-          cluster_ENERGY_DigiHSTruth = -999.;
+        getMoment(*calibratedCluster, xAOD::CaloCluster::EM_PROBABILITY, m_cluster_EM_PROBABILITY,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::HAD_WEIGHT, m_cluster_HAD_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::OOC_WEIGHT, m_cluster_OOC_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::DM_WEIGHT, m_cluster_DM_WEIGHT,-1,false);
+        getMoment(*calibratedCluster, xAOD::CaloCluster::ENERGY_DigiHSTruth, m_cluster_ENERGY_DigiHSTruth,-999,false);
 
-        m_cluster_ENG_CALIB_TOT.push_back(cluster_ENG_CALIB_TOT);
-        m_cluster_ENG_CALIB_OUT_T.push_back(cluster_ENG_CALIB_OUT_T);
-        m_cluster_ENG_CALIB_DEAD_TOT.push_back(cluster_ENG_CALIB_DEAD_TOT);
-        m_cluster_EM_PROBABILITY.push_back(cluster_EM_PROBABILITY);
-        m_cluster_HAD_WEIGHT.push_back(cluster_HAD_WEIGHT);
-        m_cluster_OOC_WEIGHT.push_back(cluster_OOC_WEIGHT);
-        m_cluster_DM_WEIGHT.push_back(cluster_DM_WEIGHT);
-        m_cluster_CENTER_MAG.push_back(cluster_CENTER_MAG);
-        m_cluster_FIRST_ENG_DENS.push_back(cluster_FIRST_ENG_DENS);
-        m_cluster_CENTER_LAMBDA.push_back(cluster_CENTER_LAMBDA);
-        m_cluster_ISOLATION.push_back(cluster_ISOLATION);
-        m_cluster_ENERGY_DigiHSTruth.push_back(cluster_ENERGY_DigiHSTruth);
       }
       if (m_doClusterCells)
       {
@@ -1431,6 +1179,18 @@ StatusCode MLTreeMaker::execute()
         cluster_cell_ID.reserve(nCells_cl);
         cluster_cell_E.reserve(nCells_cl);
 
+        std::vector<std::vector<int>>* cluster_cell_hitsTruthIndex = nullptr;
+        if (m_doTruthParticlesPerCell) {
+          cluster_cell_hitsTruthIndex = &m_cluster_cell_hitsTruthIndex[jCluster];
+          cluster_cell_hitsTruthIndex->assign(nCells_cl, std::vector<int>());
+        }
+
+        std::vector<std::vector<float>>* cluster_cell_hitsTruthE = nullptr;
+        if (m_doTruthParticlesPerCell){
+          cluster_cell_hitsTruthE = &m_cluster_cell_hitsTruthE[jCluster];
+          cluster_cell_hitsTruthE->assign(nCells_cl, std::vector<float>());          
+        }
+
         if (m_doCalibHits && m_doCalibHitsPerCell)
         {
           cluster_cell_hitsE_EM.reserve(nCells_cl);
@@ -1439,8 +1199,21 @@ StatusCode MLTreeMaker::execute()
           cluster_cell_hitsE_Escaped.reserve(nCells_cl);
         }
 
+        unsigned int jCell = 0;
         for (CaloClusterCellLink::const_iterator it_cell = cluster->cell_begin(); it_cell != cluster->cell_end(); it_cell++)
         {
+          // store truth particle index, energy depostit per cell
+          // ultimately these end up in the vectors, but first we have to calculate a map
+          // map will be indexed by particle index, loooked up via barcode
+          // map value will be total hits energy
+          std::map<unsigned int, float > truthIndexEnergyMapPerCell;
+          std::vector<int>* hitsTruthIndex;
+          std::vector<float>* hitsTruthE;
+          if (m_doTruthParticlesPerCell) {
+            hitsTruthIndex = &cluster_cell_hitsTruthIndex->at(jCell);
+            hitsTruthE = &cluster_cell_hitsTruthE->at(jCell);
+          }
+
           const CaloCell *cell = (*it_cell);
           float cellE = cell->e() * (it_cell.weight()) * 1e-3;
           if (cellE < m_cellE_thres)
@@ -1465,6 +1238,28 @@ StatusCode MLTreeMaker::execute()
                 energy_nonEM += ch->energyNonEM();
                 energy_Invisible += ch->energyInvisible();
                 energy_Escaped += ch->energyEscaped();
+
+                if (m_doTruthParticlesPerCell)
+                {
+                  // add to the map that is indexed by the particle index, and contains the vector of particle energies
+                  unsigned int barcode = ch->particleID();
+                  const auto mapItr=truthBarcodeMap.find(barcode);
+                  // safety check that the truth particle exists 
+                  if(mapItr!=truthBarcodeMap.end()) 
+                  {
+                    // check that there is an entry for this truth particle
+                    const auto energyMapItr = truthIndexEnergyMapPerCell.find(mapItr->second);
+                    if (energyMapItr==truthIndexEnergyMapPerCell.end())
+                    {
+                      truthIndexEnergyMapPerCell.insert( std::pair<int, float>(mapItr->second, ch->energyTotal()) );        
+                    }
+                    else // if the entry exists, then just add the energy
+                    {
+                      energyMapItr->second += ch->energyTotal();
+                    }
+                  }
+                }
+
               }
             } //end loop on calib hits containers
             if (m_doCalibHitsPerCell)
@@ -1474,9 +1269,30 @@ StatusCode MLTreeMaker::execute()
               cluster_cell_hitsE_Invisible.push_back(energy_Invisible * 1e-3);
               cluster_cell_hitsE_Escaped.push_back(energy_Escaped * 1e-3);
             }
+            if (m_doTruthParticlesPerCell)
+            { 
+              // now we have to construct the vectors from the map
+              std::vector<std::pair<int, float>> sortedPairs;
+              for (auto& it : truthIndexEnergyMapPerCell)
+              {
+                sortedPairs.push_back(it);
+              }
+
+              // now we sort
+              std::sort(sortedPairs.begin(), sortedPairs.end(), cmp);
+
+              // now we copy to actual vectors, up to the limit
+              for(unsigned int i = 0; i < sortedPairs.size() && i < m_truthParticlesPerLimitLimit; i++)
+              {
+                hitsTruthIndex->push_back(sortedPairs[i].first);
+                hitsTruthE->push_back(sortedPairs[i].second);
+              }
+
+            }
           } //end m_doCalibHits
+          jCell++;
         }   //end cell loop
-        if (m_doTruthParticles && m_doCalibHits)
+        if (m_doCalibHits)
         {
 
           //now get visible energy contributions via calo cluster decorations
@@ -1492,9 +1308,9 @@ StatusCode MLTreeMaker::execute()
             const auto mapItr = truthBarcodeMap.find(barcode);
             if (mapItr != truthBarcodeMap.end())
             {
-              cluster_visibleHitsTruthIndex.push_back(mapItr->second);
+              if (m_doTruthParticles) cluster_visibleHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
-              cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTruthParticles) cluster_visibleHitsTruthE.push_back(calibrationHitEnergy);
               if (m_doTracking) truthVisibleCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations
@@ -1508,9 +1324,9 @@ StatusCode MLTreeMaker::execute()
             const auto mapItr = truthBarcodeMap.find(barcode);
             if (mapItr != truthBarcodeMap.end())
             {
-              cluster_fullHitsTruthIndex.push_back(mapItr->second);
+              if (m_doTruthParticles) cluster_fullHitsTruthIndex.push_back(mapItr->second);
               float calibrationHitEnergy = thePair.second * 1e-3;
-              cluster_fullHitsTruthE.push_back(calibrationHitEnergy);
+              if (m_doTruthParticles) cluster_fullHitsTruthE.push_back(calibrationHitEnergy);
               if (m_doTracking) truthFullCalHitCaloEnergyMap[barcode] += calibrationHitEnergy;
             }//if have valid truth particle entry in map
           }//end loop on clusterTruthDecorations_Full
@@ -1522,15 +1338,26 @@ StatusCode MLTreeMaker::execute()
     } //end cluster loop
   }//end m_doCaloClusters
 
+  if (m_doTracking){
+    //loop over track truth match indices and fill cal hit variables, if a match                                                                                                                                                                                                
+    unsigned int trackIndex = 0;
+    for (auto thisIndex : m_trackTruthParticleIndex){
+      if (thisIndex < 0) {
+	trackIndex++;
+        continue;
+      }
+      m_trackVisibleCalHitCaloEnergy[trackIndex] = truthVisibleCalHitCaloEnergyMap[m_truthPartBarcode[thisIndex]];
+      m_trackFullCalHitCaloEnergy[trackIndex] = truthFullCalHitCaloEnergyMap[m_truthPartBarcode[thisIndex]];
+      trackIndex++;
+    }
+  }
+
   //Cells
   if (m_doAllCells){
 
     //clear all the vectors
     m_cell_E.clear();
-    m_cell_Eta.clear();
-    m_cell_Phi.clear();
-    m_cell_Et.clear();
-    m_cell_Sampling.clear();
+    m_cell_ID.clear();
     m_cell_Time.clear();
     m_cell_Quality.clear();
 
@@ -1544,18 +1371,9 @@ StatusCode MLTreeMaker::execute()
     //fill cell branches
     for (auto thisCaloCell : *cellContainerHandle){
       m_cell_E.push_back(thisCaloCell->e()*1e-3);
-      m_cell_Eta.push_back(thisCaloCell->eta());
-      m_cell_Phi.push_back(thisCaloCell->phi());
-      m_cell_Et.push_back(thisCaloCell->et()*1e-3);
+      m_cell_ID.push_back(thisCaloCell->ID().get_identifier32().get_compact());
       m_cell_Time.push_back(thisCaloCell->time());
       m_cell_Quality.push_back(thisCaloCell->quality());
-
-      const CaloDetDescrElement* caloDDE = thisCaloCell->caloDDE();
-      if (caloDDE) m_cell_Sampling.push_back(caloDDE->getSampling());
-      else {
-        ATH_MSG_WARNING("Cell with no CaloDetDescrElement found!");
-        m_cell_Sampling.push_back(-1);
-      }
     }//end loop on cells
 
   }

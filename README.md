@@ -2,7 +2,7 @@
 
 ATLAS Athena package to save calorimeter clusters as images, with normalized cell energies as pixel values. Six images are saved for each cluster, corresponding to the barrels layers of the EM (EMB1, EMB2, EMB3) and HAD calorimeters (TileBar0, TileBar2, TileBar3). The image size is 0.4x0.4 in eta-phi space. Images are generated from ESD (Event Summary Data).
 
-For questions please contact: joakim.olsson[at]cern.ch in general and m.hodgkinson[at]sheffield.ac.uk for questions specific to the Release 22 branch.
+For questions please contact: mswiatlo[at]cern.ch in general and m.hodgkinson[at]sheffield.ac.uk for questions specific to the Release 22 branch.
 
 ## Setup
 
@@ -15,13 +15,11 @@ lsetup git
 git atlas init-workdir https://:@gitlab.cern.ch:8443/atlas/athena.git
 cd athena
 git clone  git@github.com:atlas-calo-ml/MLTree.git MLTree
-cd MLTree
-git checkout origin/Release22
-cd ../../
+cd ../
 echo "+ MLTree" > package_filters.txt
 echo "- .*" >> package_filters.txt
 mkdir build; cd build
-asetup Athena,22.0.78
+asetup Athena,24.0.4
 cmake -DATLAS_PACKAGE_FILTER_FILE=../package_filters.txt ../athena/Projects/WorkDir
 make
 source ../build/x86*/setup.sh
