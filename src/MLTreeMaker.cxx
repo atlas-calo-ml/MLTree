@@ -791,15 +791,21 @@ StatusCode MLTreeMaker::execute()
           linkedTruthParticle = *truthLink;
       }
 
-      //get truth particle barcode for track
+      //get index of truth particle associated with track via barcode map
+      int truthParticleIndex = -1;
       if (linkedTruthParticle){
         int barcode = linkedTruthParticle->barcode();
-        unsigned int truthParticleIndex = truthBarcodeMap[barcode];
-        m_trackTruthParticleIndex.push_back(truthParticleIndex);
-        truthVisibleCalHitCaloEnergyMap[barcode] = m_trackVisibleCalHitCaloEnergy[m_nTrack];
-        truthFullCalHitCaloEnergyMap[barcode] = m_trackFullCalHitCaloEnergy[m_nTrack];
+
+        //check if the barcode is in the map
+        const auto mapItr = truthBarcodeMap.find(barcode);
+        if (mapItr != truthBarcodeMap.end())
+        {
+          truthParticleIndex = truthBarcodeMap[barcode];
+          truthVisibleCalHitCaloEnergyMap[barcode] = m_trackVisibleCalHitCaloEnergy[m_nTrack];
+          truthFullCalHitCaloEnergyMap[barcode] = m_trackFullCalHitCaloEnergy[m_nTrack];
+        }
       }
-      else m_trackTruthParticleIndex.push_back(-1);
+      m_trackTruthParticleIndex.push_back(truthParticleIndex);
 
       if (mapTrackSubtractedEnergy.find(track) != mapTrackSubtractedEnergy.end()){
         m_trackSubtractedCaloEnergy.push_back(mapTrackSubtractedEnergy[track]);	
