@@ -841,6 +841,11 @@ StatusCode MLTreeMaker::execute()
       if (linkedTruthParticle){
         int barcode = linkedTruthParticle->barcode();
         unsigned int truthParticleIndex = truthBarcodeMap[barcode];
+        //check for duplicates
+        if (std::find(m_trackTruthParticleIndex.begin(), m_trackTruthParticleIndex.end(), truthParticleIndex) != m_trackTruthParticleIndex.end())
+        {
+          ATH_MSG_WARNING("Duplicate truth particle index " << truthParticleIndex << " found for track " << m_nTrack << " with barcode " << barcode);
+        }
         m_trackTruthParticleIndex.push_back(truthParticleIndex);
         truthVisibleCalHitCaloEnergyMap[barcode] = m_trackVisibleCalHitCaloEnergy[m_nTrack];
         truthFullCalHitCaloEnergyMap[barcode] = m_trackFullCalHitCaloEnergy[m_nTrack];
