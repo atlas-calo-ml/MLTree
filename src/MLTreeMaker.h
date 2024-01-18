@@ -197,7 +197,7 @@ private:
   std::vector<float> m_trackEta;
   std::vector<float> m_trackPhi;
   //index of matched truth particle in m_truthPart* vectors
-  std::vector<unsigned int> m_trackTruthParticleIndex;
+  std::vector<int> m_trackTruthParticleIndex;
   //sum of visible calibration hit energy of this tracks
   //truth particle found in all topoclusters
   std::vector<float> m_trackVisibleCalHitCaloEnergy;
