@@ -32,6 +32,10 @@
 #include "StoreGate/ReadHandleKeyArray.h"
 #include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
 
+//Leptons
+#include <xAODEgamma/ElectronContainer.h>
+#include <xAODMuon/MuonContainer.h>
+
 class TileTBID;
 class ICaloSurfaceHelper;
 
@@ -66,6 +70,7 @@ private:
   Gaudi::Property<bool> m_doClusterMoments{this, "ClusterMoments", true, "Write cluster moments to tree"};
   Gaudi::Property<bool> m_doUncalibratedClusters{this, "UncalibratedClusters", true, "Use uncalibrated EM scale clusters to write cluster data to tree"};
 
+  Gaudi::Property<bool> m_doLeptons{this, "Leptons", true, "Write leptons to tree"};
   Gaudi::Property<bool> m_doTracking{this, "Tracking", false, "Write tracks to tree"};
   Gaudi::Property<bool> m_doTrackTruthMatching{this,"TrackTruthMatching",false,"Write truth matching information for tracks to tree"};
   Gaudi::Property<bool> m_doDetailedTracking{this,"DetailedTracking",false,"Write details of track parameters etc to tree"};
@@ -85,6 +90,12 @@ private:
 
   /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
   SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
+
+  /** ReadHandle to retrieve xAOD::ElectronContainer */
+  SG::ReadHandleKey<xAOD::ElectronContainer> m_electronReadHandleKey{this, "ElectronContainer", "Electrons", "ReadHandleKey for the electron container"};
+
+  /** ReadHandle to retrieve xAOD::MuonContainer */
+  SG::ReadHandleKey<xAOD::MuonContainer> m_muonReadHandleKey{this, "MuonContainer", "Muons", "ReadHandleKey for the muon container"};
 
   /** ReadHandleKey for Primary Vertices */
   SG::ReadHandleKey<xAOD::VertexContainer> m_vxReadHandleKey{this, "VxContainer", "PrimaryVertices", "ReadHandleKey for Primary Vertices"};
@@ -195,6 +206,20 @@ private:
   std::vector<float> m_truthPartMass;
   std::vector<float> m_truthPartEta;
   std::vector<float> m_truthPartPhi;
+
+  // Electron variables
+  int m_nElectron;
+  std::vector<float> m_electronPt;
+  std::vector<float> m_electronEta;
+  std::vector<float> m_electronPhi;
+  std::vector<int> m_electronCharge;
+
+  // Muon variables
+  int m_nMuon;
+  std::vector<float> m_muonPt;
+  std::vector<float> m_muonEta;
+  std::vector<float> m_muonPhi;
+  std::vector<int> m_muonCharge;
 
   // Track variables
   int m_nTrack;

@@ -29,6 +29,10 @@
 // Other xAOD incudes
 #include "xAODTruth/TruthEventContainer.h"
 #include "AthContainers/AuxElement.h"
+// Leptons
+#include "xAODEgamma/ElectronContainer.h"
+#include "xAODMuon/MuonContainer.h"
+
 
 #include <string>
 #include <vector>
@@ -64,6 +68,8 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(m_CalibrationHitContainerKeys.initialize());
   ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
   ATH_CHECK(m_caloCellReadHandleKey.initialize());
+  ATH_CHECK(m_electronReadHandleKey.initialize());
+  ATH_CHECK(m_muonReadHandleKey.initialize());
 
   // Setup the event level TTree and its branches
   CHECK(book(TTree("EventTree", "EventTree")));
@@ -232,6 +238,22 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("trackPhi_TileExt2", &m_trackPhi_TileExt2);
   }
 
+  //Lepton (electron and muon) variables
+  if (m_doLeptons)
+  {
+    m_eventTree->Branch("nElectron",&m_nElectron);
+    m_eventTree->Branch("electronPt",&m_electronPt);
+    m_eventTree->Branch("electronEta",&m_electronEta);
+    m_eventTree->Branch("electronPhi",&m_electronPhi);
+    m_eventTree->Branch("electronCharge",&m_electronCharge);
+
+    m_eventTree->Branch("nMuon",&m_nMuon);
+    m_eventTree->Branch("muonPt",&m_muonPt);
+    m_eventTree->Branch("muonEta",&m_muonEta);
+    m_eventTree->Branch("muonPhi",&m_muonPhi);
+    m_eventTree->Branch("muonCharge",&m_muonCharge);
+  }
+
   if (m_doJets)
   {
     unsigned int nJetColl = m_jetReadHandleKeyArray.size();
@@ -391,6 +413,16 @@ StatusCode MLTreeMaker::execute()
   m_trackVisibleCalHitCaloEnergy.clear();
   m_trackFullCalHitCaloEnergy.clear();
   m_trackSubtractedCaloEnergy.clear();
+
+  m_electronPt.clear();
+  m_electronEta.clear();
+  m_electronPhi.clear();
+  m_electronCharge.clear();
+
+  m_muonPt.clear();
+  m_muonEta.clear();
+  m_muonPhi.clear();
+  m_muonCharge.clear();
 
   m_trackNumberOfPixelHits.clear();
   m_trackNumberOfSCTHits.clear();
@@ -934,6 +966,44 @@ StatusCode MLTreeMaker::execute()
       m_nTrack++;
     }
   }
+
+  if (m_doLeptons)
+  {
+    SG::ReadHandle<xAOD::ElectronContainer> electronReadHandle(m_electronReadHandleKey);
+    if (!electronReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::ElectronContainer with key: " << electronReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
+    m_nElectron = 0;
+    for (auto el : *electronReadHandle)
+    {
+      m_electronPt.push_back(el->pt() * 1e-3);
+      m_electronEta.push_back(el->eta());
+      m_electronPhi.push_back(el->phi());
+      m_electronCharge.push_back(el->charge());
+      m_nElectron++;
+    }
+
+    SG::ReadHandle<xAOD::MuonContainer> muonReadHandle(m_muonReadHandleKey);
+    if (!muonReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::MuonContainer with key: " << muonReadHandle.key());
+      return StatusCode::SUCCESS;
+    }
+
+    m_nMuon = 0;
+    for (auto mu : *muonReadHandle)
+    {
+      m_muonPt.push_back(mu->pt() * 1e-3);
+      m_muonEta.push_back(mu->eta());
+      m_muonPhi.push_back(mu->phi());
+      m_muonCharge.push_back(mu->charge());
+      m_nMuon++;
+    }
+  }
+
   if (m_doJets)
   {
     unsigned int iColl = 0;
