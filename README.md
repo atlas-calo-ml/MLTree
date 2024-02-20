@@ -25,7 +25,7 @@ make
 source ../build/x86*/setup.sh
 mkdir ../run;cd ../run
 #adjust input file name in below file prior to running
-python ../athena/MLTree/run/runCA.py
+python ../athena/MLTree/python/runCA.py
 #To run on the grid a command like this would work
 lsetup panda
 prun --exec="python runCA.py --filesInput=%IN MLTree.NtupleName=mltree.root" --inDS=mc20_13TeV.426332.ParticleGun_single_piplus_E0p4to2.recon.ESD.e5661_s3170_r13300 --outDS=user.mhodgkin.mc20_13TeV.426332.ParticleGun_single_piplus_E0p4to2.MLTree.e5661_s3170_r13300.V3 --useAthenaPackage --outputs="mltree.root" --nFilesPerJob=5
