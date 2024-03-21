@@ -31,10 +31,11 @@
 #include "StoreGate/ReadHandleKey.h"
 #include "StoreGate/ReadHandleKeyArray.h"
 #include "InDetTrackSelectionTool/IInDetTrackSelectionTool.h"
-
-//Leptons
-#include <xAODEgamma/ElectronContainer.h>
-#include <xAODMuon/MuonContainer.h>
+#include "xAODMissingET/MissingETContainer.h"
+#include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/PhotonContainer.h"
+#include "xAODMuon/MuonContainer.h"
+#include "METInterface/IMETMaker.h"
 
 class TileTBID;
 class ICaloSurfaceHelper;
@@ -81,6 +82,7 @@ private:
   Gaudi::Property<bool> m_doShapeLC{this, "ShapeLC", false, "Write LC shape data to tree"};
   Gaudi::Property<bool> m_doEventTruth{this, "EventTruth", false, "Write event truth data to tree"};
   Gaudi::Property<bool> m_doTruthParticles{this, "TruthParticles", false, "Write truth particle related data to tree"};
+  Gaudi::Property<bool> m_doTruthMET{this, "TruthMET", true, "Write truth MET to tree"};
 
   Gaudi::Property<bool> m_keepOnlyStableTruthParticles{this, "OnlyStableTruthParticles", true, "Write out truth particle data only for stable truth particles"};
   Gaudi::Property<bool> m_keepG4TruthParticles{this, "G4TruthParticles", false, "Write out truth particle data for G4 truth particles"};
@@ -91,8 +93,14 @@ private:
   /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
   SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
 
+  /** ReadHandleKey to retrieve xAOD::MissingETContainer */
+  SG::ReadHandleKey<xAOD::MissingETContainer> m_missingETReadHandleKey{this, "MissingETContainer", "MET_Truth", "ReadHandleKey for the missing ET container"};
+
   /** ReadHandle to retrieve xAOD::ElectronContainer */
   SG::ReadHandleKey<xAOD::ElectronContainer> m_electronReadHandleKey{this, "ElectronContainer", "Electrons", "ReadHandleKey for the electron container"};
+
+  /** ReadHandle to retrieve xAOD::PhotonContainer */
+  SG::ReadHandleKey<xAOD::PhotonContainer> m_photonReadHandleKey{this, "PhotonContainer", "Photons", "ReadHandleKey for the photon container"};
 
   /** ReadHandle to retrieve xAOD::MuonContainer */
   SG::ReadHandleKey<xAOD::MuonContainer> m_muonReadHandleKey{this, "MuonContainer", "Muons", "ReadHandleKey for the muon container"};
@@ -207,6 +215,13 @@ private:
   std::vector<float> m_truthPartEta;
   std::vector<float> m_truthPartPhi;
 
+  // Truth MET
+  std::vector<float> m_truthMissPx;
+  std::vector<float> m_truthMissPy;
+  std::vector<float> m_truthMissPt;
+  std::vector<float> m_truthMissPhi;
+  std::vector<float> m_truthMissSum;
+
   // Electron variables
   int m_nElectron;
   std::vector<float> m_electronPt;
@@ -214,6 +229,12 @@ private:
   std::vector<float> m_electronPhi;
   std::vector<int> m_electronCharge;
 
+  // Photon variables
+  int m_nPhoton;
+  std::vector<float> m_photonPt;
+  std::vector<float> m_photonEta;
+  std::vector<float> m_photonPhi;
+  
   // Muon variables
   int m_nMuon;
   std::vector<float> m_muonPt;

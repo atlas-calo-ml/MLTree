@@ -1,6 +1,5 @@
 #include "MLTreeMaker.h"
 
-
 // Tracks
 #include "TrkTrack/Track.h"
 #include "TrkParameters/TrackParameters.h"
@@ -29,10 +28,14 @@
 // Other xAOD incudes
 #include "xAODTruth/TruthEventContainer.h"
 #include "AthContainers/AuxElement.h"
-// Leptons
+// Leptons and photons
 #include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/PhotonContainer.h"
 #include "xAODMuon/MuonContainer.h"
-
+// Truth MET
+#include "xAODMissingET/MissingETContainer.h"
+// METMaker
+#include "METInterface/IMETMaker.h"
 
 #include <string>
 #include <vector>
@@ -57,6 +60,7 @@ StatusCode MLTreeMaker::initialize()
   //Initialize the ReadHandle keys
   ATH_CHECK(m_chargedFlowElementReadHandleKey.initialize());
   ATH_CHECK(m_truthParticleReadHandleKey.initialize());
+  ATH_CHECK(m_missingETReadHandleKey.initialize());
   ATH_CHECK(m_vxReadHandleKey.initialize());
   ATH_CHECK(m_trackParticleReadHandleKey.initialize());
   ATH_CHECK(m_caloClusterReadHandleKey.initialize());
@@ -69,6 +73,7 @@ StatusCode MLTreeMaker::initialize()
   ATH_CHECK(m_caloClusterCalibHitsDecorHandleKey.initialize());
   ATH_CHECK(m_caloCellReadHandleKey.initialize());
   ATH_CHECK(m_electronReadHandleKey.initialize());
+  ATH_CHECK(m_photonReadHandleKey.initialize());
   ATH_CHECK(m_muonReadHandleKey.initialize());
 
   // Setup the event level TTree and its branches
@@ -148,6 +153,16 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("truthPartMass", &m_truthPartMass);
     m_eventTree->Branch("truthPartEta", &m_truthPartEta);
     m_eventTree->Branch("truthPartPhi", &m_truthPartPhi);
+  }
+
+  // Truth MET variables
+  if (m_doTruthMET)
+  {
+    m_eventTree->Branch("truthMissPx",&m_truthMissPx);
+    m_eventTree->Branch("truthMissPy",&m_truthMissPy);
+    m_eventTree->Branch("truthMissPt",&m_truthMissPt);
+    m_eventTree->Branch("truthMissPhi",&m_truthMissPhi);
+    m_eventTree->Branch("truthMissSum",&m_truthMissSum);
   }
 
   // Track variables
@@ -246,6 +261,11 @@ StatusCode MLTreeMaker::initialize()
     m_eventTree->Branch("electronEta",&m_electronEta);
     m_eventTree->Branch("electronPhi",&m_electronPhi);
     m_eventTree->Branch("electronCharge",&m_electronCharge);
+
+    m_eventTree->Branch("nPhoton",&m_nPhoton);
+    m_eventTree->Branch("photonPt",&m_photonPt);
+    m_eventTree->Branch("photonEta",&m_photonEta);
+    m_eventTree->Branch("photonPhi",&m_photonPhi);
 
     m_eventTree->Branch("nMuon",&m_nMuon);
     m_eventTree->Branch("muonPt",&m_muonPt);
@@ -414,10 +434,20 @@ StatusCode MLTreeMaker::execute()
   m_trackFullCalHitCaloEnergy.clear();
   m_trackSubtractedCaloEnergy.clear();
 
+  m_truthMissPx.clear();
+  m_truthMissPy.clear();
+  m_truthMissPt.clear();
+  m_truthMissPhi.clear();
+  m_truthMissSum.clear();
+
   m_electronPt.clear();
   m_electronEta.clear();
   m_electronPhi.clear();
   m_electronCharge.clear();
+
+  m_photonPt.clear();
+  m_photonEta.clear();
+  m_photonPhi.clear();
 
   m_muonPt.clear();
   m_muonEta.clear();
@@ -754,6 +784,25 @@ StatusCode MLTreeMaker::execute()
     }
   }
 
+  if (m_doTruthMET)
+  {
+    SG::ReadHandle<xAOD::MissingETContainer_v1> missingETReadHandle(m_missingETReadHandleKey);
+    if (!missingETReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::MissingETContainer with key: " << missingETReadHandle.key());
+      return StatusCode::SUCCESS;      
+    }
+
+    for(auto ev : *missingETReadHandle)
+    {
+      m_truthMissPx.push_back(ev->mpx() * 1e-3);
+      m_truthMissPy.push_back(ev->mpy() * 1e-3);
+      m_truthMissPt.push_back(ev->met() * 1e-3);
+      m_truthMissPhi.push_back(ev->phi());
+      m_truthMissSum.push_back(ev->sumet() * 1e-3);
+    }
+  }
+
   //Create maps between the truth particle matched to each track
   //(using its barcode) and the sum of the visible/full calibration hit 
   //energy for that truth particle found in topoclusters
@@ -984,6 +1033,22 @@ StatusCode MLTreeMaker::execute()
       m_electronPhi.push_back(el->phi());
       m_electronCharge.push_back(el->charge());
       m_nElectron++;
+    }
+
+    SG::ReadHandle<xAOD::PhotonContainer> photonReadHandle(m_photonReadHandleKey);
+    if (!photonReadHandle.isValid())
+    {
+      ATH_MSG_WARNING("Invalid ReadHandle for xAOD::PhotonContainer with key: " << photonReadHandle.key());
+      return StatusCode::SUCCESS;      
+    }
+
+    m_nPhoton = 0;
+    for (auto gamma : *photonReadHandle)
+    {
+      m_photonPt.push_back(gamma->pt() * 1e-3);
+      m_photonEta.push_back(gamma->eta());
+      m_photonPhi.push_back(gamma->phi());
+      m_nPhoton++;
     }
 
     SG::ReadHandle<xAOD::MuonContainer> muonReadHandle(m_muonReadHandleKey);

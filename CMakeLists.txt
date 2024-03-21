@@ -21,6 +21,7 @@ set(	_athLINKLIBS	AthenaBaseComps
 			xAODMissingET
 			xAODEgamma
 			xAODMuon
+			METInterface
       xAODPFlow     
 			CaloEvent
       CaloConditions
