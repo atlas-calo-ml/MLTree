@@ -875,11 +875,16 @@ StatusCode MLTreeMaker::execute()
             m_G4PreCalo_n_EM++;
           }
         }
+        else
+          continue; //don't keep G4 particles with decay vertex
         if (!m_keepG4TruthParticles)
           continue;
       }
+      else if (truth->status() > 2)
+        continue;
+
       m_truthPartPdgId.push_back(truth->pdgId());
-      m_truthPartStatus.push_back(truth->status());
+      m_truthPartStatus.push_back(truth->barcode() > m_G4BarcodeOffset ? 0 : truth->status());
       m_truthPartBarcode.push_back(truth->barcode());
       m_truthPartPt.push_back(truth->pt() * 1e-3);
       m_truthPartE.push_back(truth->e() * 1e-3);
