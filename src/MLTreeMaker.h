@@ -69,6 +69,7 @@ private:
   // bool m_isMC;
   bool m_doTracking;
   bool m_doJets;
+  bool m_doPflow;
   bool m_doEventCleaning;
   bool m_doPileup;
   bool m_doShapeEM;
@@ -81,7 +82,10 @@ private:
   std::string m_eventInfoContainerName;
 
   /** ReadHandle to retrieve xAOD::FlowElementContainer (charged) */
-  SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "JetETMissChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_chargedFlowElementReadHandleKey{this, "ChargedFlowElementContainer", "GlobalChargedParticleFlowObjects", "ReadHandleKey for the charged FlowElement container"};
+
+  /** ReadHandle to retrieve xAOD::FlowElementContainer (neutral) */
+  SG::ReadHandleKey<xAOD::FlowElementContainer> m_neutralFlowElementReadHandleKey{this, "NeutralFlowElementContainer", "GlobalNeutralParticleFlowObjects", "ReadHandleKey for the neutral FlowElement container"};
 
   /** ReadHandleKey to retrieve xAOD::TruthParticleContainer */
   SG::ReadHandleKey<xAOD::TruthParticleContainer> m_truthParticleReadHandleKey{this, "TruthParticleContainer", "TruthParticles", "ReadHandleKey for the truth particle container"};
@@ -191,13 +195,14 @@ private:
 
   // Track variables
   int m_nTrack;
+  std::vector<int> m_trackID;
   std::vector<float> m_trackPt;
   std::vector<float> m_trackP;
   std::vector<float> m_trackMass;
   std::vector<float> m_trackEta;
   std::vector<float> m_trackPhi;
   //index of matched truth particle in m_truthPart* vectors
-  std::vector<unsigned int> m_trackTruthParticleIndex;
+  std::vector<int> m_trackTruthParticleIndex;
   //sum of visible calibration hit energy of this tracks
   //truth particle found in all topoclusters
   std::vector<float> m_trackVisibleCalHitCaloEnergy;
@@ -293,6 +298,18 @@ private:
   std::vector<float> m_trackEta_TileExt2;
   std::vector<float> m_trackPhi_TileExt2;
 
+  // PFlow variables
+  int m_nNuPflow;
+  int m_nChPflow;
+  std::vector<float> m_PflowID;
+  std::vector<float> m_PflowPt;
+  std::vector<float> m_PflowMass;
+  std::vector<float> m_PflowEta;
+  std::vector<float> m_PflowPhi;
+  std::vector<float> m_PflowCharge;
+  std::vector<int> m_PflowTrackID;
+  std::vector<std::vector<int>> m_PflowClusterID;
+
   //outer index is for jet container
   //inner index is for jets index w/in that container
   std::vector<std::vector<float>> m_jet_pt;
@@ -300,9 +317,11 @@ private:
   std::vector<std::vector<float>> m_jet_phi;
   std::vector<std::vector<float>> m_jet_E;
   std::vector<std::vector<int>> m_jet_flavor;
+  std::vector<std::vector<std::vector<int>>> m_jet_constit_ID;
 
   // Clusters and cells
   int m_nCluster;
+  std::vector<int> m_cluster_ID;
   std::vector<int> m_cluster_nCells;
   std::vector<float> m_cluster_E;
   std::vector<float> m_cluster_E_LCCalib;

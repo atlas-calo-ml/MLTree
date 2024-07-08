@@ -49,4 +49,8 @@ def MainCfg(cfgFlags):
                                                  CaloClusterWriteDecorHandleKey_NLeadingTruthParticles = "CaloTopoClusters."+cfgFlags.Calo.TopoCluster.CalibrationHitDecorationName+"_Full",
                                                  NumTruthParticles = numTruthParticles))    
 
+    from JetRecConfig.JetRecConfig import JetRecCfg
+    from JetRecConfig.StandardSmallRJets import AntiKt4EMPFlow
+    cfg.merge( JetRecCfg(cfgFlags,AntiKt4EMPFlow) )
+
     return cfg
