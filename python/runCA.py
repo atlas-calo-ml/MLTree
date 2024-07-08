@@ -12,11 +12,12 @@ if __name__=="__main__":
     import os
     file_list = os.getenv('FILELIST')
     #file_list = '/eos/user/e/edreyer/MLTreeAthenaAnalysis/samples/train.txt'
+    max_events = int(os.getenv('MAXEVENTS')) if os.getenv('MAXEVENTS')!='' else 10
 
     with open(file_list, "r") as f:
         flist = [line.strip() for line in f if not line.startswith("#")]
 
-    cfgFlags.Exec.MaxEvents=10
+    cfgFlags.Exec.MaxEvents=max_events
     #cfgFlags.Exec.OutputLevel=DEBUG
     cfgFlags.Input.isMC=True
     cfgFlags.Input.Files=flist

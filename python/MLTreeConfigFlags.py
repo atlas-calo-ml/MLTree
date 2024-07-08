@@ -2,9 +2,12 @@
 
 from AthenaConfiguration.AthConfigFlags import AthConfigFlags
 
+import os
+
 def createMLTreeConfigFlags():
+  outfile = os.getenv('OUTFILE') if os.getenv('OUTFILE')!='' else "mltree.root"
   mlTreeConfigFlags=AthConfigFlags()
-  mlTreeConfigFlags.addFlag("MLTree.NtupleName","mltree.root") #Define output ntuple nam,e
+  mlTreeConfigFlags.addFlag("MLTree.NtupleName",outfile) #Define output ntuple name
 
   return mlTreeConfigFlags
 
