@@ -1,3 +1,5 @@
+# Copyright (C) 2002-2023 CERN for the benefit of the ATLAS collaboration
+
 #You can run this code from the command line (after Athena setup) with a command:
 #python runDiJets.py --filesInput=<inputFileName> MLTree.NtupleName=<outputNtupleFileName>"
 

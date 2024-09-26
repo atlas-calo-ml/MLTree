@@ -1,22 +1,30 @@
+# Copyright (C) 2002-2023 CERN for the benefit of the ATLAS collaboration
+
 from AthenaConfiguration.ComponentFactory import CompFactory
 
 def __MLTree():
   from MLTree.MLTreeConfigFlags import createMLTreeConfigFlags
   return createMLTreeConfigFlags()
 
+def GeneralServicesCfg(cfgFlags):
+
+  from AthenaConfiguration.MainServicesConfig import MainServicesCfg
+  cfg = MainServicesCfg(cfgFlags)
+
+  StoreGateSvc=CompFactory.StoreGateSvc
+  cfg.addService(StoreGateSvc("DetectorStore"))
+
+  histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='"+ cfgFlags.MLTree.NtupleName+"', OPT='RECREATE'"])
+  cfg.addService(histSvc)
+
+  from AthenaPoolCnvSvc.PoolReadConfig import PoolReadCfg
+  cfg.merge(PoolReadCfg(cfgFlags))
+
+  return cfg
+
 def MainCfg(cfgFlags):
     
-    from AthenaConfiguration.MainServicesConfig import MainServicesCfg
-    cfg = MainServicesCfg(cfgFlags)
-
-    StoreGateSvc=CompFactory.StoreGateSvc
-    cfg.addService(StoreGateSvc("DetectorStore"))
-
-    histSvc = CompFactory.THistSvc(Output = ["OutputStream DATAFILE='"+ cfgFlags.MLTree.NtupleName+"', OPT='RECREATE'"])
-    cfg.addService(histSvc)
-
-    from AthenaPoolCnvSvc.PoolReadConfig import PoolReadCfg
-    cfg.merge(PoolReadCfg(cfgFlags))
+    cfg = GeneralServicesCfg(cfgFlags)
 
     #Configure topocluster algorithmsm, and associated conditions
     from CaloRec.CaloTopoClusterConfig import CaloTopoClusterCfg
